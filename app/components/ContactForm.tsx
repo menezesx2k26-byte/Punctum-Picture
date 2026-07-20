@@ -56,9 +56,12 @@ export function ContactForm() {
           <option value="" disabled>
             Selecione
           </option>
-          <option>Casamento</option>
-          <option>Ensaio de casal</option>
           <option>Retrato</option>
+          <option>Família</option>
+          <option>Evento</option>
+          <option>Música</option>
+          <option>Esporte</option>
+          <option>Projeto documental</option>
           <option>Outro</option>
         </select>
       </div>

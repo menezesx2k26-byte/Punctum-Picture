@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
+import { ArrowDown, ArrowUpRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { DemoAlbum } from "../lib/demo";
+import type { PortfolioAlbum } from "../lib/portfolio";
 
 type LiveAlbumData = {
   title: string;
@@ -24,7 +26,7 @@ export function LiveAlbum({
   initial,
 }: {
   slug: string;
-  initial: DemoAlbum;
+  initial: PortfolioAlbum;
 }) {
   const [album, setAlbum] = useState<LiveAlbumData | null>(null);
 
@@ -55,33 +57,41 @@ export function LiveAlbum({
           alt: image.altText ?? "",
           width: image.width ?? 1600,
           height: image.height ?? 1200,
+          number: null,
         }))
-      : initial.gallery.map((image, index) => ({
+      : initial.gallery.map((image) => ({
           src: image.src,
           alt: image.alt,
-          width: index % 2 === 0 ? 1600 : 1200,
-          height: index % 2 === 0 ? 1200 : 1600,
+          width: 1800,
+          height: 2400,
+          number: image.number,
         }));
 
   return (
     <>
       <section className="album-hero">
-        <Image src={cover} alt="" fill priority sizes="100vw" />
+        <Image src={cover} alt={`Capa do ensaio ${title}`} fill priority sizes="100vw" />
         <div className="album-hero-copy">
-          <p className="eyebrow">{album?.location ?? initial.category}</p>
+          <div className="album-kicker">
+            <p className="eyebrow">{album?.location ?? initial.category}</p>
+            <span>{images.length.toString().padStart(2, "0")} fotografias</span>
+          </div>
           <h1>{title}</h1>
-          <p style={{ maxWidth: "34rem", lineHeight: 1.7 }}>{subtitle}</p>
+          <div className="album-hero-bottom">
+            <p>{subtitle}</p>
+            <ArrowDown aria-hidden="true" size={22} />
+          </div>
         </div>
       </section>
-      <section className="section">
+      <section className="section album-story">
         <div className="section-inner">
           <div className="section-heading">
-            <h2>A história</h2>
+            <h2>Sobre a história</h2>
             <p>{description}</p>
           </div>
           <div className="album-gallery">
             {images.map((image, index) => (
-              <figure key={`${image.src}-${index}`}>
+              <figure className={`gallery-frame frame-${index % 6}`} key={`${image.src}-${index}`}>
                 <Image
                   src={image.src}
                   alt={image.alt}
@@ -90,8 +100,18 @@ export function LiveAlbum({
                   sizes="(max-width: 640px) 100vw, 50vw"
                   loading={index < 2 ? "eager" : "lazy"}
                 />
+                <figcaption>
+                  <span>{(index + 1).toString().padStart(2, "0")}</span>
+                  {image.number ? <small>Arquivo {image.number.toString().padStart(3, "0")}</small> : null}
+                </figcaption>
               </figure>
             ))}
+          </div>
+          <div className="album-archive-link">
+            <p>Esta história faz parte do arquivo completo da Punctum Picture.</p>
+            <Link href="/arquivo">
+              Percorrer as 113 fotografias <ArrowUpRight size={17} />
+            </Link>
           </div>
         </div>
       </section>

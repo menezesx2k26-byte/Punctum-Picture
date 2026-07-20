@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { LiveAlbum } from "../../components/LiveAlbum";
 import { SiteFooter, SiteHeader } from "../../components/SiteChrome";
-import { demoAlbums } from "../../lib/demo";
+import { portfolioAlbums } from "../../lib/portfolio";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const album = demoAlbums.find((entry) => entry.slug === slug);
+  const album = portfolioAlbums.find((entry) => entry.slug === slug);
   const title = album?.title ?? "Ensaio";
   const description =
     album?.description ?? "Ensaio fotográfico da Punctum Picture.";
@@ -22,8 +22,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function AlbumPage({ params }: PageProps) {
   const { slug } = await params;
   const initial =
-    demoAlbums.find((entry) => entry.slug === slug) ?? {
-      ...demoAlbums[0],
+    portfolioAlbums.find((entry) => entry.slug === slug) ?? {
+      ...portfolioAlbums[0],
       slug,
       title: "História em imagens",
       subtitle: "Punctum Picture",

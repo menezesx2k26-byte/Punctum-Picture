@@ -9,6 +9,7 @@ export function SiteHeader({ dark = false }: { dark?: boolean }) {
       </Link>
       <nav className="site-nav" aria-label="Navegação principal">
         <Link href="/portfolio">Portfólio</Link>
+        <Link href="/arquivo">Arquivo</Link>
         <Link href="/#sobre">Sobre</Link>
         <Link href="/contato" className="nav-cta">
           Conversar
@@ -21,8 +22,16 @@ export function SiteHeader({ dark = false }: { dark?: boolean }) {
 export function SiteFooter() {
   return (
     <footer className="site-footer">
-      <span>© {new Date().getFullYear()} Punctum Picture</span>
-      <span>Fotografia autoral · Brasil</span>
+      <div>
+        <span className="footer-wordmark">Punctum Picture</span>
+        <p>Fotografia de presença, gesto e movimento.</p>
+      </div>
+      <nav aria-label="Navegação do rodapé">
+        <Link href="/portfolio">Histórias</Link>
+        <Link href="/arquivo">Arquivo completo</Link>
+        <Link href="/contato">Contato</Link>
+      </nav>
+      <span>© {new Date().getFullYear()} · Maria Helena · Brasil</span>
     </footer>
   );
 }

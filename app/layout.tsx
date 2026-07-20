@@ -6,6 +6,7 @@ const editorial = Cormorant_Garamond({
   variable: "--font-editorial",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
 });
 
 const sans = Manrope({
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
     template: "%s — Punctum Picture",
   },
   description:
-    "Fotografias que preservam presença, gesto e memória. Conheça o portfólio da Punctum Picture.",
+    "Fotografias de Maria Helena que preservam presença, gesto e movimento. Conheça as 113 imagens do arquivo Punctum Picture.",
   applicationName: "Punctum Picture",
   alternates: { canonical: "/" },
   robots: { index: true, follow: true },
@@ -31,12 +32,12 @@ export const metadata: Metadata = {
     locale: "pt_BR",
     siteName: "Punctum Picture",
     title: "Punctum Picture — fotografia autoral",
-    description: "Fotografias que preservam presença, gesto e memória.",
+    description: "Fotografia autoral de pessoas, ritos, palcos e movimento.",
     images: [
       {
-        url: "/portfolio/music-cover.jpg",
-        width: 2730,
-        height: 1820,
+        url: "/photos/p110.jpg",
+        width: 2400,
+        height: 1600,
         alt: "Fotografia de espetáculo por Maria Helena",
       },
     ],
@@ -44,8 +45,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Punctum Picture — fotografia autoral",
-    description: "Fotografias que preservam presença, gesto e memória.",
-    images: ["/portfolio/music-cover.jpg"],
+    description: "Fotografia autoral de pessoas, ritos, palcos e movimento.",
+    images: ["/photos/p110.jpg"],
   },
 };
 

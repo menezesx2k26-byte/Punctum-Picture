@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import type { DemoAlbum } from "../lib/demo";
+import type { PortfolioAlbum } from "../lib/portfolio";
 
-type Album = DemoAlbum & { coverUrl?: string | null };
+type Album = PortfolioAlbum & { coverUrl?: string | null };
 
-export function PortfolioGrid({ initialAlbums }: { initialAlbums: DemoAlbum[] }) {
+export function PortfolioGrid({ initialAlbums }: { initialAlbums: PortfolioAlbum[] }) {
   const [albums, setAlbums] = useState<Album[]>(initialAlbums);
   const [filter, setFilter] = useState("Todos");
   const categories = useMemo(
@@ -33,31 +34,35 @@ export function PortfolioGrid({ initialAlbums }: { initialAlbums: DemoAlbum[] })
       })
       .then((body) => {
         if (!active || !body?.albums?.length) return;
-        setAlbums(
-          body.albums.map((album) => ({
+        const remoteAlbums = body.albums.map((album) => ({
             slug: album.slug,
             title: album.title,
             subtitle: album.subtitle ?? "",
             description: album.description ?? "",
             category: "Portfólio",
-            cover: album.coverUrl ?? "/maria-helena.jpg",
+            cover: album.coverUrl ?? "/photos/p001.jpg",
             coverUrl: album.coverUrl,
             gallery: [],
-          })),
-        );
+          }));
+        setAlbums([
+          ...initialAlbums,
+          ...remoteAlbums.filter(
+            (remote) => !initialAlbums.some((album) => album.slug === remote.slug),
+          ),
+        ]);
       })
       .catch(() => undefined);
     return () => {
       active = false;
     };
-  }, []);
+  }, [initialAlbums]);
 
   return (
     <>
-      <div className="button-row" aria-label="Filtrar portfólio">
+      <div className="portfolio-filter" aria-label="Filtrar portfólio">
         {categories.map((category) => (
           <button
-            className={`button small${filter === category ? "" : " ghost"}`}
+            className={filter === category ? "active" : ""}
             key={category}
             type="button"
             onClick={() => setFilter(category)}
@@ -67,8 +72,8 @@ export function PortfolioGrid({ initialAlbums }: { initialAlbums: DemoAlbum[] })
           </button>
         ))}
       </div>
-      <div className="editorial-grid" style={{ marginTop: "2rem" }}>
-        {visible.map((album) => (
+      <div className="portfolio-grid">
+        {visible.map((album, index) => (
           <Link
             key={album.slug}
             className="story-card"
@@ -76,13 +81,18 @@ export function PortfolioGrid({ initialAlbums }: { initialAlbums: DemoAlbum[] })
           >
             <Image
               src={album.coverUrl ?? album.cover}
-              alt=""
+              alt={`Capa do ensaio ${album.title}`}
               fill
-              sizes="(max-width: 900px) 100vw, 55vw"
+              sizes="(max-width: 760px) 100vw, (max-width: 1100px) 50vw, 34vw"
             />
             <div className="story-card-copy">
-              <span>{album.category}</span>
+              <div>
+                <span>{album.category}</span>
+                <small>{(index + 1).toString().padStart(2, "0")}</small>
+              </div>
               <h2>{album.title}</h2>
+              <p>{album.subtitle}</p>
+              <ArrowUpRight aria-hidden="true" size={20} />
             </div>
           </Link>
         ))}
