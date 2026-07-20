@@ -1,4 +1,5 @@
 import { handleAdminApi } from "./api/admin";
+import { handleAdminAuth } from "./api/admin-auth";
 import { handlePublicApi } from "./api/public";
 import { serveMedia } from "./media/serve";
 import { AppError } from "./utils/errors";
@@ -19,6 +20,9 @@ export default {
     try {
       const publicResponse = await handlePublicApi(request, url, env);
       if (publicResponse) return publicResponse;
+
+      const adminAuthResponse = await handleAdminAuth(request, url, env);
+      if (adminAuthResponse) return adminAuthResponse;
 
       const adminResponse = await handleAdminApi(request, url, env);
       if (adminResponse) return adminResponse;

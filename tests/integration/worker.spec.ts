@@ -142,6 +142,51 @@ describe("Worker Punctum Picture", () => {
     expect(album?.cover).toBeNull();
   });
 
+  it("cria sessão administrativa apenas para os e-mails permitidos", async () => {
+    const login = await exports.default.fetch(
+      new Request("https://example.com/admin/api/session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: "https://example.com",
+        },
+        body: JSON.stringify({
+          email: "menezesx2k26@gmail.com",
+          password: "test-password",
+        }),
+      }),
+    );
+    expect(login.status).toBe(200);
+    const cookie = login.headers.get("set-cookie")?.split(";")[0];
+    expect(cookie).toMatch(/^punctum_admin_session=/);
+
+    const current = await exports.default.fetch(
+      new Request("https://example.com/admin/api/me", {
+        headers: { Cookie: cookie ?? "" },
+      }),
+    );
+    expect(current.status).toBe(200);
+    expect(await current.json()).toMatchObject({
+      email: "menezesx2k26@gmail.com",
+      roles: ["admin"],
+    });
+
+    const rejected = await exports.default.fetch(
+      new Request("https://example.com/admin/api/session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: "https://example.com",
+        },
+        body: JSON.stringify({
+          email: "outra-pessoa@example.com",
+          password: "test-password",
+        }),
+      }),
+    );
+    expect(rejected.status).toBe(401);
+  });
+
   it("rejeita Access inválido, preset inválido e imagem ausente", async () => {
     const access = await exports.default.fetch(
       new Request("https://punctumpicture.com/admin/api/me", {

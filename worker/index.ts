@@ -5,6 +5,7 @@ import {
 } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 import { handleAdminApi } from "./api/admin";
+import { handleAdminAuth } from "./api/admin-auth";
 import { handlePublicApi } from "./api/public";
 import { serveMedia } from "./media/serve";
 import { handleScheduled } from "./scheduled";
@@ -56,6 +57,11 @@ async function routeRequest(
     return publicResponse;
   }
 
+  const adminAuthResponse = await handleAdminAuth(request, url, env);
+  if (adminAuthResponse) {
+    return adminAuthResponse;
+  }
+
   const adminResponse = await handleAdminApi(request, url, env);
   if (adminResponse) {
     return adminResponse;
@@ -79,7 +85,20 @@ async function routeRequest(
   }
 
   if (url.pathname === "/admin" || url.pathname.startsWith("/admin/")) {
-    await requireAdmin(request, env);
+    try {
+      await requireAdmin(request, env);
+    } catch (error) {
+      if (
+        error instanceof AppError &&
+        (error.status === 401 || error.status === 403) &&
+        (request.method === "GET" || request.method === "HEAD")
+      ) {
+        const loginUrl = new URL("/acesso", request.url);
+        loginUrl.searchParams.set("next", `${url.pathname}${url.search}`);
+        return Response.redirect(loginUrl, 303);
+      }
+      throw error;
+    }
   }
 
   const response = await handler.fetch(request, env, ctx);

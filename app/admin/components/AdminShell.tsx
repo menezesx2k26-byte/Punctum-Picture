@@ -7,6 +7,7 @@ import {
   Tags,
 } from "lucide-react";
 import Link from "next/link";
+import { LogoutButton } from "./LogoutButton";
 
 const navigation = [
   { href: "/admin", label: "Visão geral", icon: LayoutDashboard },
@@ -36,8 +37,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <p className="admin-sidebar-bottom">
             Painel de Maria Helena
             <br />
-            Protegido por Cloudflare Access
+            Sessão protegida por senha
           </p>
+          <LogoutButton />
         </aside>
         <main className="admin-main">{children}</main>
         <nav className="mobile-admin-nav" aria-label="Painel no celular">
