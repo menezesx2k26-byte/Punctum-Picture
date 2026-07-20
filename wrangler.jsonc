@@ -1,0 +1,174 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "punctum-picture",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-05-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/admin/*", "/media/*", "/sitemap.xml", "/robots.txt"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "punctum-picture",
+      "database_id": "00000000-0000-4000-8000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "ORIGINALS",
+      "bucket_name": "punctum-picture-originals"
+    },
+    {
+      "binding": "BACKUPS",
+      "bucket_name": "punctum-picture-backups"
+    }
+  ],
+  "images": {
+    "binding": "IMAGES"
+  },
+  "routes": [
+    {
+      "pattern": "punctumpicture.com",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.punctumpicture.com",
+      "custom_domain": true
+    }
+  ],
+  "triggers": {
+    "crons": ["0 3 * * *", "0 * * * *"]
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "head_sampling_rate": 1
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.1
+    }
+  },
+  "vars": {
+    "ENVIRONMENT": "production",
+    "SITE_ORIGIN": "https://punctumpicture.com",
+    "PUBLIC_SITE_URL": "https://punctumpicture.com",
+    "PUBLIC_WHATSAPP_E164": "UNSPECIFIED",
+    "PUBLIC_INSTAGRAM_URL": "UNSPECIFIED",
+    "MAX_UPLOAD_BYTES": "26214400",
+    "ALLOWED_MIME_TYPES": "image/jpeg,image/png,image/webp",
+    "PRESIGNED_URL_TTL_SECONDS": "900",
+    "CONTACT_RATE_LIMIT_WINDOW_SECONDS": "3600",
+    "CONTACT_RATE_LIMIT_MAX": "5",
+    "ADMIN_RATE_LIMIT_WINDOW_SECONDS": "60",
+    "ADMIN_RATE_LIMIT_MAX": "60",
+    "BACKUP_PREFIX": "backups/d1",
+    "BACKUP_RETENTION_DAYS": "180",
+    "CLEANUP_ORPHAN_UPLOAD_AGE_HOURS": "24"
+  },
+  "env": {
+    "preview": {
+      "name": "punctum-picture-preview",
+      "vars": {
+        "ENVIRONMENT": "preview",
+        "SITE_ORIGIN": "https://preview.punctumpicture.com",
+        "PUBLIC_SITE_URL": "https://preview.punctumpicture.com",
+        "PUBLIC_WHATSAPP_E164": "UNSPECIFIED",
+        "PUBLIC_INSTAGRAM_URL": "UNSPECIFIED",
+        "MAX_UPLOAD_BYTES": "26214400",
+        "ALLOWED_MIME_TYPES": "image/jpeg,image/png,image/webp",
+        "PRESIGNED_URL_TTL_SECONDS": "900",
+        "CONTACT_RATE_LIMIT_WINDOW_SECONDS": "3600",
+        "CONTACT_RATE_LIMIT_MAX": "5",
+        "ADMIN_RATE_LIMIT_WINDOW_SECONDS": "60",
+        "ADMIN_RATE_LIMIT_MAX": "60",
+        "BACKUP_PREFIX": "backups/d1",
+        "BACKUP_RETENTION_DAYS": "180",
+        "CLEANUP_ORPHAN_UPLOAD_AGE_HOURS": "24"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "punctum-picture-preview",
+          "database_id": "11111111-1111-4111-8111-111111111111",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "ORIGINALS",
+          "bucket_name": "punctum-picture-originals-preview"
+        },
+        {
+          "binding": "BACKUPS",
+          "bucket_name": "punctum-picture-backups-preview"
+        }
+      ],
+      "routes": [
+        {
+          "pattern": "preview.punctumpicture.com",
+          "custom_domain": true
+        }
+      ],
+      "images": {
+        "binding": "IMAGES"
+      },
+    },
+    "production": {
+      "name": "punctum-picture",
+      "vars": {
+        "ENVIRONMENT": "production",
+        "SITE_ORIGIN": "https://punctumpicture.com",
+        "PUBLIC_SITE_URL": "https://punctumpicture.com",
+        "PUBLIC_WHATSAPP_E164": "UNSPECIFIED",
+        "PUBLIC_INSTAGRAM_URL": "UNSPECIFIED",
+        "MAX_UPLOAD_BYTES": "26214400",
+        "ALLOWED_MIME_TYPES": "image/jpeg,image/png,image/webp",
+        "PRESIGNED_URL_TTL_SECONDS": "900",
+        "CONTACT_RATE_LIMIT_WINDOW_SECONDS": "3600",
+        "CONTACT_RATE_LIMIT_MAX": "5",
+        "ADMIN_RATE_LIMIT_WINDOW_SECONDS": "60",
+        "ADMIN_RATE_LIMIT_MAX": "60",
+        "BACKUP_PREFIX": "backups/d1",
+        "BACKUP_RETENTION_DAYS": "180",
+        "CLEANUP_ORPHAN_UPLOAD_AGE_HOURS": "24"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "punctum-picture",
+          "database_id": "00000000-0000-4000-8000-000000000000",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "ORIGINALS",
+          "bucket_name": "punctum-picture-originals"
+        },
+        {
+          "binding": "BACKUPS",
+          "bucket_name": "punctum-picture-backups"
+        }
+      ],
+      "routes": [
+        {
+          "pattern": "punctumpicture.com",
+          "custom_domain": true
+        },
+        {
+          "pattern": "www.punctumpicture.com",
+          "custom_domain": true
+        }
+      ],
+      "images": {
+        "binding": "IMAGES"
+      },
+    }
+  }
+}

@@ -1,0 +1,9 @@
+[
+  {
+    "AllowedOrigins": ["https://punctumpicture.com"],
+    "AllowedMethods": ["PUT", "HEAD"],
+    "AllowedHeaders": ["Content-Type"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
