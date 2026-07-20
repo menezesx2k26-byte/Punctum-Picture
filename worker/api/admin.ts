@@ -1,4 +1,3 @@
-import { AwsClient } from "aws4fetch";
 import { z } from "zod";
 import { writeAudit } from "../utils/audit";
 import { AdminIdentity, assertAllowedOrigin, requireAdmin } from "../utils/auth";
@@ -7,7 +6,6 @@ import {
   envString,
   requireDb,
   requireOriginals,
-  requiredEnvString,
 } from "../utils/env";
 import { AppError } from "../utils/errors";
 import { assertRateLimit } from "../utils/rate-limit";
@@ -493,43 +491,11 @@ function extensionForMime(mime: string): string {
   return mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
 }
 
-function encodeObjectKey(key: string): string {
-  return key.split("/").map(encodeURIComponent).join("/");
-}
-
 async function buildUploadUrl(
   request: Request,
-  env: Env,
   intentId: string,
-  objectKey: string,
-  mimeType: string,
-  ttl: number,
 ): Promise<string> {
-  if (envString(env, "ENVIRONMENT") === "local") {
-    return `${new URL(request.url).origin}/admin/api/uploads/${intentId}/direct`;
-  }
-
-  const accountId = requiredEnvString(env, "R2_ACCOUNT_ID");
-  const accessKeyId = requiredEnvString(env, "R2_ACCESS_KEY_ID");
-  const secretAccessKey = requiredEnvString(env, "R2_SECRET_ACCESS_KEY");
-  const bucketName = requiredEnvString(env, "R2_BUCKET_NAME");
-  const endpoint = new URL(
-    `https://${accountId}.r2.cloudflarestorage.com/${encodeURIComponent(bucketName)}/${encodeObjectKey(objectKey)}`,
-  );
-  endpoint.searchParams.set("X-Amz-Expires", String(ttl));
-  const aws = new AwsClient({
-    accessKeyId,
-    secretAccessKey,
-    service: "s3",
-    region: "auto",
-    retries: 0,
-  });
-  const signed = await aws.sign(endpoint, {
-    method: "PUT",
-    headers: { "Content-Type": mimeType },
-    aws: { signQuery: true, allHeaders: true },
-  });
-  return signed.url;
+  return `${new URL(request.url).origin}/admin/api/uploads/${intentId}/direct`;
 }
 
 async function createUploadIntent(
@@ -567,11 +533,7 @@ async function createUploadIntent(
   const expiresAt = new Date(now.getTime() + ttl * 1000).toISOString();
   const uploadUrl = await buildUploadUrl(
     request,
-    env,
     intentId,
-    objectKey,
-    input.mimeType,
-    ttl,
   );
 
   await db.batch([
@@ -655,9 +617,6 @@ async function directUpload(
   db: D1Database,
   intentId: string,
 ): Promise<Response> {
-  if (envString(env, "ENVIRONMENT") !== "local") {
-    throw new AppError(404, "NOT_FOUND", "Rota não encontrada.");
-  }
   const intent = await getIntent(db, intentId);
   if (intent.status !== "pending" || new Date(intent.expiresAt) <= new Date()) {
     throw new AppError(409, "INTENT_EXPIRED", "O prazo deste envio expirou.");

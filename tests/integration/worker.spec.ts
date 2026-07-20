@@ -1,6 +1,7 @@
 import { env, exports } from "cloudflare:workers";
 import { beforeAll, describe, expect, it } from "vitest";
 import appMigration from "../../drizzle/0000_grey_swordsman.sql?raw";
+import portfolioSeed from "../../drizzle/0001_seed_portfolio.sql?raw";
 
 async function applySql(sql: string) {
   if (!env.DB) throw new Error("Binding DB ausente no teste");
@@ -27,6 +28,7 @@ function jsonRequest(path: string, method: string, body?: unknown) {
 describe("Worker Punctum Picture", () => {
   beforeAll(async () => {
     await applySql(appMigration);
+    await applySql(portfolioSeed);
   });
 
   it("responde o health check e dados públicos", async () => {
@@ -39,6 +41,24 @@ describe("Worker Punctum Picture", () => {
     expect(await site.json()).toMatchObject({
       site: { brandName: "Punctum Picture" },
     });
+  });
+
+  it("disponibiliza todo o acervo existente no banco administrativo", async () => {
+    if (!env.DB) throw new Error("Binding DB ausente");
+    const totals = await env.DB.prepare(
+      `SELECT
+        (SELECT COUNT(*) FROM albums WHERE deleted_at IS NULL) AS albums,
+        (SELECT COUNT(*) FROM images WHERE deleted_at IS NULL) AS images`,
+    ).first<{ albums: number; images: number }>();
+    expect(totals).toEqual({ albums: 14, images: 113 });
+
+    const publicAlbums = await exports.default.fetch(
+      "http://localhost:8787/api/public/albums?limit=24",
+    );
+    expect(publicAlbums.status).toBe(200);
+    const body = (await publicAlbums.json()) as { albums: Array<{ slug: string }> };
+    expect(body.albums).toHaveLength(13);
+    expect(body.albums.some((album) => album.slug === "ritos-de-luz")).toBe(true);
   });
 
   it("aceita contato e neutraliza honeypot", async () => {

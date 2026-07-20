@@ -41,9 +41,38 @@ export async function serveMedia(
     throw new AppError(404, "IMAGE_NOT_FOUND", "Imagem não encontrada.");
   }
 
-  const object = await requireOriginals(env).get(image.originalKey);
-  if (!object) {
-    throw new AppError(404, "IMAGE_NOT_FOUND", "Imagem não encontrada.");
+  let sourceBody: ReadableStream;
+  let sourceContentType = "image/jpeg";
+  if (image.originalKey.startsWith("static:")) {
+    const pathname = image.originalKey.slice("static:".length);
+    if (!pathname.startsWith("/") || pathname.startsWith("//")) {
+      throw new AppError(404, "IMAGE_NOT_FOUND", "Imagem não encontrada.");
+    }
+    const asset = await env.ASSETS.fetch(new Request(new URL(pathname, request.url)));
+    if (!asset.ok || !asset.body) {
+      throw new AppError(404, "IMAGE_NOT_FOUND", "Imagem não encontrada.");
+    }
+    sourceBody = asset.body;
+    sourceContentType = asset.headers.get("content-type") ?? sourceContentType;
+  } else {
+    const object = await requireOriginals(env).get(image.originalKey);
+    if (!object) {
+      throw new AppError(404, "IMAGE_NOT_FOUND", "Imagem não encontrada.");
+    }
+    sourceBody = object.body;
+    sourceContentType = object.httpMetadata?.contentType ?? sourceContentType;
+  }
+
+  if (!env.IMAGES) {
+    return new Response(sourceBody, {
+      headers: {
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "Content-Type": sourceContentType,
+        "Content-Disposition": "inline",
+        "X-Content-Type-Options": "nosniff",
+        ETag: `"${imageId}-${presetName}-v1"`,
+      },
+    });
   }
 
   const preset = IMAGE_PRESETS[presetName];
@@ -59,7 +88,7 @@ export async function serveMedia(
 
   let transformed: Response;
   try {
-    const result = await env.IMAGES.input(object.body)
+    const result = await env.IMAGES.input(sourceBody)
       .transform(transform)
       .output({ format, quality: preset.quality });
     transformed = result.response();

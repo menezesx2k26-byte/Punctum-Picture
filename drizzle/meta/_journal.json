@@ -8,6 +8,13 @@
       "when": 1784587442867,
       "tag": "0000_grey_swordsman",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1784587912190,
+      "tag": "0001_seed_portfolio",
+      "breakpoints": true
     }
   ]
 }

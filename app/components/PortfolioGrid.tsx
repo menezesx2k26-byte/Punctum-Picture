@@ -34,21 +34,25 @@ export function PortfolioGrid({ initialAlbums }: { initialAlbums: PortfolioAlbum
       })
       .then((body) => {
         if (!active || !body?.albums?.length) return;
-        const remoteAlbums = body.albums.map((album) => ({
+        const remoteAlbums = body.albums.map((album) => {
+          const original = initialAlbums.find((entry) => entry.slug === album.slug);
+          return {
+            ...original,
             slug: album.slug,
             title: album.title,
             subtitle: album.subtitle ?? "",
             description: album.description ?? "",
-            category: "Portfólio",
+            category: original?.category ?? "Portfólio",
             cover: album.coverUrl ?? "/photos/p001.jpg",
             coverUrl: album.coverUrl,
-            gallery: [],
-          }));
+            gallery: original?.gallery ?? [],
+          };
+        });
         setAlbums([
-          ...initialAlbums,
-          ...remoteAlbums.filter(
-            (remote) => !initialAlbums.some((album) => album.slug === remote.slug),
+          ...initialAlbums.map(
+            (album) => remoteAlbums.find((remote) => remote.slug === album.slug) ?? album,
           ),
+          ...remoteAlbums.filter((remote) => !initialAlbums.some((album) => album.slug === remote.slug)),
         ]);
       })
       .catch(() => undefined);

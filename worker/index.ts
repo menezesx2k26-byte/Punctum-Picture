@@ -29,6 +29,15 @@ async function routeRequest(
   }
 
   if (url.pathname === "/_vinext/image") {
+    if (!env.IMAGES) {
+      const source = url.searchParams.get("url");
+      if (!source || !source.startsWith("/") || source.startsWith("//")) {
+        throw new AppError(400, "INVALID_IMAGE_SOURCE", "A origem da imagem é inválida.");
+      }
+      return withSecurityHeaders(
+        await env.ASSETS.fetch(new Request(new URL(source, request.url))),
+      );
+    }
     const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
     return handleImageOptimization(
       request,
