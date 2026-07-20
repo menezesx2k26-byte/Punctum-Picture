@@ -5,13 +5,18 @@ export function SiteHeader({ dark = false }: { dark?: boolean }) {
   return (
     <header className={`site-header${dark ? " dark" : ""}`}>
       <Link href="/" className="wordmark" aria-label="Punctum Picture — início">
-        <Image
-          src="/logo-punctum.png"
-          alt="Punctum Fotografia"
-          width={720}
-          height={799}
-          priority
-        />
+        <span className="wordmark-art" aria-hidden="true">
+          <Image
+            src="/logo-punctum.png"
+            alt=""
+            width={720}
+            height={799}
+            priority
+          />
+        </span>
+        <span className="wordmark-subtitle" aria-hidden="true">
+          Fotografia
+        </span>
       </Link>
       <nav className="site-nav" aria-label="Navegação principal">
         <Link href="/portfolio">Portfólio</Link>
