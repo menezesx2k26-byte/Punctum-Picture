@@ -137,7 +137,103 @@ export function clearAdminSessionCookie(): string {
   return `${ADMIN_SESSION_COOKIE}=; Path=/admin; Max-Age=0; HttpOnly; Secure; SameSite=Strict`;
 }
 
-export async function verifyAdminPassword(password: string, env: Env): Promise<boolean> {
+type StoredAdminCredential = {
+  passwordHash: string;
+  passwordSalt: string;
+  passwordIterations: number;
+};
+
+async function derivePassword(
+  password: string,
+  salt: Uint8Array,
+  iterations: number,
+): Promise<Uint8Array> {
+  const material = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"],
+  );
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      hash: "SHA-256",
+      salt: new Uint8Array(salt).buffer,
+      iterations,
+    },
+    material,
+    256,
+  );
+  return new Uint8Array(bits);
+}
+
+function equalBytes(left: Uint8Array, right: Uint8Array): boolean {
+  if (left.length !== right.length) return false;
+  let difference = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    difference |= left[index] ^ right[index];
+  }
+  return difference === 0;
+}
+
+async function storedCredential(db: D1Database): Promise<StoredAdminCredential | null> {
+  return db
+    .prepare(
+      `SELECT
+        password_hash AS passwordHash,
+        password_salt AS passwordSalt,
+        password_iterations AS passwordIterations
+       FROM admin_credentials WHERE id = 1`,
+    )
+    .first<StoredAdminCredential>();
+}
+
+export async function setAdminPassword(
+  password: string,
+  db: D1Database,
+  updatedBy: string,
+): Promise<void> {
+  const iterations = 60_000;
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const hash = await derivePassword(password, salt, iterations);
+  await db
+    .prepare(
+      `INSERT INTO admin_credentials (
+        id, password_hash, password_salt, password_iterations, updated_at, updated_by
+       ) VALUES (1, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+        password_hash = excluded.password_hash,
+        password_salt = excluded.password_salt,
+        password_iterations = excluded.password_iterations,
+        updated_at = excluded.updated_at,
+        updated_by = excluded.updated_by`,
+    )
+    .bind(
+      toBase64Url(hash),
+      toBase64Url(salt),
+      iterations,
+      new Date().toISOString(),
+      updatedBy,
+    )
+    .run();
+}
+
+export async function verifyAdminPassword(
+  password: string,
+  env: Env,
+  db?: D1Database,
+): Promise<boolean> {
+  const credential = db ? await storedCredential(db) : null;
+  if (credential) {
+    const actual = await derivePassword(
+      password,
+      fromBase64Url(credential.passwordSalt),
+      credential.passwordIterations,
+    );
+    return equalBytes(actual, fromBase64Url(credential.passwordHash));
+  }
+
   const expected = requiredEnvString(env, "ADMIN_PASSWORD_HASH").toLowerCase();
   const digest = Array.from(
     new Uint8Array(

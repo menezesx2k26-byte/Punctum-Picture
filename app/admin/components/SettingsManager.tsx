@@ -34,6 +34,8 @@ const empty: Settings = {
 export function SettingsManager() {
   const [settings, setSettings] = useState<Settings>(empty);
   const [status, setStatus] = useState("");
+  const [passwordStatus, setPasswordStatus] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     fetch("/admin/api/settings")
@@ -70,6 +72,43 @@ export function SettingsManager() {
     }
     if (body.settings) setSettings(body.settings);
     setStatus("Configurações salvas.");
+  }
+
+  async function changePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const currentPassword = String(data.get("currentPassword") ?? "");
+    const newPassword = String(data.get("newPassword") ?? "");
+    const confirmPassword = String(data.get("confirmPassword") ?? "");
+    if (newPassword !== confirmPassword) {
+      setPasswordStatus("A confirmação não corresponde à nova senha.");
+      return;
+    }
+
+    setChangingPassword(true);
+    setPasswordStatus("Alterando senha…");
+    try {
+      const response = await fetch("/admin/api/session", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const body = (await response.json()) as { error?: { message?: string } };
+      if (!response.ok) {
+        throw new Error(body.error?.message ?? "Não foi possível alterar a senha.");
+      }
+      form.reset();
+      setPasswordStatus("Senha definitiva salva. Entre novamente com a nova senha.");
+      window.setTimeout(() => {
+        window.location.href = "/acesso";
+      }, 1600);
+    } catch (error) {
+      setPasswordStatus(
+        error instanceof Error ? error.message : "Não foi possível alterar a senha.",
+      );
+      setChangingPassword(false);
+    }
   }
 
   return (
@@ -180,6 +219,58 @@ export function SettingsManager() {
             </p>
           </div>
         </aside>
+      </form>
+      <form className="admin-card full admin-password-card" onSubmit={changePassword}>
+        <div>
+          <p className="eyebrow">Segurança</p>
+          <h2>Senha definitiva</h2>
+          <p className="admin-muted">
+            Defina uma senha com pelo menos 12 caracteres. Ela será usada pelos
+            dois e-mails autorizados e poderá ser trocada novamente aqui.
+          </p>
+        </div>
+        <div className="admin-password-fields">
+          <label>
+            <span>Senha atual</span>
+            <input
+              className="admin-input"
+              name="currentPassword"
+              type="password"
+              autoComplete="current-password"
+              required
+            />
+          </label>
+          <label>
+            <span>Nova senha</span>
+            <input
+              className="admin-input"
+              name="newPassword"
+              type="password"
+              autoComplete="new-password"
+              minLength={12}
+              maxLength={128}
+              required
+            />
+          </label>
+          <label>
+            <span>Confirmar nova senha</span>
+            <input
+              className="admin-input"
+              name="confirmPassword"
+              type="password"
+              autoComplete="new-password"
+              minLength={12}
+              maxLength={128}
+              required
+            />
+          </label>
+          <button className="button" type="submit" disabled={changingPassword}>
+            {changingPassword ? "Salvando…" : "Salvar nova senha"}
+          </button>
+          <p className="admin-muted" role="status" aria-live="polite">
+            {passwordStatus}
+          </p>
+        </div>
       </form>
     </>
   );

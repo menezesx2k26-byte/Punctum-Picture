@@ -2,6 +2,7 @@ import { env, exports } from "cloudflare:workers";
 import { beforeAll, describe, expect, it } from "vitest";
 import appMigration from "../../drizzle/0000_grey_swordsman.sql?raw";
 import portfolioSeed from "../../drizzle/0001_seed_portfolio.sql?raw";
+import credentialsMigration from "../../drizzle/0002_wonderful_wither.sql?raw";
 
 async function applySql(sql: string) {
   if (!env.DB) throw new Error("Binding DB ausente no teste");
@@ -29,6 +30,7 @@ describe("Worker Punctum Picture", () => {
   beforeAll(async () => {
     await applySql(appMigration);
     await applySql(portfolioSeed);
+    await applySql(credentialsMigration);
   });
 
   it("responde o health check e dados públicos", async () => {
@@ -201,6 +203,53 @@ describe("Worker Punctum Picture", () => {
       }),
     );
     expect(rejected.status).toBe(401);
+
+    const change = await exports.default.fetch(
+      new Request("https://example.com/admin/api/session", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: "https://example.com",
+          Cookie: cookie ?? "",
+        },
+        body: JSON.stringify({
+          currentPassword: "test-password",
+          newPassword: "NovaSenhaDefinitiva2026!",
+        }),
+      }),
+    );
+    expect(change.status).toBe(200);
+    expect(change.headers.get("set-cookie")).toContain("Max-Age=0");
+
+    const oldPassword = await exports.default.fetch(
+      new Request("https://example.com/admin/api/session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: "https://example.com",
+        },
+        body: JSON.stringify({
+          email: "menezesx2k26@gmail.com",
+          password: "test-password",
+        }),
+      }),
+    );
+    expect(oldPassword.status).toBe(401);
+
+    const definitivePassword = await exports.default.fetch(
+      new Request("https://example.com/admin/api/session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: "https://example.com",
+        },
+        body: JSON.stringify({
+          email: "maria.helena.ifc@gmail.com",
+          password: "NovaSenhaDefinitiva2026!",
+        }),
+      }),
+    );
+    expect(definitivePassword.status).toBe(200);
   });
 
   it("rejeita Access inválido, preset inválido e imagem ausente", async () => {

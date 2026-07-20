@@ -187,3 +187,12 @@ export const backupRuns = sqliteTable(
   },
   (table) => [index("idx_backup_runs_created").on(table.createdAt)],
 );
+
+export const adminCredentials = sqliteTable("admin_credentials", {
+  id: integer("id").primaryKey(),
+  passwordHash: text("password_hash").notNull(),
+  passwordSalt: text("password_salt").notNull(),
+  passwordIterations: integer("password_iterations").notNull(),
+  updatedAt: text("updated_at").notNull(),
+  updatedBy: text("updated_by").notNull(),
+});

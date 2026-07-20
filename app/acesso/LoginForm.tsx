@@ -43,9 +43,7 @@ export function LoginForm() {
       <div>
         <p className="eyebrow">Acesso reservado</p>
         <h1>Entrar no painel</h1>
-        <p className="access-description">
-          Área de administração da Punctum Picture para Maria Helena e Gabriel.
-        </p>
+        <p className="access-description">Área de administração da Punctum Picture.</p>
       </div>
       <label className="field">
         <span>E-mail</span>
@@ -58,7 +56,7 @@ export function LoginForm() {
         />
       </label>
       <label className="field">
-        <span>Senha temporária</span>
+        <span>Senha</span>
         <input
           name="password"
           type="password"
