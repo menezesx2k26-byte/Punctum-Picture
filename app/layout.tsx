@@ -34,10 +34,10 @@ export const metadata: Metadata = {
     description: "Fotografias que preservam presença, gesto e memória.",
     images: [
       {
-        url: "/og.png",
-        width: 1200,
-        height: 630,
-        alt: "Punctum Picture — fotografia autoral",
+        url: "/portfolio/music-cover.jpg",
+        width: 2730,
+        height: 1820,
+        alt: "Fotografia de espetáculo por Maria Helena",
       },
     ],
   },
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Punctum Picture — fotografia autoral",
     description: "Fotografias que preservam presença, gesto e memória.",
-    images: ["/og.png"],
+    images: ["/portfolio/music-cover.jpg"],
   },
 };
 

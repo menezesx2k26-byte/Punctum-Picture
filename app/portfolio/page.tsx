@@ -6,7 +6,7 @@ import { demoAlbums } from "../lib/demo";
 export const metadata: Metadata = {
   title: "Portfólio",
   description:
-    "Conheça histórias de casamento, retratos e ensaios fotografados pela Punctum Picture.",
+    "Conheça histórias de música, retratos e esporte fotografadas por Maria Helena.",
   alternates: { canonical: "/portfolio" },
 };
 

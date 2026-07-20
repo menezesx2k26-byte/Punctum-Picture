@@ -11,8 +11,8 @@ export default function Home() {
     "@type": "ProfessionalService",
     name: "Punctum Picture",
     url: "https://punctumpicture.com",
-    image: "https://punctumpicture.com/og.png",
-    description: "Fotografia autoral de casamentos, retratos e ensaios.",
+    image: "https://punctumpicture.com/portfolio/music-cover.jpg",
+    description: "Fotografia autoral de música, retratos, eventos e esporte.",
     areaServed: "Brasil",
   };
   return (
@@ -92,10 +92,10 @@ export default function Home() {
           <div className="section-inner manifesto-grid">
             <div className="manifesto-image">
               <Image
-                src="/demo/portrait.jpg"
-                alt="Retrato ao entardecer junto ao mar"
-                width={1200}
-                height={1500}
+                src="/portfolio/portrait-about.jpg"
+                alt="Retrato em vestido vermelho fotografado por Maria Helena"
+                width={3072}
+                height={4096}
                 sizes="(max-width: 900px) 100vw, 42vw"
               />
             </div>

@@ -40,7 +40,7 @@ export function PortfolioGrid({ initialAlbums }: { initialAlbums: DemoAlbum[] })
             subtitle: album.subtitle ?? "",
             description: album.description ?? "",
             category: "Portfólio",
-            cover: album.coverUrl ?? "/demo/hero.jpg",
+            cover: album.coverUrl ?? "/maria-helena.jpg",
             coverUrl: album.coverUrl,
             gallery: [],
           })),
