@@ -49,7 +49,7 @@ function makeAlbum(input: Omit<PortfolioAlbum, "cover" | "gallery"> & {
 export const portfolioAlbums: PortfolioAlbum[] = [
   makeAlbum({
     slug: "ritos-de-luz",
-    title: "Ritos de luz",
+    title: "Fé e Tradição",
     category: "Documental",
     subtitle: "Fé, silêncio e comunidade iluminados por dentro",
     description:

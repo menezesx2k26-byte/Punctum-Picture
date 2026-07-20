@@ -1,11 +1,17 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export function SiteHeader({ dark = false }: { dark?: boolean }) {
   return (
     <header className={`site-header${dark ? " dark" : ""}`}>
       <Link href="/" className="wordmark" aria-label="Punctum Picture — início">
-        <span className="wordmark-mark" aria-hidden="true" />
-        Punctum Picture
+        <Image
+          src="/logo-punctum.png"
+          alt="Punctum Fotografia"
+          width={720}
+          height={799}
+          priority
+        />
       </Link>
       <nav className="site-nav" aria-label="Navegação principal">
         <Link href="/portfolio">Portfólio</Link>

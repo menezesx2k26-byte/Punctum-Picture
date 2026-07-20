@@ -4,6 +4,8 @@
   --paper-soft: #e7d9cc;
   --clay: #bd6748;
   --wine: #6b2939;
+  --purple: #5d1f87;
+  --purple-deep: #431064;
   --night: #211a20;
   --moss: #4b584d;
   --line: rgba(43, 27, 28, 0.18);
@@ -1164,33 +1166,9 @@ body {
   margin-inline: auto;
   padding-block: clamp(6rem, 13vw, 12rem);
   display: grid;
-  grid-template-columns: 0.65fr 1.8fr 0.8fr;
+  grid-template-columns: 1.8fr 0.8fr;
   gap: clamp(2rem, 6vw, 7rem);
   align-items: end;
-}
-
-.visual-thesis-count {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.8rem;
-  color: var(--wine);
-}
-
-.visual-thesis-count strong {
-  font-family: var(--font-editorial), Georgia, serif;
-  font-size: clamp(4.5rem, 8vw, 8rem);
-  font-weight: 400;
-  letter-spacing: -0.07em;
-  line-height: 0.72;
-}
-
-.visual-thesis-count span {
-  padding-bottom: 0.2rem;
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.11em;
-  line-height: 1.45;
-  text-transform: uppercase;
 }
 
 .visual-thesis h2,
@@ -2187,7 +2165,7 @@ body {
 
 @media (max-width: 1050px) {
   .visual-thesis {
-    grid-template-columns: 0.6fr 1.5fr;
+    grid-template-columns: 1.5fr 0.8fr;
   }
 
   .visual-thesis > p {
@@ -2310,10 +2288,6 @@ body {
     padding-block: 5rem;
   }
 
-  .visual-thesis-count {
-    align-items: center;
-  }
-
   .carousel-heading,
   .carousel-controls {
     width: calc(100% - 2rem);
@@ -2432,5 +2406,54 @@ body {
 
   .photo-carousel-track {
     scroll-behavior: auto;
+  }
+}
+
+/* Marca Punctum e estados de interação */
+.site-header .wordmark {
+  display: block;
+  flex: 0 0 auto;
+  width: clamp(5.4rem, 7.2vw, 6.8rem);
+  line-height: 0;
+}
+
+.site-header .wordmark img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 1px 1px rgba(24, 7, 34, 0.7));
+}
+
+.site-header.dark .wordmark img {
+  filter:
+    drop-shadow(0 0 1px rgba(67, 16, 100, 0.95))
+    drop-shadow(0 1px 1px rgba(67, 16, 100, 0.65));
+}
+
+.button:hover,
+.button:focus-visible,
+.site-nav .nav-cta:hover,
+.site-nav .nav-cta:focus-visible {
+  border-color: var(--purple);
+  background: var(--purple);
+  color: #fff;
+}
+
+.portfolio-filter button:hover,
+.portfolio-filter button:focus-visible,
+.archive-filters button:hover,
+.archive-filters button:focus-visible,
+.carousel-controls button:hover,
+.carousel-controls button:focus-visible,
+.lightbox button:hover,
+.lightbox button:focus-visible {
+  border-color: var(--purple);
+  background: var(--purple);
+  color: #fff;
+}
+
+@media (max-width: 640px) {
+  .site-header .wordmark {
+    width: 4.6rem;
   }
 }

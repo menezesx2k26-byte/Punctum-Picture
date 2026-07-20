@@ -64,10 +64,6 @@ export default function Home() {
         </section>
 
         <section className="visual-thesis reveal" aria-labelledby="thesis-title">
-          <div className="visual-thesis-count">
-            <strong>113</strong>
-            <span>fotografias<br />em movimento</span>
-          </div>
           <div>
             <p className="eyebrow">Um arquivo vivo</p>
             <h2 id="thesis-title">
