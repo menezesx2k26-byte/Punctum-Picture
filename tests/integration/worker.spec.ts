@@ -1,8 +1,6 @@
 import { env, exports } from "cloudflare:workers";
 import { beforeAll, describe, expect, it } from "vitest";
-import initSql from "../../migrations/0001_init.sql?raw";
-import seedSql from "../../migrations/0002_seed_settings.sql?raw";
-import operationsSql from "../../migrations/0003_operations.sql?raw";
+import appMigration from "../../drizzle/0000_grey_swordsman.sql?raw";
 
 async function applySql(sql: string) {
   if (!env.DB) throw new Error("Binding DB ausente no teste");
@@ -28,9 +26,7 @@ function jsonRequest(path: string, method: string, body?: unknown) {
 
 describe("Worker Punctum Picture", () => {
   beforeAll(async () => {
-    await applySql(initSql);
-    await applySql(seedSql);
-    await applySql(operationsSql);
+    await applySql(appMigration);
   });
 
   it("responde o health check e dados públicos", async () => {
