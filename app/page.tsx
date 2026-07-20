@@ -29,8 +29,8 @@ export default function Home() {
         <section className="hero" aria-labelledby="hero-title">
           <div className="hero-image">
             <Image
-              src="/demo/hero.jpg"
-              alt="Casal caminhando de mãos dadas em uma paisagem aberta"
+              src="/maria-helena.jpg"
+              alt="Maria Helena fotografando com uma câmera"
               fill
               priority
               sizes="100vw"
