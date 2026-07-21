@@ -34,8 +34,20 @@ async function routeRequest(
       if (!source || !source.startsWith("/") || source.startsWith("//")) {
         throw new AppError(400, "INVALID_IMAGE_SOURCE", "A origem da imagem é inválida.");
       }
+
+      const sourceUrl = new URL(source, request.url);
+      const mediaMatch = sourceUrl.pathname.match(/^\/media\/([^/]+)\/([^/]+)$/);
+      if (mediaMatch) {
+        return serveMedia(
+          request,
+          env,
+          decodeURIComponent(mediaMatch[1]),
+          decodeURIComponent(mediaMatch[2]),
+        );
+      }
+
       return withSecurityHeaders(
-        await env.ASSETS.fetch(new Request(new URL(source, request.url))),
+        await env.ASSETS.fetch(new Request(sourceUrl)),
       );
     }
     const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
