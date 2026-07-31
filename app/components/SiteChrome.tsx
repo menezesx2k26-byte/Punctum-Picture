@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { WhatsAppLink } from "./WhatsAppLink";
 
 export function SiteHeader({ dark = false }: { dark?: boolean }) {
   return (
@@ -32,17 +33,20 @@ export function SiteHeader({ dark = false }: { dark?: boolean }) {
 
 export function SiteFooter() {
   return (
-    <footer className="site-footer">
-      <div>
-        <span className="footer-wordmark">Punctum Picture</span>
-        <p>Fotografia de presença, gesto e movimento.</p>
-      </div>
-      <nav aria-label="Navegação do rodapé">
-        <Link href="/portfolio">Histórias</Link>
-        <Link href="/arquivo">Arquivo completo</Link>
-        <Link href="/contato">Contato</Link>
-      </nav>
-      <span>© {new Date().getFullYear()} · Maria Helena · Brasil</span>
-    </footer>
+    <>
+      <footer className="site-footer">
+        <div>
+          <span className="footer-wordmark">Punctum Picture</span>
+          <p>Fotografia de presença, gesto e movimento.</p>
+        </div>
+        <nav aria-label="Navegação do rodapé">
+          <Link href="/portfolio">Histórias</Link>
+          <Link href="/arquivo">Arquivo completo</Link>
+          <Link href="/contato">Contato</Link>
+        </nav>
+        <span>© {new Date().getFullYear()} · Maria Helena · Brasil</span>
+      </footer>
+      <WhatsAppLink variant="floating" />
+    </>
   );
 }
