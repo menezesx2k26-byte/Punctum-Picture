@@ -4,12 +4,12 @@
   --paper-soft: #e7d9cc;
   --clay: #bd6748;
   --wine: #6b2939;
-  --purple: #5d1f87;
-  --purple-deep: #431064;
-  --purple-plum: #74358f;
-  --purple-berry: #8b477f;
-  --purple-mauve: #b58ac3;
-  --purple-mist: #e4d5e9;
+  --purple: #7426ad;
+  --purple-deep: #4d126c;
+  --purple-plum: #8f3eb5;
+  --purple-berry: #a84691;
+  --purple-mauve: #cb91dc;
+  --purple-mist: #eddaf3;
   --night: #211a20;
   --moss: #4b584d;
   --line: rgba(43, 27, 28, 0.18);
@@ -2821,38 +2821,87 @@ body {
 
 .stories-section {
   background:
-    linear-gradient(180deg, transparent, rgba(228, 213, 233, 0.34) 46%, transparent),
-    radial-gradient(ellipse at 86% 32%, rgba(116, 53, 143, 0.1), transparent 31rem);
+    linear-gradient(180deg, transparent, rgba(218, 181, 232, 0.42) 46%, transparent),
+    radial-gradient(ellipse at 86% 32%, rgba(143, 62, 181, 0.18), transparent 31rem);
 }
 
 .manifesto {
   background:
-    radial-gradient(circle at 18% 24%, rgba(181, 138, 195, 0.2), transparent 28rem),
-    radial-gradient(circle at 88% 72%, rgba(139, 71, 127, 0.3), transparent 32rem),
-    linear-gradient(135deg, #391448 0%, var(--purple-deep) 42%, #622849 100%);
+    radial-gradient(circle at 18% 24%, rgba(213, 143, 237, 0.3), transparent 28rem),
+    radial-gradient(circle at 88% 72%, rgba(212, 80, 166, 0.32), transparent 32rem),
+    linear-gradient(135deg, #50156c 0%, #6d208d 46%, #862b67 100%);
 }
 
 .manifesto-image {
-  box-shadow: -1.2rem 1.2rem 0 #2d1239;
+  box-shadow: -1.2rem 1.2rem 0 #3d1252;
 }
 
 .site-footer {
   background:
-    radial-gradient(circle at 12% 22%, rgba(181, 138, 195, 0.16), transparent 24rem),
-    linear-gradient(128deg, #1c151d 0%, #32133f 48%, #551f4a 100%);
+    radial-gradient(circle at 12% 22%, rgba(207, 130, 235, 0.24), transparent 24rem),
+    radial-gradient(circle at 88% 76%, rgba(177, 55, 143, 0.22), transparent 26rem),
+    linear-gradient(128deg, #281032 0%, #50196a 48%, #742555 100%);
 }
 
 .archive-page {
   background:
-    radial-gradient(ellipse at 84% 12%, rgba(181, 138, 195, 0.25), transparent 32rem),
-    radial-gradient(ellipse at 12% 58%, rgba(116, 53, 143, 0.1), transparent 38rem),
-    #eee3e7;
+    radial-gradient(ellipse at 84% 12%, rgba(190, 111, 218, 0.34), transparent 32rem),
+    radial-gradient(ellipse at 12% 58%, rgba(143, 62, 181, 0.18), transparent 38rem),
+    #eee0f0;
 }
 
 .archive-toolbar {
-  background: rgba(239, 228, 236, 0.92);
-  box-shadow: 0 0.5rem 2rem rgba(67, 16, 100, 0.07);
+  background: rgba(239, 222, 243, 0.92);
+  box-shadow: 0 0.5rem 2rem rgba(77, 18, 108, 0.12);
   backdrop-filter: blur(14px);
+}
+
+.album-story {
+  position: relative;
+  overflow: hidden;
+  color: #fff8ff;
+  background:
+    radial-gradient(ellipse at 8% 13%, rgba(211, 126, 239, 0.3), transparent 34rem),
+    radial-gradient(ellipse at 94% 42%, rgba(187, 57, 154, 0.3), transparent 42rem),
+    radial-gradient(ellipse at 42% 88%, rgba(121, 45, 181, 0.36), transparent 46rem),
+    linear-gradient(145deg, #351142 0%, #54176e 43%, #752455 100%);
+}
+
+.album-story::before {
+  content: "";
+  position: absolute;
+  width: min(34rem, 78vw);
+  aspect-ratio: 1;
+  right: -15rem;
+  top: 18%;
+  border-radius: 43% 57% 65% 35% / 38% 46% 54% 62%;
+  background: rgba(177, 86, 216, 0.12);
+  filter: blur(1.5rem);
+  pointer-events: none;
+}
+
+.album-story .section-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.album-story .section-heading p,
+.album-story .album-archive-link p,
+.album-story .album-gallery figcaption {
+  color: rgba(255, 239, 255, 0.76);
+}
+
+.album-story .album-gallery figcaption span,
+.album-story .album-archive-link a {
+  color: #e5a8f4;
+}
+
+.album-story .album-gallery img {
+  background: rgba(87, 27, 111, 0.72);
+}
+
+.album-story .album-archive-link {
+  border-color: rgba(235, 192, 245, 0.3);
 }
 
 .portfolio-section-header a,
