@@ -114,7 +114,7 @@ export function LiveAlbum({
           <div className="album-archive-link">
             <p>Esta história faz parte do arquivo completo da Punctum Picture.</p>
             <Link href="/arquivo">
-              Percorrer as 113 fotografias <ArrowUpRight size={17} />
+              Percorrer todas as fotografias <ArrowUpRight size={17} />
             </Link>
           </div>
         </div>
