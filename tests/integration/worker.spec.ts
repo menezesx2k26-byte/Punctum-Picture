@@ -58,9 +58,34 @@ describe("Worker Punctum Picture", () => {
       "http://localhost:8787/api/public/albums?limit=24",
     );
     expect(publicAlbums.status).toBe(200);
-    const body = (await publicAlbums.json()) as { albums: Array<{ slug: string }> };
+    const body = (await publicAlbums.json()) as {
+      albums: Array<{
+        slug: string;
+        categories: Array<{ id: string; name: string; slug: string }>;
+      }>;
+    };
     expect(body.albums).toHaveLength(13);
-    expect(body.albums.some((album) => album.slug === "ritos-de-luz")).toBe(true);
+    const rites = body.albums.find((album) => album.slug === "ritos-de-luz");
+    expect(rites?.categories.map((category) => category.slug)).toEqual([
+      "documental",
+    ]);
+
+    const updateCategory = await exports.default.fetch(
+      jsonRequest("/admin/api/albums/static-ritos-de-luz", "PATCH", {
+        categoryIds: ["portfolio-musica"],
+      }),
+    );
+    expect(updateCategory.status).toBe(200);
+
+    const refreshed = await exports.default.fetch(
+      "http://localhost:8787/api/public/albums?limit=100",
+    );
+    const refreshedBody = (await refreshed.json()) as typeof body;
+    expect(
+      refreshedBody.albums
+        .find((album) => album.slug === "ritos-de-luz")
+        ?.categories.map((category) => category.slug),
+    ).toEqual(["musica"]);
   });
 
   it("aceita contato e neutraliza honeypot", async () => {

@@ -12,6 +12,7 @@ type LiveAlbumData = {
   description: string | null;
   location: string | null;
   coverUrl: string | null;
+  categories: Array<{ id: string; name: string; slug: string }>;
   images: Array<{
     id: string;
     url: string;
@@ -32,7 +33,7 @@ export function LiveAlbum({
 
   useEffect(() => {
     let active = true;
-    fetch(`/api/public/albums/${encodeURIComponent(slug)}`)
+    fetch(`/api/public/albums/${encodeURIComponent(slug)}`, { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) return null;
         return (await response.json()) as { album?: LiveAlbumData };
@@ -50,6 +51,9 @@ export function LiveAlbum({
   const subtitle = album?.subtitle ?? initial.subtitle;
   const description = album?.description ?? initial.description;
   const cover = album?.coverUrl ?? initial.cover;
+  const category = album
+    ? album.categories.map((entry) => entry.name).join(" · ") || "Sem categoria"
+    : initial.category;
   const images =
     album?.images?.length
       ? album.images.map((image) => ({
@@ -73,7 +77,7 @@ export function LiveAlbum({
         <Image src={cover} alt={`Capa do ensaio ${title}`} fill priority sizes="100vw" />
         <div className="album-hero-copy">
           <div className="album-kicker">
-            <p className="eyebrow">{album?.location ?? initial.category}</p>
+            <p className="eyebrow">{category}</p>
             <span>{images.length.toString().padStart(2, "0")} fotografias</span>
           </div>
           <h1>{title}</h1>

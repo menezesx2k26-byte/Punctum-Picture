@@ -17,6 +17,13 @@ type PublicAlbumRow = {
   publishedAt: string | null;
 };
 
+type PublicAlbumCategoryRow = {
+  albumId: string;
+  id: string;
+  name: string;
+  slug: string;
+};
+
 function publicAlbum(row: PublicAlbumRow) {
   return {
     id: row.id,
@@ -70,7 +77,7 @@ async function getAlbums(url: URL, env: Env): Promise<Response> {
   const category = url.searchParams.get("category");
   const featured = url.searchParams.get("featured");
   const page = Math.max(1, Number(url.searchParams.get("page") ?? 1) || 1);
-  const limit = Math.min(24, Math.max(1, Number(url.searchParams.get("limit") ?? 12) || 12));
+  const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit") ?? 12) || 12));
   const offset = (page - 1) * limit;
 
   const where = ["a.status = 'published'", "a.deleted_at IS NULL"];
@@ -108,9 +115,45 @@ async function getAlbums(url: URL, env: Env): Promise<Response> {
     .bind(...bindings, limit, offset)
     .all<PublicAlbumRow>();
 
+  const categoriesByAlbum = new Map<
+    string,
+    Array<{ id: string; name: string; slug: string }>
+  >();
+  const albumIds = result.results.map((album) => album.id);
+  if (albumIds.length > 0) {
+    const placeholders = albumIds.map(() => "?").join(", ");
+    const categoryResult = await db
+      .prepare(
+        `SELECT ac.album_id AS albumId, c.id, c.name, c.slug
+         FROM album_categories ac
+         INNER JOIN categories c ON c.id = ac.category_id
+         WHERE ac.album_id IN (${placeholders}) AND c.is_visible = 1
+         ORDER BY c.sort_order, c.name`,
+      )
+      .bind(...albumIds)
+      .all<PublicAlbumCategoryRow>();
+
+    for (const category of categoryResult.results) {
+      const albumCategories = categoriesByAlbum.get(category.albumId) ?? [];
+      albumCategories.push({
+        id: category.id,
+        name: category.name,
+        slug: category.slug,
+      });
+      categoriesByAlbum.set(category.albumId, albumCategories);
+    }
+  }
+
   return json(
-    { albums: result.results.map(publicAlbum), page, limit },
-    { headers: { "Cache-Control": "public, max-age=60" } },
+    {
+      albums: result.results.map((album) => ({
+        ...publicAlbum(album),
+        categories: categoriesByAlbum.get(album.id) ?? [],
+      })),
+      page,
+      limit,
+    },
+    { headers: { "Cache-Control": "no-store" } },
   );
 }
 
@@ -172,7 +215,7 @@ async function getAlbum(slug: string, env: Env): Promise<Response> {
         })),
       },
     },
-    { headers: { "Cache-Control": "public, max-age=60" } },
+    { headers: { "Cache-Control": "no-store" } },
   );
 }
 

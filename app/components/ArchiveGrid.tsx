@@ -6,19 +6,68 @@ import { ArrowLeft, ArrowRight, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ArchiveImage } from "../lib/portfolio";
 
+type LiveArchiveImage = ArchiveImage & { categories: string[] };
+
 export function ArchiveGrid({ images }: { images: ArchiveImage[] }) {
   const [filter, setFilter] = useState("Tudo");
   const [selected, setSelected] = useState<number | null>(null);
+  const [liveImages, setLiveImages] = useState<LiveArchiveImage[]>(() =>
+    images.map((image) => ({ ...image, categories: [image.category] })),
+  );
   const categories = useMemo(
-    () => ["Tudo", ...Array.from(new Set(images.map((image) => image.category)))],
-    [images],
+    () => ["Tudo", ...Array.from(new Set(liveImages.flatMap((image) => image.categories)))],
+    [liveImages],
   );
   const visible = useMemo(
-    () => filter === "Tudo" ? images : images.filter((image) => image.category === filter),
-    [filter, images],
+    () =>
+      filter === "Tudo"
+        ? liveImages
+        : liveImages.filter((image) => image.categories.includes(filter)),
+    [filter, liveImages],
   );
   const selectedIndex = visible.findIndex((image) => image.number === selected);
   const selectedImage = selectedIndex >= 0 ? visible[selectedIndex] : null;
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/public/albums?limit=100", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as {
+          albums?: Array<{
+            slug: string;
+            categories?: Array<{ name: string }>;
+          }>;
+        };
+      })
+      .then((body) => {
+        if (!active || !body?.albums) return;
+        const categoriesByAlbum = new Map(
+          body.albums.map((album) => [
+            album.slug,
+            album.categories?.map((category) => category.name) ?? [],
+          ]),
+        );
+        setLiveImages(
+          images.map((image) => {
+            if (!image.albumSlug || !categoriesByAlbum.has(image.albumSlug)) {
+              return { ...image, categories: [image.category] };
+            }
+            const liveCategories = categoriesByAlbum.get(image.albumSlug) ?? [];
+            const resolved = liveCategories.length ? liveCategories : ["Sem categoria"];
+            return {
+              ...image,
+              category: resolved.join(" · "),
+              categories: resolved,
+            };
+          }),
+        );
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [images]);
 
   const step = useCallback((direction: 1 | -1) => {
     if (!visible.length) return;
@@ -103,7 +152,7 @@ export function ArchiveGrid({ images }: { images: ArchiveImage[] }) {
           <div className="lightbox-caption">
             <span>{selectedImage.number.toString().padStart(3, "0")} / 113</span>
             <div>
-              <small>{selectedImage.category}</small>
+              <small>{selectedImage.categories.join(" · ")}</small>
               <p>{selectedImage.alt}</p>
               {selectedImage.albumSlug ? (
                 <Link href={`/ensaios/${selectedImage.albumSlug}`}>Ver ensaio completo</Link>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowDownRight, ArrowUpRight, MessageCircle } from "lucide-react";
 import { ContactForm } from "./components/ContactForm";
 import { PhotoCarousel } from "./components/PhotoCarousel";
+import { FeaturedStories } from "./components/FeaturedStories";
 import { SiteFooter, SiteHeader } from "./components/SiteChrome";
 import { carouselImages, featuredAlbums } from "./lib/portfolio";
 
@@ -105,30 +106,7 @@ export default function Home() {
                 </Link>
               </div>
             </div>
-            <div className="home-stories-grid">
-              {featuredAlbums.slice(0, 6).map((album, index) => (
-                <Link
-                  key={album.slug}
-                  className="story-card reveal"
-                  href={`/ensaios/${album.slug}`}
-                >
-                  <Image
-                    src={album.cover}
-                    alt={`Capa do ensaio ${album.title}`}
-                    fill
-                    sizes="(max-width: 800px) 100vw, 50vw"
-                  />
-                  <div className="story-card-copy">
-                    <div>
-                      <span>{album.category}</span>
-                      <small>{(index + 1).toString().padStart(2, "0")}</small>
-                    </div>
-                    <h3>{album.title}</h3>
-                    <p>{album.subtitle}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            <FeaturedStories initialAlbums={featuredAlbums.slice(0, 6)} />
           </div>
         </section>
 

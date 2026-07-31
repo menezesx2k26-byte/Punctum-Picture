@@ -6,20 +6,28 @@ import { ArrowUpRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { PortfolioAlbum } from "../lib/portfolio";
 
-type Album = PortfolioAlbum & { coverUrl?: string | null };
+type Album = PortfolioAlbum & {
+  coverUrl?: string | null;
+  categories: string[];
+};
 
 export function PortfolioGrid({ initialAlbums }: { initialAlbums: PortfolioAlbum[] }) {
-  const [albums, setAlbums] = useState<Album[]>(initialAlbums);
+  const [albums, setAlbums] = useState<Album[]>(() =>
+    initialAlbums.map((album) => ({ ...album, categories: [album.category] })),
+  );
   const [filter, setFilter] = useState("Todos");
   const categories = useMemo(
-    () => ["Todos", ...Array.from(new Set(albums.map((album) => album.category)))],
+    () => ["Todos", ...Array.from(new Set(albums.flatMap((album) => album.categories)))],
     [albums],
   );
-  const visible = filter === "Todos" ? albums : albums.filter((album) => album.category === filter);
+  const visible =
+    filter === "Todos"
+      ? albums
+      : albums.filter((album) => album.categories.includes(filter));
 
   useEffect(() => {
     let active = true;
-    fetch("/api/public/albums?limit=24")
+    fetch("/api/public/albums?limit=100", { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) return null;
         return (await response.json()) as {
@@ -29,6 +37,7 @@ export function PortfolioGrid({ initialAlbums }: { initialAlbums: PortfolioAlbum
             subtitle?: string | null;
             description?: string | null;
             coverUrl?: string | null;
+            categories?: Array<{ id: string; name: string; slug: string }>;
           }>;
         };
       })
@@ -36,13 +45,16 @@ export function PortfolioGrid({ initialAlbums }: { initialAlbums: PortfolioAlbum
         if (!active || !body?.albums?.length) return;
         const remoteAlbums = body.albums.map((album) => {
           const original = initialAlbums.find((entry) => entry.slug === album.slug);
+          const categoryNames = album.categories?.map((category) => category.name) ?? [];
+          const liveCategories = categoryNames.length ? categoryNames : ["Sem categoria"];
           return {
             ...original,
             slug: album.slug,
             title: album.title,
             subtitle: album.subtitle ?? "",
             description: album.description ?? "",
-            category: original?.category ?? "Portfólio",
+            category: liveCategories.join(" · "),
+            categories: liveCategories,
             cover: album.coverUrl ?? "/photos/p001.jpg",
             coverUrl: album.coverUrl,
             gallery: original?.gallery ?? [],
@@ -50,7 +62,11 @@ export function PortfolioGrid({ initialAlbums }: { initialAlbums: PortfolioAlbum
         });
         setAlbums([
           ...initialAlbums.map(
-            (album) => remoteAlbums.find((remote) => remote.slug === album.slug) ?? album,
+            (album) =>
+              remoteAlbums.find((remote) => remote.slug === album.slug) ?? {
+                ...album,
+                categories: [album.category],
+              },
           ),
           ...remoteAlbums.filter((remote) => !initialAlbums.some((album) => album.slug === remote.slug)),
         ]);
@@ -91,7 +107,7 @@ export function PortfolioGrid({ initialAlbums }: { initialAlbums: PortfolioAlbum
             />
             <div className="story-card-copy">
               <div>
-                <span>{album.category}</span>
+                <span>{album.categories.join(" · ")}</span>
                 <small>{(index + 1).toString().padStart(2, "0")}</small>
               </div>
               <h2>{album.title}</h2>
