@@ -15,13 +15,7 @@ type PublicAlbumRow = {
   coverImageId: string | null;
   featured: number;
   publishedAt: string | null;
-};
-
-type PublicAlbumCategoryRow = {
-  albumId: string;
-  id: string;
-  name: string;
-  slug: string;
+  categoriesJson?: string;
 };
 
 function publicAlbum(row: PublicAlbumRow) {
@@ -105,7 +99,23 @@ async function getAlbums(url: URL, env: Env): Promise<Response> {
         a.shoot_date AS shootDate,
         a.cover_image_id AS coverImageId,
         a.featured,
-        a.published_at AS publishedAt
+        a.published_at AS publishedAt,
+        COALESCE((
+          SELECT json_group_array(
+            json_object(
+              'id', ordered_categories.id,
+              'name', ordered_categories.name,
+              'slug', ordered_categories.slug
+            )
+          )
+          FROM (
+            SELECT category.id, category.name, category.slug
+            FROM album_categories album_category
+            INNER JOIN categories category ON category.id = album_category.category_id
+            WHERE album_category.album_id = a.id AND category.is_visible = 1
+            ORDER BY category.sort_order, category.name
+          ) ordered_categories
+        ), '[]') AS categoriesJson
        FROM albums a
        ${categoryJoin}
        WHERE ${where.join(" AND ")}
@@ -115,40 +125,15 @@ async function getAlbums(url: URL, env: Env): Promise<Response> {
     .bind(...bindings, limit, offset)
     .all<PublicAlbumRow>();
 
-  const categoriesByAlbum = new Map<
-    string,
-    Array<{ id: string; name: string; slug: string }>
-  >();
-  const albumIds = result.results.map((album) => album.id);
-  if (albumIds.length > 0) {
-    const placeholders = albumIds.map(() => "?").join(", ");
-    const categoryResult = await db
-      .prepare(
-        `SELECT ac.album_id AS albumId, c.id, c.name, c.slug
-         FROM album_categories ac
-         INNER JOIN categories c ON c.id = ac.category_id
-         WHERE ac.album_id IN (${placeholders}) AND c.is_visible = 1
-         ORDER BY c.sort_order, c.name`,
-      )
-      .bind(...albumIds)
-      .all<PublicAlbumCategoryRow>();
-
-    for (const category of categoryResult.results) {
-      const albumCategories = categoriesByAlbum.get(category.albumId) ?? [];
-      albumCategories.push({
-        id: category.id,
-        name: category.name,
-        slug: category.slug,
-      });
-      categoriesByAlbum.set(category.albumId, albumCategories);
-    }
-  }
-
   return json(
     {
       albums: result.results.map((album) => ({
         ...publicAlbum(album),
-        categories: categoriesByAlbum.get(album.id) ?? [],
+        categories: JSON.parse(album.categoriesJson ?? "[]") as Array<{
+          id: string;
+          name: string;
+          slug: string;
+        }>,
       })),
       page,
       limit,
