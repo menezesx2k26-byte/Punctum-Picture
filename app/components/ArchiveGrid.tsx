@@ -6,13 +6,23 @@ import { ArrowLeft, ArrowRight, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ArchiveImage } from "../lib/portfolio";
 
-type LiveArchiveImage = ArchiveImage & { categories: string[] };
+type LiveArchiveImage = ArchiveImage & {
+  id: string;
+  categories: string[];
+  fullSrc: string;
+};
 
 export function ArchiveGrid({ images }: { images: ArchiveImage[] }) {
   const [filter, setFilter] = useState("Tudo");
   const [selected, setSelected] = useState<number | null>(null);
+  const [archiveReady, setArchiveReady] = useState(false);
   const [liveImages, setLiveImages] = useState<LiveArchiveImage[]>(() =>
-    images.map((image) => ({ ...image, categories: [image.category] })),
+    images.map((image) => ({
+      ...image,
+      id: `static-${image.number}`,
+      categories: [image.category],
+      fullSrc: image.src,
+    })),
   );
   const categories = useMemo(
     () => ["Tudo", ...Array.from(new Set(liveImages.flatMap((image) => image.categories)))],
@@ -30,44 +40,47 @@ export function ArchiveGrid({ images }: { images: ArchiveImage[] }) {
 
   useEffect(() => {
     let active = true;
-    fetch("/api/public/albums?limit=100", { cache: "no-store" })
+    fetch("/api/public/archive", { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) return null;
         return (await response.json()) as {
-          albums?: Array<{
-            slug: string;
+          images?: Array<{
+            id: string;
+            altText?: string | null;
+            albumSlug: string;
+            albumTitle: string;
+            url: string;
+            thumbUrl: string;
             categories?: Array<{ name: string }>;
           }>;
         };
       })
       .then((body) => {
-        if (!active || !body?.albums) return;
-        const categoriesByAlbum = new Map(
-          body.albums.map((album) => [
-            album.slug,
-            album.categories?.map((category) => category.name) ?? [],
-          ]),
-        );
+        if (!active || !body?.images) return;
         setLiveImages(
-          images.map((image) => {
-            if (!image.albumSlug || !categoriesByAlbum.has(image.albumSlug)) {
-              return { ...image, categories: [image.category] };
-            }
-            const liveCategories = categoriesByAlbum.get(image.albumSlug) ?? [];
-            const resolved = liveCategories.length ? liveCategories : ["Sem categoria"];
+          body.images.map((image, index) => {
+            const categoryNames = image.categories?.map((category) => category.name) ?? [];
+            const categories = categoryNames.length ? categoryNames : ["Sem categoria"];
             return {
-              ...image,
-              category: resolved.join(" · "),
-              categories: resolved,
+              id: image.id,
+              number: index + 1,
+              src: image.thumbUrl,
+              fullSrc: image.url,
+              alt: image.altText ?? `Fotografia do ensaio ${image.albumTitle}`,
+              albumSlug: image.albumSlug,
+              albumTitle: image.albumTitle,
+              category: categories.join(" · "),
+              categories,
             };
           }),
         );
+        setArchiveReady(true);
       })
       .catch(() => undefined);
     return () => {
       active = false;
     };
-  }, [images]);
+  }, []);
 
   const step = useCallback((direction: 1 | -1) => {
     if (!visible.length) return;
@@ -94,7 +107,11 @@ export function ArchiveGrid({ images }: { images: ArchiveImage[] }) {
   return (
     <>
       <div className="archive-toolbar">
-        <p>{visible.length.toString().padStart(3, "0")} fotografias</p>
+        <p>
+          {archiveReady
+            ? `${visible.length.toString().padStart(3, "0")} fotografias`
+            : "Atualizando arquivo"}
+        </p>
         <div className="archive-filters" aria-label="Filtrar arquivo">
           {categories.map((category) => (
             <button
@@ -117,7 +134,7 @@ export function ArchiveGrid({ images }: { images: ArchiveImage[] }) {
         {visible.map((image, index) => (
           <button
             className={`archive-card archive-card-${index % 7}`}
-            key={image.src}
+            key={image.id}
             type="button"
             onClick={() => setSelected(image.number)}
             aria-label={`Abrir fotografia ${image.number}: ${image.alt}`}
@@ -147,10 +164,14 @@ export function ArchiveGrid({ images }: { images: ArchiveImage[] }) {
             <ArrowLeft size={22} />
           </button>
           <div className="lightbox-image">
-            <Image src={selectedImage.src} alt={selectedImage.alt} fill sizes="95vw" priority />
+            <Image src={selectedImage.fullSrc} alt={selectedImage.alt} fill sizes="95vw" priority />
           </div>
           <div className="lightbox-caption">
-            <span>{selectedImage.number.toString().padStart(3, "0")} / 113</span>
+            <span>
+              {selectedImage.number.toString().padStart(3, "0")} / {archiveReady
+                ? visible.length.toString().padStart(3, "0")
+                : "—"}
+            </span>
             <div>
               <small>{selectedImage.categories.join(" · ")}</small>
               <p>{selectedImage.alt}</p>

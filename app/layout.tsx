@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: "%s — Punctum Picture",
   },
   description:
-    "Fotografias de Maria Helena que preservam presença, gesto e movimento. Conheça as 113 imagens do arquivo Punctum Picture.",
+    "Fotografias de Maria Helena que preservam presença, gesto e movimento. Conheça o arquivo vivo da Punctum Picture.",
   applicationName: "Punctum Picture",
   alternates: { canonical: "/" },
   robots: { index: true, follow: true },

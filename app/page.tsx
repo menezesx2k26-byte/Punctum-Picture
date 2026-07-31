@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowDownRight, ArrowUpRight, MessageCircle } from "lucide-react";
 import { ContactForm } from "./components/ContactForm";
 import { PhotoCarousel } from "./components/PhotoCarousel";
+import { PublicStatsText } from "./components/PublicStats";
 import { FeaturedStories } from "./components/FeaturedStories";
 import { SiteFooter, SiteHeader } from "./components/SiteChrome";
 import { carouselImages, featuredAlbums } from "./lib/portfolio";
@@ -61,7 +62,9 @@ export default function Home() {
               </div>
             </div>
           </div>
-          <span className="hero-index" aria-hidden="true">001 / 113</span>
+          <span className="hero-index" aria-hidden="true">
+            <PublicStatsText variant="hero-index" />
+          </span>
         </section>
 
         <section className="visual-thesis reveal" aria-labelledby="thesis-title">
@@ -102,7 +105,7 @@ export default function Home() {
                   sem moldar pessoas diferentes dentro da mesma fórmula.
                 </p>
                 <Link className="text-link" href="/portfolio">
-                  Ver as 13 histórias <ArrowUpRight size={16} />
+                  <PublicStatsText variant="stories-link" /> <ArrowUpRight size={16} />
                 </Link>
               </div>
             </div>

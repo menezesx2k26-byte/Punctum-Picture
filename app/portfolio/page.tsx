@@ -4,13 +4,14 @@ import Link from "next/link";
 import { ArrowDownRight } from "lucide-react";
 import { PhotoCarousel } from "../components/PhotoCarousel";
 import { PortfolioGrid } from "../components/PortfolioGrid";
+import { PublicStatsText } from "../components/PublicStats";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { carouselImages, portfolioAlbums } from "../lib/portfolio";
 
 export const metadata: Metadata = {
   title: "Portfólio",
   description:
-    "Treze histórias de música, retrato, esporte, família e vida documental fotografadas por Maria Helena.",
+    "Histórias de música, retrato, esporte, família e vida documental fotografadas por Maria Helena.",
   alternates: { canonical: "/portfolio" },
 };
 
@@ -21,7 +22,7 @@ export default function PortfolioPage() {
       <main>
         <header className="portfolio-hero">
           <div className="portfolio-hero-copy">
-            <p className="eyebrow">Portfólio · 13 histórias</p>
+            <p className="eyebrow"><PublicStatsText variant="portfolio-eyebrow" /></p>
             <h1>Um olhar,<br /><em>muitos pulsos.</em></h1>
             <p>
               Do recolhimento de um rito à energia de uma quadra, cada ensaio
@@ -50,7 +51,7 @@ export default function PortfolioPage() {
                 Cada história abaixo reúne todas as fotografias de uma série,
                 na ordem e no ritmo em que ela pede para ser vista.
               </p>
-              <Link href="/arquivo">Preferir o arquivo completo — 113 imagens</Link>
+              <Link href="/arquivo"><PublicStatsText variant="archive-link" /></Link>
             </div>
             <PortfolioGrid initialAlbums={portfolioAlbums} />
           </div>

@@ -86,6 +86,24 @@ describe("Worker Punctum Picture", () => {
         .find((album) => album.slug === "ritos-de-luz")
         ?.categories.map((category) => category.slug),
     ).toEqual(["musica"]);
+
+    const stats = await exports.default.fetch("http://localhost:8787/api/public/stats");
+    expect(stats.status).toBe(200);
+    expect(await stats.json()).toMatchObject({
+      stats: { photoCount: 112, albumCount: 13, categoryCount: 7 },
+    });
+
+    const archive = await exports.default.fetch("http://localhost:8787/api/public/archive");
+    expect(archive.status).toBe(200);
+    const archiveBody = (await archive.json()) as {
+      images: Array<{
+        id: string;
+        albumSlug: string;
+        categories: Array<{ slug: string }>;
+      }>;
+    };
+    expect(archiveBody.images).toHaveLength(112);
+    expect(archiveBody.images.every((image) => image.albumSlug)).toBe(true);
   });
 
   it("aceita contato e neutraliza honeypot", async () => {

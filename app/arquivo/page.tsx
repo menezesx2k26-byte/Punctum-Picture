@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { ArchiveGrid } from "../components/ArchiveGrid";
+import { PublicStatsText } from "../components/PublicStats";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { archiveImages } from "../lib/portfolio";
 
 export const metadata: Metadata = {
   title: "Arquivo completo",
   description:
-    "As 113 fotografias do arquivo Punctum Picture, reunidas em um percurso visual completo.",
+    "As fotografias do arquivo Punctum Picture, reunidas em um percurso visual completo e sempre atualizado.",
   alternates: { canonical: "/arquivo" },
 };
 
@@ -16,14 +17,14 @@ export default function ArchivePage() {
       <SiteHeader dark />
       <main>
         <header className="archive-hero">
-          <p className="eyebrow">Arquivo completo · 001—113</p>
+          <p className="eyebrow"><PublicStatsText variant="archive-range" /></p>
           <h1>Nenhum instante<br /><em>de fora.</em></h1>
           <div>
             <p>
               Um percurso integral pelas fotografias de Maria Helena. Filtre
               por linguagem ou abra qualquer imagem para observá-la sem pressa.
             </p>
-            <span>13 histórias · 9 territórios visuais</span>
+            <span><PublicStatsText variant="archive-summary" /></span>
           </div>
         </header>
         <section className="archive-section" aria-label="Todas as fotografias">

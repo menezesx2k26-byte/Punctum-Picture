@@ -66,6 +66,105 @@ async function getCategories(env: Env): Promise<Response> {
   return json({ categories: result.results }, { headers: { "Cache-Control": "public, max-age=60" } });
 }
 
+async function getStats(env: Env): Promise<Response> {
+  const db = requireDb(env);
+  const stats = await db
+    .prepare(
+      `SELECT
+        (SELECT COUNT(*)
+         FROM images image
+         INNER JOIN albums album ON album.id = image.album_id
+         WHERE image.status = 'ready'
+           AND image.deleted_at IS NULL
+           AND album.status = 'published'
+           AND album.deleted_at IS NULL) AS photoCount,
+        (SELECT COUNT(*)
+         FROM albums album
+         WHERE album.status = 'published' AND album.deleted_at IS NULL) AS albumCount,
+        (SELECT COUNT(DISTINCT category.id)
+         FROM categories category
+         INNER JOIN album_categories album_category ON album_category.category_id = category.id
+         INNER JOIN albums album ON album.id = album_category.album_id
+         WHERE category.is_visible = 1
+           AND album.status = 'published'
+           AND album.deleted_at IS NULL) AS categoryCount`,
+    )
+    .first<{ photoCount: number; albumCount: number; categoryCount: number }>();
+
+  return json(
+    { stats: stats ?? { photoCount: 0, albumCount: 0, categoryCount: 0 } },
+    { headers: { "Cache-Control": "no-store" } },
+  );
+}
+
+async function getArchive(env: Env): Promise<Response> {
+  const db = requireDb(env);
+  const result = await db
+    .prepare(
+      `SELECT
+        image.id,
+        image.alt_text AS altText,
+        image.width,
+        image.height,
+        album.slug AS albumSlug,
+        album.title AS albumTitle,
+        COALESCE((
+          SELECT json_group_array(
+            json_object(
+              'id', ordered_categories.id,
+              'name', ordered_categories.name,
+              'slug', ordered_categories.slug
+            )
+          )
+          FROM (
+            SELECT category.id, category.name, category.slug
+            FROM album_categories album_category
+            INNER JOIN categories category ON category.id = album_category.category_id
+            WHERE album_category.album_id = album.id AND category.is_visible = 1
+            ORDER BY category.sort_order, category.name
+          ) ordered_categories
+        ), '[]') AS categoriesJson
+       FROM images image
+       INNER JOIN albums album ON album.id = image.album_id
+       WHERE image.status = 'ready'
+         AND image.deleted_at IS NULL
+         AND album.status = 'published'
+         AND album.deleted_at IS NULL
+       ORDER BY album.featured DESC, album.sort_order, album.published_at DESC,
+         image.position, image.created_at`,
+    )
+    .all<{
+      id: string;
+      altText: string | null;
+      width: number | null;
+      height: number | null;
+      albumSlug: string;
+      albumTitle: string;
+      categoriesJson: string;
+    }>();
+
+  return json(
+    {
+      images: result.results.map((image) => ({
+        id: image.id,
+        altText: image.altText,
+        width: image.width,
+        height: image.height,
+        albumSlug: image.albumSlug,
+        albumTitle: image.albumTitle,
+        categories: JSON.parse(image.categoriesJson ?? "[]") as Array<{
+          id: string;
+          name: string;
+          slug: string;
+        }>,
+        url: `/media/${image.id}/gallery`,
+        thumbUrl: `/media/${image.id}/card`,
+      })),
+    },
+    { headers: { "Cache-Control": "no-store" } },
+  );
+}
+
 async function getAlbums(url: URL, env: Env): Promise<Response> {
   const db = requireDb(env);
   const category = url.searchParams.get("category");
@@ -253,6 +352,12 @@ export async function handlePublicApi(
   }
   if (request.method === "GET" && url.pathname === "/api/public/categories") {
     return getCategories(env);
+  }
+  if (request.method === "GET" && url.pathname === "/api/public/stats") {
+    return getStats(env);
+  }
+  if (request.method === "GET" && url.pathname === "/api/public/archive") {
+    return getArchive(env);
   }
   if (request.method === "GET" && url.pathname === "/api/public/albums") {
     return getAlbums(url, env);
