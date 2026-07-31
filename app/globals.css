@@ -2904,6 +2904,195 @@ body {
   border-color: rgba(235, 192, 245, 0.3);
 }
 
+/* Paleta pública completa: viva, leve e orgânica */
+body {
+  background:
+    radial-gradient(ellipse at 9% 12%, rgba(205, 142, 226, 0.24), transparent 34rem),
+    radial-gradient(ellipse at 92% 48%, rgba(164, 79, 189, 0.16), transparent 42rem),
+    linear-gradient(155deg, #f8f0fa 0%, #f1e2f4 48%, #f8edf4 100%);
+}
+
+.site-shell {
+  --ink: #241629;
+  --paper: #f8f0fa;
+  --paper-soft: #ead7ef;
+  --clay: #c55b88;
+  --wine: #90386e;
+  --purple: #7a25b5;
+  --purple-deep: #4d126c;
+  --purple-plum: #963fba;
+  --purple-berry: #ad488f;
+  --purple-mauve: #d29be1;
+  --purple-mist: #f0dff4;
+  --night: #2c1038;
+  --line: rgba(91, 36, 109, 0.19);
+  --muted: #725e78;
+  background:
+    radial-gradient(ellipse at 4% 24%, rgba(224, 177, 237, 0.22), transparent 36rem),
+    radial-gradient(ellipse at 96% 72%, rgba(194, 115, 202, 0.14), transparent 42rem),
+    transparent;
+}
+
+.site-header.dark {
+  border-bottom: 1px solid rgba(101, 43, 122, 0.13);
+  background: rgba(248, 239, 250, 0.88);
+  box-shadow: 0 0.75rem 2.5rem rgba(84, 26, 104, 0.06);
+  backdrop-filter: blur(16px);
+}
+
+.site-shell .button:not(.light):not(.ghost) {
+  border-color: var(--purple-deep);
+  background: linear-gradient(115deg, var(--purple-deep), var(--purple));
+  box-shadow: 0 0.7rem 1.8rem rgba(91, 28, 124, 0.16);
+}
+
+.site-shell .button:not(.light):not(.ghost):hover,
+.site-shell .button:not(.light):not(.ghost):focus-visible {
+  border-color: var(--purple-plum);
+  background: linear-gradient(115deg, var(--purple), var(--purple-berry));
+}
+
+.hero h1 em,
+.carousel-heading h2,
+.contact-page-copy h1 {
+  color: #f2d4fa;
+}
+
+.visual-thesis {
+  border-radius: 48% 52% 44% 56% / 12% 15% 85% 88%;
+  background:
+    radial-gradient(ellipse at 12% 20%, rgba(213, 151, 231, 0.25), transparent 30rem),
+    linear-gradient(105deg, rgba(255, 250, 255, 0.42), rgba(231, 202, 239, 0.18));
+}
+
+.carousel-section {
+  background:
+    radial-gradient(ellipse at 12% 18%, rgba(190, 98, 224, 0.26), transparent 34rem),
+    radial-gradient(ellipse at 88% 78%, rgba(197, 67, 143, 0.22), transparent 38rem),
+    linear-gradient(135deg, #291035 0%, #461459 48%, #642047 100%);
+}
+
+.carousel-slide {
+  background: #4a2057;
+}
+
+.stories-section {
+  background:
+    radial-gradient(ellipse at 12% 82%, rgba(213, 143, 226, 0.2), transparent 34rem),
+    radial-gradient(ellipse at 88% 24%, rgba(164, 73, 194, 0.2), transparent 31rem),
+    linear-gradient(180deg, rgba(255, 249, 255, 0.12), rgba(226, 190, 235, 0.38) 52%, rgba(250, 241, 250, 0.2));
+}
+
+.manifesto blockquote {
+  color: #f8e2ff;
+}
+
+.manifesto p {
+  color: rgba(255, 238, 255, 0.78);
+}
+
+.contact-home,
+.contact-form-section {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 8% 14%, rgba(218, 143, 232, 0.32), transparent 32rem),
+    radial-gradient(ellipse at 94% 82%, rgba(205, 103, 168, 0.22), transparent 35rem),
+    linear-gradient(138deg, #f5e5f7 0%, #ead3f0 52%, #f5e1ec 100%);
+}
+
+.contact-home::before,
+.contact-form-section::before {
+  content: "";
+  position: absolute;
+  width: min(32rem, 75vw);
+  aspect-ratio: 1;
+  right: -15rem;
+  top: -11rem;
+  border: 1px solid rgba(139, 53, 171, 0.13);
+  border-radius: 43% 57% 61% 39% / 52% 39% 61% 48%;
+  pointer-events: none;
+}
+
+.contact-home .section-inner,
+.contact-form-section .section-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.contact-form {
+  border-color: rgba(126, 43, 153, 0.42);
+  background: rgba(255, 249, 255, 0.54);
+  box-shadow: 0 1.4rem 4rem rgba(89, 31, 111, 0.09);
+  backdrop-filter: blur(14px);
+}
+
+.site-shell .field input,
+.site-shell .field textarea,
+.site-shell .field select {
+  background: rgba(255, 252, 255, 0.5);
+}
+
+.portfolio-hero-copy {
+  background:
+    radial-gradient(ellipse at 4% 20%, rgba(205, 135, 225, 0.24), transparent 26rem),
+    linear-gradient(100deg, rgba(255, 250, 255, 0.34), transparent 76%);
+}
+
+.portfolio-section {
+  background:
+    radial-gradient(ellipse at 94% 8%, rgba(208, 139, 225, 0.22), transparent 32rem),
+    linear-gradient(180deg, transparent, rgba(234, 209, 239, 0.34) 48%, transparent);
+}
+
+.portfolio-filter button.active,
+.archive-filters button.active {
+  background: rgba(151, 61, 184, 0.1);
+}
+
+.archive-page {
+  background:
+    radial-gradient(ellipse at 86% 10%, rgba(200, 118, 222, 0.38), transparent 34rem),
+    radial-gradient(ellipse at 10% 52%, rgba(156, 64, 187, 0.2), transparent 40rem),
+    radial-gradient(ellipse at 76% 86%, rgba(209, 99, 164, 0.16), transparent 36rem),
+    linear-gradient(145deg, #f2e4f4 0%, #ead5ef 54%, #f5e6ef 100%);
+}
+
+.archive-toolbar {
+  border-color: rgba(105, 40, 127, 0.2);
+  background: rgba(243, 229, 247, 0.9);
+}
+
+.archive-image,
+.portfolio-hero-image,
+.album-gallery img {
+  background: linear-gradient(135deg, #e8d1ee, #dcb9e5);
+}
+
+.lightbox {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(121, 43, 153, 0.26), transparent 42rem),
+    rgba(31, 8, 39, 0.98);
+}
+
+.album-hero::after {
+  background:
+    linear-gradient(0deg, rgba(42, 10, 51, 0.9), transparent 68%),
+    linear-gradient(90deg, rgba(72, 18, 86, 0.4), transparent 65%);
+}
+
+.contact-page-hero::after {
+  background:
+    linear-gradient(90deg, rgba(53, 11, 64, 0.9), rgba(63, 13, 72, 0.25) 70%),
+    linear-gradient(0deg, rgba(44, 8, 53, 0.82), transparent 70%);
+}
+
+.floating-whatsapp {
+  border-color: rgba(102, 35, 129, 0.2);
+  background: rgba(255, 250, 255, 0.96);
+  box-shadow: 0 0.9rem 2.6rem rgba(72, 20, 91, 0.2);
+}
+
 .portfolio-section-header a,
 .archive-hero > div span,
 .archive-caption small,
