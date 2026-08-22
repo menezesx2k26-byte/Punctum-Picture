@@ -81,6 +81,7 @@ export const categoryUpdateSchema = z
 
 export const settingsSchema = z
   .object({
+    brandName: z.string().trim().min(2).max(120).optional(),
     tagline: z.string().trim().max(180).nullable().optional(),
     aboutText: z.string().trim().max(5000).nullable().optional(),
     whatsappE164: z.string().trim().max(24).nullable().optional(),
@@ -109,10 +110,14 @@ export async function parseJson<T extends z.ZodType>(
   const result = schema.safeParse(input);
   if (!result.success) {
     const issue = result.error.issues[0];
+    const friendlyIssue =
+      issue?.message && /^[A-ZÁÉÍÓÚÂÊÔÃÕÇ][^:]{2,70}:\s/.test(issue.message)
+        ? issue.message
+        : "Revise os campos informados.";
     throw new AppError(
       400,
       "VALIDATION_ERROR",
-      "Revise os campos informados.",
+      friendlyIssue,
       issue?.path.join(".") || undefined,
     );
   }

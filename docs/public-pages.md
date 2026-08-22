@@ -22,9 +22,9 @@ load por meio do componente de imagem.
 
 ## Portfólio
 
-Lista apenas ensaios publicados. Filtro de categoria e paginação são
-processados pela API pública. Enquanto não há conteúdo real no D1, o frontend
-mostra um conjunto de demonstração claramente substituível.
+Lista apenas ensaios publicados, com capa pronta e não deletada. O primeiro
+HTML recebe os dados diretamente do D1 no servidor; o filtro de categoria
+opera no cliente sobre esse estado canônico, sem catálogo estático alternativo.
 
 ## Ensaio
 

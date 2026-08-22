@@ -45,4 +45,5 @@ next-env.d.ts
 /node_modules.partial/
 /.codex-dev.*.log
 /backups/
+/.drizzle-generated/
 /.dev.vars

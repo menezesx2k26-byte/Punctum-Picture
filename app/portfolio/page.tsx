@@ -6,30 +6,42 @@ import { PhotoCarousel } from "../components/PhotoCarousel";
 import { PortfolioGrid } from "../components/PortfolioGrid";
 import { PublicStatsText } from "../components/PublicStats";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
-import { carouselImages, portfolioAlbums } from "../lib/portfolio";
+import { SiteThemeRoot } from "../components/SiteThemeRoot";
+import { EditorialText } from "../components/EditorialText";
+import {
+  loadEditorialCarousel,
+  loadPortfolioAlbums,
+  loadPublicExperience,
+} from "../lib/server-content";
 
-export const metadata: Metadata = {
-  title: "Portfólio",
-  description:
-    "Histórias de música, retrato, esporte, família e vida documental fotografadas por Maria Helena.",
-  alternates: { canonical: "/portfolio" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { config } = await loadPublicExperience();
+  return {
+    title: config.editorial.portfolio.seo.title,
+    description: config.editorial.portfolio.seo.description,
+    alternates: { canonical: "/portfolio" },
+  };
+}
 
-export default function PortfolioPage() {
+export default async function PortfolioPage() {
+  const [experience, albums, carouselImages] = await Promise.all([
+    loadPublicExperience(),
+    loadPortfolioAlbums(),
+    loadEditorialCarousel(),
+  ]);
+  const { site, config } = experience;
+  const copy = config.editorial.portfolio;
   return (
-    <div className="site-shell">
-      <SiteHeader dark />
+    <SiteThemeRoot config={config}>
+      <SiteHeader dark site={site} editorial={config.editorial} />
       <main>
         <header className="portfolio-hero">
           <div className="portfolio-hero-copy">
             <p className="eyebrow"><PublicStatsText variant="portfolio-eyebrow" /></p>
-            <h1>Um olhar,<br /><em>muitos pulsos.</em></h1>
-            <p>
-              Do recolhimento de um rito à energia de uma quadra, cada ensaio
-              preserva sua própria temperatura, voz e maneira de ocupar o tempo.
-            </p>
+            <h1>{copy.hero.title}<br /><em>{copy.hero.accent}</em></h1>
+            <p>{copy.hero.body}</p>
             <Link className="text-link" href="#historias">
-              Percorrer histórias <ArrowDownRight size={16} />
+              {copy.hero.cta} <ArrowDownRight size={16} />
             </Link>
           </div>
           <div className="portfolio-hero-image">
@@ -40,37 +52,31 @@ export default function PortfolioPage() {
               priority
               sizes="(max-width: 820px) 100vw, 46vw"
             />
-            <span>Retrato / Outono rubro</span>
+            <span>{copy.hero.imageNote}</span>
           </div>
         </header>
 
         <section className="section portfolio-section" id="historias">
           <div className="section-inner">
             <div className="portfolio-section-header">
-              <p>
-                Cada história abaixo reúne todas as fotografias de uma série,
-                na ordem e no ritmo em que ela pede para ser vista.
-              </p>
+              <p>{copy.listing.intro}</p>
               <Link href="/arquivo"><PublicStatsText variant="archive-link" /></Link>
             </div>
-            <PortfolioGrid initialAlbums={portfolioAlbums} />
+            <PortfolioGrid albums={albums} />
           </div>
         </section>
         <section className="carousel-section portfolio-reel" aria-labelledby="portfolio-reel-title">
           <div className="carousel-heading reveal">
             <div>
-              <p className="eyebrow">Outro modo de olhar</p>
-              <h2 id="portfolio-reel-title">Sem categorias.<br />Só presença.</h2>
+              <p className="eyebrow">{copy.reel.eyebrow}</p>
+              <h2 id="portfolio-reel-title"><EditorialText text={copy.reel.title} /></h2>
             </div>
-            <p>
-              Um percurso livre aproxima imagens de universos diferentes e
-              deixa que cor, gesto e luz criem novas relações entre elas.
-            </p>
+            <p>{copy.reel.body}</p>
           </div>
-          <PhotoCarousel images={[...carouselImages].reverse()} />
+          <PhotoCarousel images={[...carouselImages].reverse()} hint={copy.reel.hint} />
         </section>
       </main>
-      <SiteFooter />
-    </div>
+      <SiteFooter site={site} editorial={config.editorial} />
+    </SiteThemeRoot>
   );
 }

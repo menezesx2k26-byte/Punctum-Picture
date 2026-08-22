@@ -5,7 +5,9 @@ import {
   real,
   sqliteTable,
   text,
+  uniqueIndex,
 } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 
 export const siteSettings = sqliteTable("site_settings", {
   id: integer("id").primaryKey(),
@@ -18,6 +20,53 @@ export const siteSettings = sqliteTable("site_settings", {
   contactEmail: text("contact_email"),
   seoTitle: text("seo_title"),
   seoDescription: text("seo_description"),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const siteConfig = sqliteTable("site_config", {
+  id: integer("id").primaryKey(),
+  schemaVersion: integer("schema_version").notNull(),
+  configJson: text("config_json").notNull(),
+  updatedAt: text("updated_at").notNull(),
+  updatedBy: text("updated_by").notNull(),
+});
+
+export const siteConfigVersions = sqliteTable(
+  "site_config_versions",
+  {
+    id: text("id").primaryKey(),
+    schemaVersion: integer("schema_version").notNull(),
+    state: text("state", { enum: ["draft", "published"] }).notNull(),
+    revision: integer("revision").notNull(),
+    configJson: text("config_json").notNull(),
+    basedOnVersionId: text("based_on_version_id"),
+    restoredFromVersionId: text("restored_from_version_id"),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+    publishedAt: text("published_at"),
+    createdBy: text("created_by").notNull(),
+    updatedBy: text("updated_by").notNull(),
+    publishedBy: text("published_by"),
+  },
+  (table) => [
+    uniqueIndex("idx_site_config_versions_single_draft")
+      .on(table.state)
+      .where(sql`${table.state} = 'draft'`),
+    index("idx_site_config_versions_published_at").on(
+      table.state,
+      table.publishedAt,
+    ),
+  ],
+);
+
+export const siteConfigPointers = sqliteTable("site_config_pointers", {
+  id: integer("id").primaryKey(),
+  draftVersionId: text("draft_version_id")
+    .notNull()
+    .references(() => siteConfigVersions.id),
+  publishedVersionId: text("published_version_id")
+    .notNull()
+    .references(() => siteConfigVersions.id),
   updatedAt: text("updated_at").notNull(),
 });
 

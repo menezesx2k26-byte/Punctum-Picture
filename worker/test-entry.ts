@@ -2,8 +2,10 @@ import { handleAdminApi } from "./api/admin";
 import { handleAdminAuth } from "./api/admin-auth";
 import { handlePublicApi } from "./api/public";
 import { serveMedia } from "./media/serve";
+import { sitemap } from "./seo";
+import { requireAdmin } from "./utils/auth";
 import { AppError } from "./utils/errors";
-import { apiError } from "./utils/response";
+import { apiError, withSecurityHeaders } from "./utils/response";
 
 /**
  * API-only entrypoint for the Workers Vitest pool.
@@ -27,6 +29,20 @@ export default {
       const adminResponse = await handleAdminApi(request, url, env);
       if (adminResponse) return adminResponse;
 
+      const adminMediaMatch = url.pathname.match(
+        /^\/admin\/media\/([^/]+)\/([^/]+)$/,
+      );
+      if (request.method === "GET" && adminMediaMatch) {
+        await requireAdmin(request, env);
+        return await serveMedia(
+          request,
+          env,
+          decodeURIComponent(adminMediaMatch[1]),
+          decodeURIComponent(adminMediaMatch[2]),
+          { audience: "admin" },
+        );
+      }
+
       const mediaMatch = url.pathname.match(/^\/media\/([^/]+)\/([^/]+)$/);
       if (request.method === "GET" && mediaMatch) {
         return await serveMedia(
@@ -34,6 +50,27 @@ export default {
           env,
           decodeURIComponent(mediaMatch[1]),
           decodeURIComponent(mediaMatch[2]),
+        );
+      }
+
+      if (request.method === "GET" && url.pathname === "/sitemap.xml") {
+        return await sitemap(env);
+      }
+
+      if (
+        url.pathname === "/studio-preview-internal" ||
+        url.pathname.startsWith("/studio-preview-internal/")
+      ) {
+        throw new AppError(404, "NOT_FOUND", "Página não encontrada.");
+      }
+
+      if (request.method === "GET" && url.pathname === "/admin/studio/preview") {
+        await requireAdmin(request, env);
+        return withSecurityHeaders(
+          new Response("<!doctype html><title>Prévia do Studio</title>", {
+            headers: { "Content-Type": "text/html; charset=utf-8" },
+          }),
+          { studioPreview: true },
         );
       }
 

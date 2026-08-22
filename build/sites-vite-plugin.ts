@@ -14,7 +14,9 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
-// Packages Sites metadata and migrations after Vite finishes compiling.
+// Packages Sites metadata and the canonical Wrangler migrations after Vite
+// finishes compiling. Sites expects the destination directory to be named
+// `drizzle`, but `migrations/` remains the repository source of truth.
 export function sites(): Plugin {
   let root = process.cwd();
 
@@ -27,7 +29,7 @@ export function sites(): Plugin {
     async closeBundle() {
       const outputDirectory = resolve(root, "dist", ".openai");
       const hostingConfig = resolve(root, ".openai", "hosting.json");
-      const drizzleSource = resolve(root, "drizzle");
+      const migrationsSource = resolve(root, "migrations");
 
       await rm(outputDirectory, { recursive: true, force: true });
       await mkdir(outputDirectory, { recursive: true });
@@ -35,8 +37,8 @@ export function sites(): Plugin {
       if (await exists(hostingConfig)) {
         await cp(hostingConfig, resolve(outputDirectory, "hosting.json"));
       }
-      if (await exists(drizzleSource)) {
-        await cp(drizzleSource, resolve(outputDirectory, "drizzle"), {
+      if (await exists(migrationsSource)) {
+        await cp(migrationsSource, resolve(outputDirectory, "drizzle"), {
           recursive: true,
         });
       }

@@ -1,11 +1,18 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import type { PublicSiteSettings } from "../../shared/public-content";
 import { WhatsAppLink } from "./WhatsAppLink";
 
 type FormStatus = "idle" | "sending" | "success" | "error";
 
-export function ContactForm() {
+export function ContactForm({
+  site,
+  whatsappLabel,
+}: {
+  site?: PublicSiteSettings;
+  whatsappLabel?: string;
+}) {
   const [status, setStatus] = useState<FormStatus>("idle");
   const [message, setMessage] = useState("");
 
@@ -81,7 +88,7 @@ export function ContactForm() {
         <button className="button" type="submit" disabled={status === "sending"}>
           {status === "sending" ? "Enviando…" : "Enviar pedido"}
         </button>
-        <WhatsAppLink />
+        <WhatsAppLink site={site} label={whatsappLabel} />
       </div>
       <p className="form-status" role="status" aria-live="polite">
         {message}

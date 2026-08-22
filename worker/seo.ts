@@ -26,6 +26,7 @@ export async function sitemap(env: Env): Promise<Response> {
   const staticUrls = [
     { path: "/", changefreq: "weekly", priority: "1.0" },
     { path: "/portfolio", changefreq: "weekly", priority: "0.9" },
+    { path: "/arquivo", changefreq: "weekly", priority: "0.9" },
     { path: "/contato", changefreq: "monthly", priority: "0.8" },
   ];
   const urls = [

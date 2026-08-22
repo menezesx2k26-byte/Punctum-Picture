@@ -1,7 +1,10 @@
 # Fluxos do painel
 
-Todo o painel vive em `/admin/*` e é protegido por Cloudflare Access. Não há
-senha própria.
+Todo o painel vive em `/admin/*` e o Worker exige uma identidade
+administrativa. Hoje ela pode vir de uma sessão própria por senha ou de um JWT
+válido do Cloudflare Access. A senha aceita somente e-mails de
+`ADMIN_ALLOWED_EMAILS`; o Access depende da policy remota e é validado novamente
+por issuer e audience no Worker.
 
 ## Ensaio
 
@@ -22,7 +25,8 @@ senha própria.
 +------------------------------------------------------+
 ```
 
-1. Entrar via Access e tocar em “Novo ensaio”.
+1. Entrar por `/acesso` com senha ou por uma sessão válida do Access e tocar em
+   “Novo ensaio”.
 2. Informar título; o servidor cria slug e rascunho.
 3. Editar texto, data, local, SEO e categorias.
 4. Soltar/selecionar JPG, PNG ou WebP de até 25 MB.
@@ -55,5 +59,6 @@ de segurança.
 - Upload falhou: manter os demais e repetir o item.
 - Ordem não persistiu: recarregar a ordem do servidor e exibir erro.
 - Publicação bloqueada: manter rascunho e listar o check faltante.
-- Sessão Access expirada: o próximo request é recusado e a camada Access pede
-  autenticação novamente.
+- Sessão própria expirada: o próximo request redireciona para `/acesso`.
+- Sessão Access expirada: sem sessão própria válida, o próximo request é
+  recusado e a camada Access pode pedir autenticação novamente.

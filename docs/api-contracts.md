@@ -23,7 +23,7 @@ Todas as respostas JSON de erro seguem:
 | `GET /api/public/albums?category=&featured=&page=&limit=` | publicados paginados |
 | `GET /api/public/albums/:slug` | ensaio e imagens prontas |
 | `POST /api/public/inquiries` | cria contato |
-| `GET /media/:imageId/:preset` | imagem transformada |
+| `GET /media/:imageId/:preset` | imagem transformada de álbum publicado |
 | `GET /sitemap.xml` / `GET /robots.txt` | descoberta SEO |
 
 Inquiry aceita `name`, `email`, `phone`, `instagram`, `service`,
@@ -43,6 +43,7 @@ persistência.
 | categorias | `GET/POST /admin/api/categories`; `PATCH/DELETE .../:id` |
 | site | `GET/PATCH /admin/api/settings` |
 | contatos | `GET /admin/api/inquiries`; `PATCH .../:id` |
+| preview de mídia | `GET /admin/media/:imageId/:preset` |
 
 ## Upload
 
@@ -58,8 +59,8 @@ persistência.
 ```
 
 `201` retorna `intentId`, `imageId`, `objectKey`, `uploadUrl`, `expiresAt` e
-`requiredHeaders`. O PUT usa exatamente o `Content-Type` assinado. Em local, o
-Worker oferece um PUT direto equivalente; em Cloudflare, é URL R2 assinada.
+`requiredHeaders`. O PUT usa exatamente o `Content-Type` indicado e passa por
+um endpoint autenticado do Worker, que grava no binding R2.
 
 ### Finalizar
 

@@ -4,89 +4,67 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ArchiveImage } from "../lib/portfolio";
+import type { PublicArchiveImage } from "../../shared/public-content";
 
-type LiveArchiveImage = ArchiveImage & {
-  id: string;
-  categories: string[];
+type ArchiveViewImage = PublicArchiveImage & {
+  number: number;
+  src: string;
   fullSrc: string;
+  alt: string;
+  category: string;
 };
 
-export function ArchiveGrid({ images }: { images: ArchiveImage[] }) {
+export function ArchiveGrid({ images }: { images: PublicArchiveImage[] }) {
   const [filter, setFilter] = useState("Tudo");
-  const [selected, setSelected] = useState<number | null>(null);
-  const [archiveReady, setArchiveReady] = useState(false);
-  const [liveImages, setLiveImages] = useState<LiveArchiveImage[]>(() =>
-    images.map((image) => ({
-      ...image,
-      id: `static-${image.number}`,
-      categories: [image.category],
-      fullSrc: image.src,
-    })),
+  const [selected, setSelected] = useState<string | null>(null);
+  const liveImages = useMemo<ArchiveViewImage[]>(
+    () =>
+      images.map((image, index) => ({
+        ...image,
+        number: index + 1,
+        src: image.thumbUrl,
+        fullSrc: image.url,
+        alt: image.altText ?? `Fotografia do ensaio ${image.albumTitle}`,
+        category:
+          image.categories.map((category) => category.name).join(" · ") ||
+          "Sem categoria",
+      })),
+    [images],
   );
   const categories = useMemo(
-    () => ["Tudo", ...Array.from(new Set(liveImages.flatMap((image) => image.categories)))],
+    () => [
+      "Tudo",
+      ...Array.from(
+        new Set(
+          liveImages.flatMap((image) =>
+            image.categories.map((category) => category.name),
+          ),
+        ),
+      ),
+    ],
     [liveImages],
   );
   const visible = useMemo(
     () =>
       filter === "Tudo"
         ? liveImages
-        : liveImages.filter((image) => image.categories.includes(filter)),
+        : liveImages.filter((image) =>
+            image.categories.some((category) => category.name === filter),
+          ),
     [filter, liveImages],
   );
-  const selectedIndex = visible.findIndex((image) => image.number === selected);
+  const selectedIndex = visible.findIndex((image) => image.id === selected);
   const selectedImage = selectedIndex >= 0 ? visible[selectedIndex] : null;
 
-  useEffect(() => {
-    let active = true;
-    fetch("/api/public/archive", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) return null;
-        return (await response.json()) as {
-          images?: Array<{
-            id: string;
-            altText?: string | null;
-            albumSlug: string;
-            albumTitle: string;
-            url: string;
-            thumbUrl: string;
-            categories?: Array<{ name: string }>;
-          }>;
-        };
-      })
-      .then((body) => {
-        if (!active || !body?.images) return;
-        setLiveImages(
-          body.images.map((image, index) => {
-            const categoryNames = image.categories?.map((category) => category.name) ?? [];
-            const categories = categoryNames.length ? categoryNames : ["Sem categoria"];
-            return {
-              id: image.id,
-              number: index + 1,
-              src: image.thumbUrl,
-              fullSrc: image.url,
-              alt: image.altText ?? `Fotografia do ensaio ${image.albumTitle}`,
-              albumSlug: image.albumSlug,
-              albumTitle: image.albumTitle,
-              category: categories.join(" · "),
-              categories,
-            };
-          }),
-        );
-        setArchiveReady(true);
-      })
-      .catch(() => undefined);
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const step = useCallback((direction: 1 | -1) => {
-    if (!visible.length) return;
-    const nextIndex = (selectedIndex + direction + visible.length) % visible.length;
-    setSelected(visible[nextIndex].number);
-  }, [selectedIndex, visible]);
+  const step = useCallback(
+    (direction: 1 | -1) => {
+      if (!visible.length) return;
+      const nextIndex =
+        (selectedIndex + direction + visible.length) % visible.length;
+      setSelected(visible[nextIndex].id);
+    },
+    [selectedIndex, visible],
+  );
 
   useEffect(() => {
     if (!selectedImage) return;
@@ -107,11 +85,7 @@ export function ArchiveGrid({ images }: { images: ArchiveImage[] }) {
   return (
     <>
       <div className="archive-toolbar">
-        <p>
-          {archiveReady
-            ? `${visible.length.toString().padStart(3, "0")} fotografias`
-            : "Atualizando arquivo"}
-        </p>
+        <p>{visible.length.toString().padStart(3, "0")} fotografias</p>
         <div className="archive-filters" aria-label="Filtrar arquivo">
           {categories.map((category) => (
             <button
@@ -136,7 +110,7 @@ export function ArchiveGrid({ images }: { images: ArchiveImage[] }) {
             className={`archive-card archive-card-${index % 7}`}
             key={image.id}
             type="button"
-            onClick={() => setSelected(image.number)}
+            onClick={() => setSelected(image.id)}
             aria-label={`Abrir fotografia ${image.number}: ${image.alt}`}
           >
             <span className="archive-image">
@@ -144,6 +118,7 @@ export function ArchiveGrid({ images }: { images: ArchiveImage[] }) {
                 src={image.src}
                 alt=""
                 fill
+                unoptimized
                 sizes="(max-width: 620px) 50vw, (max-width: 1000px) 33vw, 25vw"
               />
             </span>
@@ -156,31 +131,57 @@ export function ArchiveGrid({ images }: { images: ArchiveImage[] }) {
       </div>
 
       {selectedImage ? (
-        <div className="lightbox" role="dialog" aria-modal="true" aria-label="Fotografia ampliada">
-          <button className="lightbox-close" type="button" onClick={() => setSelected(null)} aria-label="Fechar">
+        <div
+          className="lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Fotografia ampliada"
+        >
+          <button
+            className="lightbox-close"
+            type="button"
+            onClick={() => setSelected(null)}
+            aria-label="Fechar"
+          >
             <X size={20} />
           </button>
-          <button className="lightbox-arrow previous" type="button" onClick={() => step(-1)} aria-label="Fotografia anterior">
+          <button
+            className="lightbox-arrow previous"
+            type="button"
+            onClick={() => step(-1)}
+            aria-label="Fotografia anterior"
+          >
             <ArrowLeft size={22} />
           </button>
           <div className="lightbox-image">
-            <Image src={selectedImage.fullSrc} alt={selectedImage.alt} fill sizes="95vw" priority />
+            <Image
+              src={selectedImage.fullSrc}
+              alt={selectedImage.alt}
+              fill
+              sizes="95vw"
+              priority
+              unoptimized
+            />
           </div>
           <div className="lightbox-caption">
             <span>
-              {selectedImage.number.toString().padStart(3, "0")} / {archiveReady
-                ? visible.length.toString().padStart(3, "0")
-                : "—"}
+              {selectedImage.number.toString().padStart(3, "0")} /{" "}
+              {visible.length.toString().padStart(3, "0")}
             </span>
             <div>
-              <small>{selectedImage.categories.join(" · ")}</small>
+              <small>{selectedImage.category}</small>
               <p>{selectedImage.alt}</p>
-              {selectedImage.albumSlug ? (
-                <Link href={`/ensaios/${selectedImage.albumSlug}`}>Ver ensaio completo</Link>
-              ) : null}
+              <Link href={`/ensaios/${selectedImage.albumSlug}`}>
+                Ver ensaio completo
+              </Link>
             </div>
           </div>
-          <button className="lightbox-arrow next" type="button" onClick={() => step(1)} aria-label="Próxima fotografia">
+          <button
+            className="lightbox-arrow next"
+            type="button"
+            onClick={() => step(1)}
+            aria-label="Próxima fotografia"
+          >
             <ArrowRight size={22} />
           </button>
         </div>

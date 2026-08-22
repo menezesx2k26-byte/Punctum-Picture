@@ -1,4 +1,17 @@
 import { z } from "zod";
+import { siteConfigSchema } from "../../shared/config";
+import { SITE_DEFAULTS, readPublishedArchive } from "../../shared/public-content";
+import {
+  DraftRevisionConflictError,
+  InvalidStoredSiteConfigError,
+  PublishedVersionNotFoundError,
+  discardDraftSiteConfig,
+  listPublishedSiteConfigVersions,
+  publishDraftSiteConfig,
+  readDraftSiteConfigState,
+  restorePublishedSiteConfig,
+  saveDraftSiteConfig,
+} from "../../shared/site-config-storage";
 import { writeAudit } from "../utils/audit";
 import { AdminIdentity, assertAllowedOrigin, requireAdmin } from "../utils/auth";
 import {
@@ -58,11 +71,23 @@ type UploadIntentRow = {
   expiresAt: string;
 };
 
+const studioUpdateSchema = z
+  .object({ siteConfig: siteConfigSchema, revision: z.number().int().min(1) })
+  .strict();
+
+const studioRevisionSchema = z
+  .object({ revision: z.number().int().min(1) })
+  .strict();
+
+const studioRestoreSchema = studioRevisionSchema.extend({
+  versionId: z.string().trim().min(1).max(128),
+}).strict();
+
 function albumJson(row: AdminAlbumRow) {
   return {
     ...row,
     featured: Boolean(row.featured),
-    coverUrl: row.coverImageId ? `/media/${row.coverImageId}/card` : null,
+    coverUrl: row.coverImageId ? `/admin/media/${row.coverImageId}/card` : null,
   };
 }
 
@@ -162,8 +187,10 @@ async function getAlbumDetail(db: D1Database, id: string): Promise<Response> {
         categories: categories.results,
         images: images.results.map((image) => ({
           ...image,
-          thumbUrl: image.status === "ready" ? `/media/${image.id}/thumb` : null,
-          cardUrl: image.status === "ready" ? `/media/${image.id}/card` : null,
+          thumbUrl:
+            image.status === "ready" ? `/admin/media/${image.id}/thumb` : null,
+          cardUrl:
+            image.status === "ready" ? `/admin/media/${image.id}/card` : null,
         })),
       },
     },
@@ -723,8 +750,8 @@ async function completeUpload(
         position: position?.position ?? 0,
         altText: "",
         urls: {
-          thumb: `/media/${intent.imageId}/thumb`,
-          card: `/media/${intent.imageId}/card`,
+          thumb: `/admin/media/${intent.imageId}/thumb`,
+          card: `/admin/media/${intent.imageId}/card`,
         },
       },
     },
@@ -860,7 +887,150 @@ async function getSettings(db: D1Database): Promise<Response> {
        FROM site_settings WHERE id = 1`,
     )
     .first();
-  return json({ settings }, { admin: true });
+  return json({ settings: settings ?? SITE_DEFAULTS }, { admin: true });
+}
+
+async function getStudio(db: D1Database): Promise<Response> {
+  const state = await readDraftSiteConfigState(db);
+  const history = await listPublishedSiteConfigVersions(db);
+  return json(
+    {
+      siteConfig: state.config,
+      source: state.source,
+      issues: state.issues,
+      updatedAt: state.updatedAt,
+      revision: state.revision,
+      hasUnpublishedChanges: state.hasUnpublishedChanges,
+      history,
+    },
+    { admin: true },
+  );
+}
+
+async function getStudioPhotos(db: D1Database): Promise<Response> {
+  const images = await readPublishedArchive(db);
+  return json(
+    {
+      photos: images.slice(0, 240).map((image) => ({
+        id: image.id,
+        altText: image.altText,
+        width: image.width,
+        height: image.height,
+        albumTitle: image.albumTitle,
+        thumbUrl: image.thumbUrl,
+      })),
+    },
+    { admin: true },
+  );
+}
+
+async function studioMutationError(
+  error: unknown,
+  db: D1Database,
+): Promise<Response> {
+  if (error instanceof DraftRevisionConflictError) {
+    const latest = await readDraftSiteConfigState(db);
+    return json(
+      {
+        error: {
+          code: "STUDIO_CHANGED_ELSEWHERE",
+          message:
+            "O Studio foi alterado em outra aba. Suas mudanças continuam neste dispositivo.",
+        },
+        latestRevision: latest.revision,
+      },
+      { status: 409, admin: true },
+    );
+  }
+  if (error instanceof PublishedVersionNotFoundError) {
+    return json(
+      {
+        error: {
+          code: "STUDIO_VERSION_NOT_FOUND",
+          message: error.message,
+        },
+      },
+      { status: 404, admin: true },
+    );
+  }
+  if (error instanceof InvalidStoredSiteConfigError) {
+    return json(
+      {
+        error: {
+          code: "STUDIO_VERSION_INVALID",
+          message: error.message,
+        },
+      },
+      { status: 409, admin: true },
+    );
+  }
+  throw error;
+}
+
+async function updateStudio(
+  request: Request,
+  db: D1Database,
+  identity: AdminIdentity,
+): Promise<Response> {
+  const input = await parseJson(request, studioUpdateSchema);
+  try {
+    await saveDraftSiteConfig(
+      db,
+      input.siteConfig,
+      input.revision,
+      identity.email,
+    );
+    return getStudio(db);
+  } catch (error) {
+    return studioMutationError(error, db);
+  }
+}
+
+async function publishStudio(
+  request: Request,
+  db: D1Database,
+  identity: AdminIdentity,
+): Promise<Response> {
+  const input = await parseJson(request, studioRevisionSchema);
+  try {
+    await publishDraftSiteConfig(db, input.revision, identity.email);
+    return getStudio(db);
+  } catch (error) {
+    return studioMutationError(error, db);
+  }
+}
+
+async function discardStudio(
+  request: Request,
+  db: D1Database,
+  identity: AdminIdentity,
+): Promise<Response> {
+  const input = await parseJson(request, studioRevisionSchema);
+  try {
+    await discardDraftSiteConfig(db, input.revision, identity.email);
+    return getStudio(db);
+  } catch (error) {
+    return studioMutationError(error, db);
+  }
+}
+
+async function restoreStudioVersion(
+  request: Request,
+  db: D1Database,
+  identity: AdminIdentity,
+): Promise<Response> {
+  const input = await parseJson(request, studioRestoreSchema);
+  try {
+    await restorePublishedSiteConfig(
+      db,
+      input.versionId,
+      input.revision,
+      identity.email,
+    );
+    return getStudio(db);
+  } catch (error) {
+    return studioMutationError(error, db);
+  }
 }
 
 async function updateSettings(
@@ -870,6 +1040,7 @@ async function updateSettings(
 ): Promise<Response> {
   const input = await parseJson(request, settingsSchema);
   const mapping = {
+    brandName: "brand_name",
     tagline: "tagline",
     aboutText: "about_text",
     whatsappE164: "whatsapp_e164",
@@ -881,6 +1052,27 @@ async function updateSettings(
   } as const;
   const assignments: string[] = [];
   const values: Array<string | null> = [];
+  await db
+    .prepare(
+      `INSERT INTO site_settings (
+        id, brand_name, tagline, about_text, whatsapp_e164, whatsapp_message,
+        instagram_url, contact_email, seo_title, seo_description, updated_at
+      ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO NOTHING`,
+    )
+    .bind(
+      SITE_DEFAULTS.brandName,
+      SITE_DEFAULTS.tagline,
+      SITE_DEFAULTS.aboutText,
+      SITE_DEFAULTS.whatsappE164,
+      SITE_DEFAULTS.whatsappMessage,
+      SITE_DEFAULTS.instagramUrl,
+      SITE_DEFAULTS.contactEmail,
+      SITE_DEFAULTS.seoTitle,
+      SITE_DEFAULTS.seoDescription,
+      new Date().toISOString(),
+    )
+    .run();
   for (const [field, column] of Object.entries(mapping)) {
     const value = input[field as keyof typeof mapping];
     if (value !== undefined) {
@@ -1027,6 +1219,22 @@ export async function handleAdminApi(
   if (url.pathname === "/admin/api/settings") {
     if (request.method === "GET") return getSettings(db);
     if (request.method === "PATCH") return updateSettings(request, db, identity);
+  }
+  if (url.pathname === "/admin/api/studio") {
+    if (request.method === "GET") return getStudio(db);
+    if (request.method === "PATCH") return updateStudio(request, db, identity);
+  }
+  if (url.pathname === "/admin/api/studio/photos" && request.method === "GET") {
+    return getStudioPhotos(db);
+  }
+  if (url.pathname === "/admin/api/studio/publish" && request.method === "POST") {
+    return publishStudio(request, db, identity);
+  }
+  if (url.pathname === "/admin/api/studio/discard" && request.method === "POST") {
+    return discardStudio(request, db, identity);
+  }
+  if (url.pathname === "/admin/api/studio/restore" && request.method === "POST") {
+    return restoreStudioVersion(request, db, identity);
   }
   if (url.pathname === "/admin/api/inquiries" && request.method === "GET") {
     return listInquiries(db);

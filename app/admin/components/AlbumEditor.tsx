@@ -107,7 +107,13 @@ function SortablePhoto({
       }}
     >
       {image.thumbUrl ? (
-        <Image src={image.thumbUrl} alt="" width={320} height={320} />
+        <Image
+          src={image.thumbUrl}
+          alt=""
+          width={320}
+          height={320}
+          unoptimized
+        />
       ) : (
         <div
           style={{
@@ -516,6 +522,32 @@ export function AlbumEditor({ albumId }: { albumId: string }) {
                 onChange={(event) => setAlbum({ ...album, description: event.target.value })}
               />
             </label>
+            <div className="admin-form-row">
+              <label>
+                <span>Título para buscadores</span>
+                <input
+                  className="admin-input"
+                  value={album.seoTitle ?? ""}
+                  onChange={(event) =>
+                    setAlbum({ ...album, seoTitle: event.target.value })
+                  }
+                  maxLength={70}
+                  placeholder={album.title}
+                />
+              </label>
+              <label>
+                <span>Descrição para buscadores</span>
+                <textarea
+                  className="admin-input"
+                  value={album.seoDescription ?? ""}
+                  onChange={(event) =>
+                    setAlbum({ ...album, seoDescription: event.target.value })
+                  }
+                  maxLength={180}
+                  placeholder="Se ficar vazio, a descrição do ensaio será usada."
+                />
+              </label>
+            </div>
             <div className="admin-form-row">
               <label>
                 <span>Local</span>

@@ -4,6 +4,7 @@ import {
   Inbox,
   LayoutDashboard,
   Settings,
+  Sparkles,
   Tags,
 } from "lucide-react";
 import Link from "next/link";
@@ -14,6 +15,7 @@ const navigation = [
   { href: "/admin/ensaios", label: "Ensaios", icon: FolderHeart },
   { href: "/admin/categorias", label: "Categorias", icon: Tags },
   { href: "/admin/contatos", label: "Contatos", icon: Inbox },
+  { href: "/admin/studio", label: "Studio", icon: Sparkles },
   { href: "/admin/configuracoes", label: "Configurações", icon: Settings },
 ];
 

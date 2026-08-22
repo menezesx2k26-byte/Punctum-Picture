@@ -46,16 +46,25 @@ export function apiError(error: unknown, requestId = crypto.randomUUID()): Respo
   );
 }
 
-export function withSecurityHeaders(response: Response): Response {
+export function withSecurityHeaders(
+  response: Response,
+  options: { studioPreview?: boolean } = {},
+): Response {
   const headers = new Headers(response.headers);
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     if (!headers.has(name)) {
       headers.set(name, value);
     }
   }
+  const frameAncestors = options.studioPreview ? "'self'" : "'none'";
+  headers.set("X-Frame-Options", options.studioPreview ? "SAMEORIGIN" : "DENY");
   headers.set(
     "Content-Security-Policy",
-    "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://*.r2.cloudflarestorage.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+    `default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://*.r2.cloudflarestorage.com; frame-ancestors ${frameAncestors}; base-uri 'self'; form-action 'self'`,
   );
+  if (options.studioPreview) {
+    headers.set("Cache-Control", "private, no-store, max-age=0");
+    headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+  }
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }

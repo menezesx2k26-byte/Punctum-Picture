@@ -1,11 +1,27 @@
 import Image from "next/image";
 import Link from "next/link";
+import {
+  SITE_DEFAULTS,
+  type PublicSiteSettings,
+} from "../../shared/public-content";
+import {
+  PUNCTUM_DEFAULT_EDITORIAL_CONFIG,
+  type EditorialConfig,
+} from "../../shared/config";
 import { WhatsAppLink } from "./WhatsAppLink";
 
-export function SiteHeader({ dark = false }: { dark?: boolean }) {
+export function SiteHeader({
+  dark = false,
+  site = SITE_DEFAULTS,
+  editorial = PUNCTUM_DEFAULT_EDITORIAL_CONFIG,
+}: {
+  dark?: boolean;
+  site?: PublicSiteSettings;
+  editorial?: EditorialConfig;
+}) {
   return (
     <header className={`site-header${dark ? " dark" : ""}`}>
-      <Link href="/" className="wordmark" aria-label="Punctum Picture — início">
+      <Link href="/" className="wordmark" aria-label={`${site.brandName} — início`}>
         <span className="wordmark-art" aria-hidden="true">
           <Image
             src="/logo-punctum.png"
@@ -16,37 +32,51 @@ export function SiteHeader({ dark = false }: { dark?: boolean }) {
           />
         </span>
         <span className="wordmark-subtitle" aria-hidden="true">
-          Fotografia
+          {editorial.chrome.brandSubtitle}
         </span>
       </Link>
       <nav className="site-nav" aria-label="Navegação principal">
-        <Link href="/portfolio">Portfólio</Link>
-        <Link href="/arquivo">Arquivo</Link>
-        <Link href="/#sobre">Sobre</Link>
+        <Link href="/portfolio">{editorial.chrome.navigation.portfolio}</Link>
+        <Link href="/arquivo">{editorial.chrome.navigation.archive}</Link>
+        <Link href="/#sobre">{editorial.chrome.navigation.about}</Link>
         <Link href="/contato" className="nav-cta">
-          Conversar
+          {editorial.chrome.navigation.contact}
         </Link>
       </nav>
     </header>
   );
 }
 
-export function SiteFooter() {
+export function SiteFooter({
+  site = SITE_DEFAULTS,
+  editorial = PUNCTUM_DEFAULT_EDITORIAL_CONFIG,
+}: {
+  site?: PublicSiteSettings;
+  editorial?: EditorialConfig;
+}) {
   return (
     <>
       <footer className="site-footer">
         <div>
-          <span className="footer-wordmark">Punctum Picture</span>
-          <p>Fotografia de presença, gesto e movimento.</p>
+          <span className="footer-wordmark">{site.brandName}</span>
+          <p>{editorial.chrome.footer.tagline}</p>
         </div>
         <nav aria-label="Navegação do rodapé">
-          <Link href="/portfolio">Histórias</Link>
-          <Link href="/arquivo">Arquivo completo</Link>
-          <Link href="/contato">Contato</Link>
+          <Link href="/portfolio">{editorial.chrome.footer.stories}</Link>
+          <Link href="/arquivo">{editorial.chrome.footer.archive}</Link>
+          <Link href="/contato">{editorial.chrome.footer.contact}</Link>
+          {site.instagramUrl ? (
+            <a href={site.instagramUrl} target="_blank" rel="noreferrer">
+              {editorial.chrome.footer.instagram}
+            </a>
+          ) : null}
+          {site.contactEmail ? (
+            <a href={`mailto:${site.contactEmail}`}>{editorial.chrome.footer.email}</a>
+          ) : null}
         </nav>
-        <span>© {new Date().getFullYear()} · Maria Helena · Brasil</span>
+        <span>© {new Date().getFullYear()} · {editorial.chrome.footer.credit}</span>
       </footer>
-      <WhatsAppLink variant="floating" />
+      <WhatsAppLink variant="floating" site={site} label={editorial.chrome.whatsappCta} />
     </>
   );
 }

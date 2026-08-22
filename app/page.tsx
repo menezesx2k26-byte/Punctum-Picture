@@ -1,163 +1,42 @@
-import Image from "next/image";
-import Link from "next/link";
-import { ArrowDownRight, ArrowUpRight, MessageCircle } from "lucide-react";
-import { ContactForm } from "./components/ContactForm";
-import { PhotoCarousel } from "./components/PhotoCarousel";
-import { PublicStatsText } from "./components/PublicStats";
-import { FeaturedStories } from "./components/FeaturedStories";
-import { SiteFooter, SiteHeader } from "./components/SiteChrome";
-import { carouselImages, featuredAlbums } from "./lib/portfolio";
+import { HomeExperience } from "./components/HomeExperience";
+import {
+  loadHomeCarousel,
+  loadFeaturedAlbums,
+  loadPublicExperience,
+} from "./lib/server-content";
 
-export default function Home() {
+export default async function Home() {
+  const experience = await loadPublicExperience();
+  const [featuredAlbums, carouselImages] = await Promise.all([
+    loadFeaturedAlbums(),
+    loadHomeCarousel(experience.config),
+  ]);
+  const { site, config } = experience;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "ProfessionalService",
-    name: "Punctum Picture",
-    url: "https://punctumpicture.com",
-    image: "https://punctumpicture.com/photos/p110.jpg",
-    description: "Fotografia autoral de pessoas, ritos, palcos e movimento.",
+    name: site.brandName,
+    url: process.env.PUBLIC_SITE_URL ?? "https://punctumpicture.com",
+    image: `${process.env.PUBLIC_SITE_URL ?? "https://punctumpicture.com"}/photos/p110.jpg`,
+    description: site.seoDescription,
     areaServed: "Brasil",
     founder: { "@type": "Person", name: "Maria Helena" },
+    ...(site.instagramUrl ? { sameAs: [site.instagramUrl] } : {}),
+    ...(site.contactEmail ? { email: site.contactEmail } : {}),
   };
 
   return (
-    <div className="site-shell">
+    <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <a className="skip-link" href="#conteudo">
-        Ir para o conteúdo
-      </a>
-      <SiteHeader />
-      <main id="conteudo">
-        <section className="hero" aria-labelledby="hero-title">
-          <div className="hero-image">
-            <Image
-              src="/photos/p001.jpg"
-              alt="Maria Helena fotografando com uma câmera"
-              fill
-              priority
-              sizes="100vw"
-            />
-          </div>
-          <div className="hero-copy">
-            <p className="eyebrow">Maria Helena · fotografia documental</p>
-            <h1 id="hero-title">
-              <span>O que pulsa,</span>
-              <em>permanece.</em>
-            </h1>
-            <div className="hero-bottom">
-              <p>
-                Pessoas, ritos, palcos e movimento observados com intimidade —
-                antes que o instante mude de forma.
-              </p>
-              <div className="button-row">
-                <Link className="button light primary" href="/portfolio">
-                  Ver histórias <ArrowDownRight size={16} />
-                </Link>
-                <Link className="button light" href="/arquivo">
-                  Abrir arquivo <ArrowUpRight size={15} />
-                </Link>
-              </div>
-            </div>
-          </div>
-          <span className="hero-index" aria-hidden="true">
-            <PublicStatsText variant="hero-index" />
-          </span>
-        </section>
-
-        <section className="visual-thesis reveal" aria-labelledby="thesis-title">
-          <div>
-            <p className="eyebrow">Um arquivo vivo</p>
-            <h2 id="thesis-title">
-              Entre o íntimo e o elétrico, a vida sempre deixa um vestígio.
-            </h2>
-          </div>
-          <p>
-            A Punctum nasce da atenção ao que não se repete: uma mão acesa por
-            uma vela, o corpo antes do salto, a pausa entre duas músicas, um
-            riso que ninguém dirigiu.
-          </p>
-        </section>
-
-        <section className="carousel-section" aria-labelledby="carousel-title">
-          <div className="carousel-heading reveal">
-            <div>
-              <p className="eyebrow">Atravessar o acervo</p>
-              <h2 id="carousel-title">Muitos ritmos.<br />Um mesmo olhar.</h2>
-            </div>
-            <p>
-              Do silêncio à vibração, cada série preserva a atmosfera do lugar
-              e a presença de quem estava ali.
-            </p>
-          </div>
-          <PhotoCarousel images={carouselImages} />
-        </section>
-
-        <section className="section stories-section" aria-labelledby="destaques-title">
-          <div className="section-inner">
-            <div className="section-heading reveal">
-              <h2 id="destaques-title">Histórias que<br /><em>respiram.</em></h2>
-              <div>
-                <p>
-                  Ensaios completos, organizados pelo ritmo de cada encontro —
-                  sem moldar pessoas diferentes dentro da mesma fórmula.
-                </p>
-                <Link className="text-link" href="/portfolio">
-                  <PublicStatsText variant="stories-link" /> <ArrowUpRight size={16} />
-                </Link>
-              </div>
-            </div>
-            <FeaturedStories initialAlbums={featuredAlbums.slice(0, 6)} />
-          </div>
-        </section>
-
-        <section id="sobre" className="section manifesto" aria-labelledby="sobre-title">
-          <div className="section-inner manifesto-grid">
-            <div className="manifesto-image reveal">
-              <Image
-                src="/photos/p061.jpg"
-                alt="Retrato teatral em vestido vermelho fotografado por Maria Helena"
-                width={1800}
-                height={2400}
-                sizes="(max-width: 900px) 100vw, 42vw"
-              />
-              <span aria-hidden="true">Olhar / presença / memória</span>
-            </div>
-            <div className="reveal">
-              <p className="eyebrow">Sobre a Punctum</p>
-              <blockquote id="sobre-title">
-                Fotografar é reconhecer o que já estava ali.
-              </blockquote>
-              <p>
-                O trabalho de Maria Helena se aproxima sem invadir. Busca a
-                textura dos lugares, a verdade dos gestos e o instante em que
-                uma pessoa deixa de posar para simplesmente estar.
-              </p>
-              <Link className="text-link light-link" href="/arquivo">
-                Conhecer o olhar por inteiro <ArrowUpRight size={16} />
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        <section className="section contact-home" aria-labelledby="contato-title">
-          <div className="section-inner contact-section">
-            <div className="contact-intro reveal">
-              <p className="eyebrow">Vamos conversar</p>
-              <h2 id="contato-title">Toda história começa antes da câmera.</h2>
-              <p>
-                Conte quando, onde e o que você deseja preservar. O retorno é
-                pessoal, atento e sem respostas automáticas.
-              </p>
-              <MessageCircle aria-hidden="true" size={28} />
-            </div>
-            <ContactForm />
-          </div>
-        </section>
-      </main>
-      <SiteFooter />
-    </div>
+      <HomeExperience
+        site={site}
+        config={config}
+        featuredAlbums={featuredAlbums}
+        carouselImages={carouselImages}
+      />
+    </>
   );
 }

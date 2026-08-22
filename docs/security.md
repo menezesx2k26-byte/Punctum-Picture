@@ -2,11 +2,14 @@
 
 ## Controles implementados
 
-- Cloudflare Access protege páginas e API sob `/admin/*`.
+- O Worker protege páginas, API e mídia sob `/admin/*` aceitando sessão própria
+  assinada ou JWT válido do Cloudflare Access.
 - O Worker valida `cf-access-jwt-assertion` com JWKS remoto, issuer e audience.
 - Mutações admin exigem `Origin` igual a `SITE_ORIGIN`.
 - D1 guarda somente metadados; R2 permanece privado.
 - Originais não têm URL pública, nome original nem parâmetros de transformação.
+- `/media/*` exige imagem pronta em álbum publicado; `/admin/media/*` permite
+  preview de conteúdo não publicado somente após autenticação administrativa.
 - Presets de imagem são allowlist fechada.
 - MIME e tamanho são validados no cliente, intent e finalização.
 - URL assinada expira em 15 minutos e inclui `Content-Type`.
@@ -28,6 +31,9 @@ Segredos entram somente por `wrangler secret put` ou cofre do CI:
 - `R2_SECRET_ACCESS_KEY`
 - `CLOUDFLARE_ACCOUNT_ID`
 - `CLOUDFLARE_API_TOKEN`
+- `ADMIN_ALLOWED_EMAILS`
+- `ADMIN_PASSWORD_HASH` (fallback inicial até existir credencial no D1)
+- `ADMIN_SESSION_SECRET`
 
 Não versionar `.dev.vars`, tokens ou credenciais R2. Limitar o token de CI aos
 recursos do projeto.
@@ -37,7 +43,9 @@ recursos do projeto.
 Criar aplicação self-hosted para `punctumpicture.com/admin/*` e Allow somente
 para identidades aprovadas. O path `/admin` sem barra também deve ser incluído
 ou coberto por uma segunda regra. O JWT continua sendo validado no Worker para
-proteger contra roteamento incorreto.
+proteger contra roteamento incorreto. A policy efetiva do Zero Trust não pode
+ser inferida pelo repositório e requer inspeção remota antes de remover ou
+consolidar qualquer mecanismo.
 
 ## Riscos residuais
 

@@ -1,0 +1,29 @@
+import { describe, expect, it } from "vitest";
+import { withSecurityHeaders } from "../../worker/utils/response";
+
+describe("headers de framing", () => {
+  it("mantém páginas públicas fora de iframes", () => {
+    const response = withSecurityHeaders(new Response("public"));
+    expect(response.headers.get("x-frame-options")).toBe("DENY");
+    expect(response.headers.get("content-security-policy")).toContain(
+      "frame-ancestors 'none'",
+    );
+    expect(response.headers.get("x-robots-tag")).toBeNull();
+  });
+
+  it("abre somente a resposta de preview para framing same-origin", () => {
+    const response = withSecurityHeaders(new Response("preview"), {
+      studioPreview: true,
+    });
+    expect(response.headers.get("x-frame-options")).toBe("SAMEORIGIN");
+    expect(response.headers.get("content-security-policy")).toContain(
+      "frame-ancestors 'self'",
+    );
+    expect(response.headers.get("cache-control")).toBe(
+      "private, no-store, max-age=0",
+    );
+    expect(response.headers.get("x-robots-tag")).toBe(
+      "noindex, nofollow, noarchive",
+    );
+  });
+});

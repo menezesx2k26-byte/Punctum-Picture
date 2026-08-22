@@ -1,12 +1,5 @@
-"use client";
-
-import { useEffect, useState } from "react";
-
-type Stats = {
-  photoCount: number;
-  albumCount: number;
-  categoryCount: number;
-};
+import type { PublicStats } from "../../shared/public-content";
+import { loadPublicStats } from "../lib/server-content";
 
 type Variant =
   | "archive-range"
@@ -16,32 +9,11 @@ type Variant =
   | "hero-index"
   | "stories-link";
 
-let cachedStats: Stats | null = null;
-let statsRequest: Promise<Stats> | null = null;
-
-function loadStats() {
-  if (cachedStats) return Promise.resolve(cachedStats);
-  if (!statsRequest) {
-    statsRequest = fetch("/api/public/stats", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Não foi possível carregar as estatísticas.");
-        const body = (await response.json()) as { stats?: Stats };
-        if (!body.stats) throw new Error("Estatísticas ausentes.");
-        cachedStats = body.stats;
-        return body.stats;
-      })
-      .finally(() => {
-        statsRequest = null;
-      });
-  }
-  return statsRequest;
-}
-
 function countLabel(count: number, singular: string, plural: string) {
   return `${count} ${count === 1 ? singular : plural}`;
 }
 
-function statText(stats: Stats, variant: Variant) {
+export function publicStatText(stats: PublicStats, variant: Variant) {
   const paddedPhotos = Math.max(1, stats.photoCount).toString().padStart(3, "0");
   switch (variant) {
     case "archive-range":
@@ -67,41 +39,7 @@ function statText(stats: Stats, variant: Variant) {
   }
 }
 
-function pendingText(variant: Variant) {
-  switch (variant) {
-    case "archive-range":
-      return "Arquivo completo";
-    case "archive-summary":
-      return "Arquivo vivo";
-    case "portfolio-eyebrow":
-      return "Portfólio";
-    case "archive-link":
-      return "Preferir o arquivo completo";
-    case "hero-index":
-      return "Arquivo vivo";
-    case "stories-link":
-      return "Ver histórias";
-  }
-}
-
-export function PublicStatsText({ variant }: { variant: Variant }) {
-  const [stats, setStats] = useState<Stats | null>(cachedStats);
-
-  useEffect(() => {
-    let active = true;
-    loadStats()
-      .then((value) => {
-        if (active) setStats(value);
-      })
-      .catch(() => undefined);
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  return (
-    <span className="live-stat" aria-live="polite">
-      {stats ? statText(stats, variant) : pendingText(variant)}
-    </span>
-  );
+export async function PublicStatsText({ variant }: { variant: Variant }) {
+  const stats = await loadPublicStats();
+  return <span className="live-stat">{publicStatText(stats, variant)}</span>;
 }

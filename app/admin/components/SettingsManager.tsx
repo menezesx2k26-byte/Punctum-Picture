@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 
 type Settings = {
   brandName: string;
@@ -51,8 +52,7 @@ export function SettingsManager() {
     event.preventDefault();
     setStatus("Salvando…");
     const editableSettings = {
-      tagline: settings.tagline,
-      aboutText: settings.aboutText,
+      brandName: settings.brandName,
       whatsappE164: settings.whatsappE164,
       whatsappMessage: settings.whatsappMessage,
       instagramUrl: settings.instagramUrl,
@@ -121,24 +121,25 @@ export function SettingsManager() {
       </div>
       <form className="admin-grid" onSubmit={save}>
         <section className="admin-card wide">
-          <h2>Textos e contato</h2>
+          <h2>Marca e contato</h2>
           <div className="admin-form">
             <label>
-              <span>Frase curta</span>
+              <span>Nome da marca</span>
               <input
                 className="admin-input"
-                value={settings.tagline ?? ""}
-                onChange={(event) => setSettings({ ...settings, tagline: event.target.value })}
+                value={settings.brandName}
+                onChange={(event) =>
+                  setSettings({ ...settings, brandName: event.target.value })
+                }
+                minLength={2}
+                maxLength={120}
+                required
               />
             </label>
-            <label>
-              <span>Sobre</span>
-              <textarea
-                className="admin-input"
-                value={settings.aboutText ?? ""}
-                onChange={(event) => setSettings({ ...settings, aboutText: event.target.value })}
-              />
-            </label>
+            <p className="admin-muted">
+              A frase da marca, o texto “Sobre” e os demais textos públicos agora ficam no{" "}
+              <Link href="/admin/studio">Studio</Link>, com prévia e publicação segura.
+            </p>
             <div className="admin-form-row">
               <label>
                 <span>WhatsApp com DDI</span>

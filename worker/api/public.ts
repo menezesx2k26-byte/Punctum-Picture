@@ -1,306 +1,69 @@
+import {
+  readPublicCategories,
+  readPublicSiteSettings,
+  readPublicStats,
+  readPublishedAlbum,
+  readPublishedAlbums,
+  readPublishedArchive,
+} from "../../shared/public-content";
+import { readPublicSiteConfig } from "../../shared/site-config-storage";
 import { envNumber, requireDb } from "../utils/env";
 import { AppError } from "../utils/errors";
 import { assertRateLimit } from "../utils/rate-limit";
 import { json } from "../utils/response";
 import { inquirySchema, parseJson } from "../utils/validation";
 
-type PublicAlbumRow = {
-  id: string;
-  slug: string;
-  title: string;
-  subtitle: string | null;
-  description: string | null;
-  location: string | null;
-  shootDate: string | null;
-  coverImageId: string | null;
-  featured: number;
-  publishedAt: string | null;
-  categoriesJson?: string;
-};
-
-function publicAlbum(row: PublicAlbumRow) {
-  return {
-    id: row.id,
-    slug: row.slug,
-    title: row.title,
-    subtitle: row.subtitle,
-    description: row.description,
-    location: row.location,
-    shootDate: row.shootDate,
-    featured: Boolean(row.featured),
-    publishedAt: row.publishedAt,
-    coverUrl: row.coverImageId ? `/media/${row.coverImageId}/card` : null,
-  };
-}
-
 async function getSite(env: Env): Promise<Response> {
   const db = requireDb(env);
-  const settings = await db
-    .prepare(
-      `SELECT
-        brand_name AS brandName,
-        tagline,
-        about_text AS aboutText,
-        whatsapp_e164 AS whatsappE164,
-        whatsapp_message AS whatsappMessage,
-        instagram_url AS instagramUrl,
-        contact_email AS contactEmail,
-        seo_title AS seoTitle,
-        seo_description AS seoDescription
-      FROM site_settings WHERE id = 1`,
-    )
-    .first();
-  return json({ site: settings }, { headers: { "Cache-Control": "public, max-age=60" } });
+  const site = await readPublicSiteSettings(db);
+  const siteConfig = await readPublicSiteConfig(db, site);
+  return json(
+    { site, siteConfig },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 async function getCategories(env: Env): Promise<Response> {
-  const db = requireDb(env);
-  const result = await db
-    .prepare(
-      `SELECT id, name, slug, description, sort_order AS sortOrder
-       FROM categories
-       WHERE is_visible = 1
-       ORDER BY sort_order, name`,
-    )
-    .all();
-  return json({ categories: result.results }, { headers: { "Cache-Control": "public, max-age=60" } });
+  const categories = await readPublicCategories(requireDb(env));
+  return json(
+    { categories },
+    { headers: { "Cache-Control": "public, max-age=60" } },
+  );
 }
 
 async function getStats(env: Env): Promise<Response> {
-  const db = requireDb(env);
-  const stats = await db
-    .prepare(
-      `SELECT
-        (SELECT COUNT(*)
-         FROM images image
-         INNER JOIN albums album ON album.id = image.album_id
-         WHERE image.status = 'ready'
-           AND image.deleted_at IS NULL
-           AND album.status = 'published'
-           AND album.deleted_at IS NULL) AS photoCount,
-        (SELECT COUNT(*)
-         FROM albums album
-         WHERE album.status = 'published' AND album.deleted_at IS NULL) AS albumCount,
-        (SELECT COUNT(DISTINCT category.id)
-         FROM categories category
-         INNER JOIN album_categories album_category ON album_category.category_id = category.id
-         INNER JOIN albums album ON album.id = album_category.album_id
-         WHERE category.is_visible = 1
-           AND album.status = 'published'
-           AND album.deleted_at IS NULL) AS categoryCount`,
-    )
-    .first<{ photoCount: number; albumCount: number; categoryCount: number }>();
-
-  return json(
-    { stats: stats ?? { photoCount: 0, albumCount: 0, categoryCount: 0 } },
-    { headers: { "Cache-Control": "no-store" } },
-  );
+  const stats = await readPublicStats(requireDb(env));
+  return json({ stats }, { headers: { "Cache-Control": "no-store" } });
 }
 
 async function getArchive(env: Env): Promise<Response> {
-  const db = requireDb(env);
-  const result = await db
-    .prepare(
-      `SELECT
-        image.id,
-        image.alt_text AS altText,
-        image.width,
-        image.height,
-        album.slug AS albumSlug,
-        album.title AS albumTitle,
-        COALESCE((
-          SELECT json_group_array(
-            json_object(
-              'id', ordered_categories.id,
-              'name', ordered_categories.name,
-              'slug', ordered_categories.slug
-            )
-          )
-          FROM (
-            SELECT category.id, category.name, category.slug
-            FROM album_categories album_category
-            INNER JOIN categories category ON category.id = album_category.category_id
-            WHERE album_category.album_id = album.id AND category.is_visible = 1
-            ORDER BY category.sort_order, category.name
-          ) ordered_categories
-        ), '[]') AS categoriesJson
-       FROM images image
-       INNER JOIN albums album ON album.id = image.album_id
-       WHERE image.status = 'ready'
-         AND image.deleted_at IS NULL
-         AND album.status = 'published'
-         AND album.deleted_at IS NULL
-       ORDER BY album.featured DESC, album.sort_order, album.published_at DESC,
-         image.position, image.created_at`,
-    )
-    .all<{
-      id: string;
-      altText: string | null;
-      width: number | null;
-      height: number | null;
-      albumSlug: string;
-      albumTitle: string;
-      categoriesJson: string;
-    }>();
-
-  return json(
-    {
-      images: result.results.map((image) => ({
-        id: image.id,
-        altText: image.altText,
-        width: image.width,
-        height: image.height,
-        albumSlug: image.albumSlug,
-        albumTitle: image.albumTitle,
-        categories: JSON.parse(image.categoriesJson ?? "[]") as Array<{
-          id: string;
-          name: string;
-          slug: string;
-        }>,
-        url: `/media/${image.id}/gallery`,
-        thumbUrl: `/media/${image.id}/card`,
-      })),
-    },
-    { headers: { "Cache-Control": "no-store" } },
-  );
+  const images = await readPublishedArchive(requireDb(env));
+  return json({ images }, { headers: { "Cache-Control": "no-store" } });
 }
 
 async function getAlbums(url: URL, env: Env): Promise<Response> {
-  const db = requireDb(env);
   const category = url.searchParams.get("category");
-  const featured = url.searchParams.get("featured");
+  const featured = url.searchParams.get("featured") === "true";
   const page = Math.max(1, Number(url.searchParams.get("page") ?? 1) || 1);
-  const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit") ?? 12) || 12));
-  const offset = (page - 1) * limit;
-
-  const where = ["a.status = 'published'", "a.deleted_at IS NULL"];
-  const bindings: Array<string | number> = [];
-  let categoryJoin = "";
-  if (category) {
-    categoryJoin =
-      "INNER JOIN album_categories ac ON ac.album_id = a.id INNER JOIN categories c ON c.id = ac.category_id";
-    where.push("c.slug = ?");
-    bindings.push(category);
-  }
-  if (featured === "true") {
-    where.push("a.featured = 1");
-  }
-
-  const result = await db
-    .prepare(
-      `SELECT DISTINCT
-        a.id,
-        a.slug,
-        a.title,
-        a.subtitle,
-        a.description,
-        a.location,
-        a.shoot_date AS shootDate,
-        a.cover_image_id AS coverImageId,
-        a.featured,
-        a.published_at AS publishedAt,
-        COALESCE((
-          SELECT json_group_array(
-            json_object(
-              'id', ordered_categories.id,
-              'name', ordered_categories.name,
-              'slug', ordered_categories.slug
-            )
-          )
-          FROM (
-            SELECT category.id, category.name, category.slug
-            FROM album_categories album_category
-            INNER JOIN categories category ON category.id = album_category.category_id
-            WHERE album_category.album_id = a.id AND category.is_visible = 1
-            ORDER BY category.sort_order, category.name
-          ) ordered_categories
-        ), '[]') AS categoriesJson
-       FROM albums a
-       ${categoryJoin}
-       WHERE ${where.join(" AND ")}
-       ORDER BY a.featured DESC, a.sort_order, a.published_at DESC
-       LIMIT ? OFFSET ?`,
-    )
-    .bind(...bindings, limit, offset)
-    .all<PublicAlbumRow>();
-
-  return json(
-    {
-      albums: result.results.map((album) => ({
-        ...publicAlbum(album),
-        categories: JSON.parse(album.categoriesJson ?? "[]") as Array<{
-          id: string;
-          name: string;
-          slug: string;
-        }>,
-      })),
-      page,
-      limit,
-    },
-    { headers: { "Cache-Control": "no-store" } },
+  const limit = Math.min(
+    100,
+    Math.max(1, Number(url.searchParams.get("limit") ?? 12) || 12),
   );
+  const result = await readPublishedAlbums(requireDb(env), {
+    category,
+    featured,
+    page,
+    limit,
+  });
+  return json(result, { headers: { "Cache-Control": "no-store" } });
 }
 
 async function getAlbum(slug: string, env: Env): Promise<Response> {
-  const db = requireDb(env);
-  const album = await db
-    .prepare(
-      `SELECT
-        id,
-        slug,
-        title,
-        subtitle,
-        description,
-        location,
-        shoot_date AS shootDate,
-        cover_image_id AS coverImageId,
-        featured,
-        published_at AS publishedAt
-       FROM albums
-       WHERE slug = ? AND status = 'published' AND deleted_at IS NULL`,
-    )
-    .bind(slug)
-    .first<PublicAlbumRow>();
+  const album = await readPublishedAlbum(requireDb(env), slug);
   if (!album) {
     throw new AppError(404, "ALBUM_NOT_FOUND", "Ensaio não encontrado.");
   }
-
-  const [imagesResult, categoriesResult] = await Promise.all([
-    db
-      .prepare(
-        `SELECT id, alt_text AS altText, width, height, position
-         FROM images
-         WHERE album_id = ? AND status = 'ready' AND deleted_at IS NULL
-         ORDER BY position`,
-      )
-      .bind(album.id)
-      .all<{ id: string; altText: string | null; width: number | null; height: number | null; position: number }>(),
-    db
-      .prepare(
-        `SELECT c.id, c.name, c.slug
-         FROM categories c
-         INNER JOIN album_categories ac ON ac.category_id = c.id
-         WHERE ac.album_id = ? AND c.is_visible = 1
-         ORDER BY c.sort_order`,
-      )
-      .bind(album.id)
-      .all(),
-  ]);
-
-  return json(
-    {
-      album: {
-        ...publicAlbum(album),
-        categories: categoriesResult.results,
-        images: imagesResult.results.map((image) => ({
-          ...image,
-          url: `/media/${image.id}/gallery`,
-          thumbUrl: `/media/${image.id}/thumb`,
-        })),
-      },
-    },
-    { headers: { "Cache-Control": "no-store" } },
-  );
+  return json({ album }, { headers: { "Cache-Control": "no-store" } });
 }
 
 async function createInquiry(request: Request, env: Env): Promise<Response> {
@@ -345,7 +108,11 @@ export async function handlePublicApi(
   env: Env,
 ): Promise<Response | null> {
   if (request.method === "GET" && url.pathname === "/api/health") {
-    return json({ ok: true, service: "punctum-picture", now: new Date().toISOString() });
+    return json({
+      ok: true,
+      service: "punctum-picture",
+      now: new Date().toISOString(),
+    });
   }
   if (request.method === "GET" && url.pathname === "/api/public/site") {
     return getSite(env);

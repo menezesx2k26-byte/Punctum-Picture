@@ -88,6 +88,20 @@ async function routeRequest(
     return adminResponse;
   }
 
+  const adminMediaMatch = url.pathname.match(
+    /^\/admin\/media\/([^/]+)\/([^/]+)$/,
+  );
+  if (request.method === "GET" && adminMediaMatch) {
+    await requireAdmin(request, env);
+    return serveMedia(
+      request,
+      env,
+      decodeURIComponent(adminMediaMatch[1]),
+      decodeURIComponent(adminMediaMatch[2]),
+      { audience: "admin" },
+    );
+  }
+
   const mediaMatch = url.pathname.match(/^\/media\/([^/]+)\/([^/]+)$/);
   if (request.method === "GET" && mediaMatch) {
     return serveMedia(
@@ -105,6 +119,13 @@ async function routeRequest(
     return robots(env);
   }
 
+  if (
+    url.pathname === "/studio-preview-internal" ||
+    url.pathname.startsWith("/studio-preview-internal/")
+  ) {
+    throw new AppError(404, "NOT_FOUND", "Página não encontrada.");
+  }
+
   if (url.pathname === "/admin" || url.pathname.startsWith("/admin/")) {
     try {
       await requireAdmin(request, env);
@@ -120,6 +141,17 @@ async function routeRequest(
       }
       throw error;
     }
+  }
+
+  if (request.method === "GET" && url.pathname === "/admin/studio/preview") {
+    const internalUrl = new URL(request.url);
+    internalUrl.pathname = "/studio-preview-internal";
+    const previewResponse = await handler.fetch(
+      new Request(internalUrl, request),
+      env,
+      ctx,
+    );
+    return withSecurityHeaders(previewResponse, { studioPreview: true });
   }
 
   const response = await handler.fetch(request, env, ctx);

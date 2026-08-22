@@ -5,7 +5,7 @@
 ```mermaid
 flowchart LR
   U["Visitante"] --> E["Cloudflare CDN / SSL"]
-  M["Maria Helena"] --> A["Cloudflare Access"]
+  M["Maria Helena"] --> A["Senha/sessão própria ou Cloudflare Access"]
   A --> E
   E --> W["Worker único: vinext + API"]
   W --> D["D1: metadados"]
@@ -25,7 +25,9 @@ permanece apenas como registradora do domínio.
 - `worker/api/`: contratos HTTP e regras de negócio.
 - `worker/media/`: leitura privada do R2 e presets de transformação.
 - `worker/utils/`: Access, validação, rate limit, auditoria e respostas.
-- `migrations/`: schema D1 versionado e seed idempotente.
+- `migrations/`: fonte canônica do schema D1 versionado e seeds idempotentes.
+- `drizzle/`: histórico legado congelado; diffs novos do Drizzle Kit são
+  gerados em `.drizzle-generated/` apenas para revisão.
 - `worker/scheduled.ts`: backup lógico e higiene horária.
 
 ## Dados e publicação
@@ -37,7 +39,9 @@ menos uma imagem `ready`.
 
 O R2 usa chaves não adivinháveis como
 `originals/{albumId}/{imageId}.{ext}`. A URL pública contém apenas o `imageId` e
-um preset permitido. Objetos não são sobrescritos.
+um preset permitido. Objetos não são sobrescritos. `/media/*` só entrega
+imagem pronta de álbum publicado. O painel usa `/admin/media/*`, protegido pela
+mesma autenticação do admin, para visualizar rascunhos e arquivados.
 
 ## Mídia
 

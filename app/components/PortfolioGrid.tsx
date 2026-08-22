@@ -3,79 +3,30 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import type { PortfolioAlbum } from "../lib/portfolio";
+import { useMemo, useState } from "react";
+import type { PublicAlbumSummary } from "../../shared/public-content";
 
-type Album = PortfolioAlbum & {
-  coverUrl?: string | null;
-  categories: string[];
-};
-
-export function PortfolioGrid({ initialAlbums }: { initialAlbums: PortfolioAlbum[] }) {
-  const [albums, setAlbums] = useState<Album[]>(() =>
-    initialAlbums.map((album) => ({ ...album, categories: [album.category] })),
-  );
+export function PortfolioGrid({ albums }: { albums: PublicAlbumSummary[] }) {
   const [filter, setFilter] = useState("Todos");
   const categories = useMemo(
-    () => ["Todos", ...Array.from(new Set(albums.flatMap((album) => album.categories)))],
+    () => [
+      "Todos",
+      ...Array.from(
+        new Set(
+          albums.flatMap((album) =>
+            album.categories.map((category) => category.name),
+          ),
+        ),
+      ),
+    ],
     [albums],
   );
   const visible =
     filter === "Todos"
       ? albums
-      : albums.filter((album) => album.categories.includes(filter));
-
-  useEffect(() => {
-    let active = true;
-    fetch("/api/public/albums?limit=100", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) return null;
-        return (await response.json()) as {
-          albums?: Array<{
-            slug: string;
-            title: string;
-            subtitle?: string | null;
-            description?: string | null;
-            coverUrl?: string | null;
-            categories?: Array<{ id: string; name: string; slug: string }>;
-          }>;
-        };
-      })
-      .then((body) => {
-        if (!active || !body?.albums?.length) return;
-        const remoteAlbums = body.albums.map((album) => {
-          const original = initialAlbums.find((entry) => entry.slug === album.slug);
-          const categoryNames = album.categories?.map((category) => category.name) ?? [];
-          const liveCategories = categoryNames.length ? categoryNames : ["Sem categoria"];
-          return {
-            ...original,
-            slug: album.slug,
-            title: album.title,
-            subtitle: album.subtitle ?? "",
-            description: album.description ?? "",
-            category: liveCategories.join(" · "),
-            categories: liveCategories,
-            cover: album.coverUrl ?? "/photos/p001.jpg",
-            coverUrl: album.coverUrl,
-            gallery: original?.gallery ?? [],
-          };
-        });
-        setAlbums([
-          ...initialAlbums.map(
-            (album) =>
-              remoteAlbums.find((remote) => remote.slug === album.slug) ?? {
-                ...album,
-                categories: [album.category],
-              },
-          ),
-          ...remoteAlbums.filter((remote) => !initialAlbums.some((album) => album.slug === remote.slug)),
-        ]);
-      })
-      .catch(() => undefined);
-    return () => {
-      active = false;
-    };
-  }, [initialAlbums]);
+      : albums.filter((album) =>
+          album.categories.some((category) => category.name === filter),
+        );
 
   return (
     <>
@@ -95,19 +46,26 @@ export function PortfolioGrid({ initialAlbums }: { initialAlbums: PortfolioAlbum
       <div className="portfolio-grid">
         {visible.map((album, index) => (
           <Link
-            key={album.slug}
+            key={album.id}
             className="story-card"
             href={`/ensaios/${album.slug}`}
           >
-            <Image
-              src={album.coverUrl ?? album.cover}
-              alt={`Capa do ensaio ${album.title}`}
-              fill
-              sizes="(max-width: 760px) 100vw, (max-width: 1100px) 50vw, 34vw"
-            />
+            {album.coverUrl ? (
+              <Image
+                src={album.coverUrl}
+                alt={`Capa do ensaio ${album.title}`}
+                fill
+                unoptimized
+                sizes="(max-width: 760px) 100vw, (max-width: 1100px) 50vw, 34vw"
+              />
+            ) : null}
             <div className="story-card-copy">
               <div>
-                <span>{album.categories.join(" · ")}</span>
+                <span>
+                  {album.categories
+                    .map((category) => category.name)
+                    .join(" · ") || "Sem categoria"}
+                </span>
                 <small>{(index + 1).toString().padStart(2, "0")}</small>
               </div>
               <h2>{album.title}</h2>

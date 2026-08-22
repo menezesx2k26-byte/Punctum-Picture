@@ -3,17 +3,18 @@
 MVP do portfólio de fotografia da Punctum Picture. O projeto reúne site
 público, painel administrativo e API em um único Cloudflare Worker, com D1 para
 metadados, R2 para originais privados, Image Transformations para entrega e
-Cloudflare Access protegendo todo o `/admin/*`.
+duas formas atuais de autenticação administrativa: sessão própria por senha e
+Cloudflare Access como fallback validado pelo Worker.
 
 ## O que está incluído
 
 - Home editorial, portfólio, página de ensaio e contato em pt-BR.
 - Painel responsivo para ensaios, categorias, configurações e contatos.
-- Upload direto ao R2 por URL assinada, três arquivos em paralelo, progresso
+- Upload ao R2 por endpoint autenticado do Worker, três arquivos em paralelo, progresso
   individual/total e repetição isolada de falha.
 - Rascunho, publicação, arquivamento, soft delete, capa, alt text e ordenação.
 - Presets fixos de imagem, negociação AVIF/WebP/JPEG, sitemap, robots e JSON-LD.
-- Access JWT validado também no Worker, proteção de Origin, rate limit,
+- Sessão administrativa assinada ou Access JWT validado no Worker, proteção de Origin, rate limit,
   honeypot, CSP, auditoria e respostas admin `no-store`.
 - Snapshot lógico agendado no R2 e limpeza horária de uploads órfãos.
 
@@ -90,12 +91,22 @@ build.
 | `npm run backup:d1` | export SQL manual |
 | `npm run restore:d1` | restore do export |
 
-## Conteúdo provisório
+## Conteúdo e fonte de verdade
 
-As cinco fotos em `public/demo` são placeholders de demonstração do Unsplash.
-Antes da abertura pública, substitua-as pelas imagens e brand assets fornecidos
-pela Maria Helena e complete os valores `UNSPECIFIED` registrados em
-[`docs/decisions.md`](docs/decisions.md).
+Álbuns, categorias e imagens publicados vêm exclusivamente do D1. Os assets em
+`public/photos` são originais históricos do acervo e também podem ser
+referenciados pelo seed idempotente; `app/lib/portfolio.ts` mantém apenas uma
+seleção editorial de IDs para o carrossel, validada contra o estado publicado.
+Settings públicos possuem defaults centralizados e são substituídos pelos
+valores administrados em `site_settings`.
+
+## Migrations
+
+`migrations/` é a trilha canônica aplicada pelo Wrangler e empacotada para
+Sites. `drizzle-kit generate` escreve diffs de revisão em
+`.drizzle-generated/`; depois de revisado, o SQL deve ser promovido para o
+próximo arquivo imutável em `migrations/`. A pasta `drizzle/` permanece somente
+como histórico legado e não deve receber migrations novas.
 
 ## Documentação
 

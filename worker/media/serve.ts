@@ -14,6 +14,8 @@ type ImageRow = {
   focalY: number | null;
   status: "pending" | "ready" | "failed";
   deletedAt: string | null;
+  albumStatus: "draft" | "published" | "archived";
+  albumDeletedAt: string | null;
 };
 
 export async function serveMedia(
@@ -21,6 +23,7 @@ export async function serveMedia(
   env: Env,
   imageId: string,
   presetName: string,
+  options: { audience?: "public" | "admin" } = {},
 ): Promise<Response> {
   if (!isImagePreset(presetName)) {
     throw new AppError(400, "INVALID_IMAGE_PRESET", "O formato de imagem solicitado é inválido.");
@@ -30,16 +33,35 @@ export async function serveMedia(
   const image = await db
     .prepare(
       `SELECT
-        id, original_key AS originalKey, focal_x AS focalX, focal_y AS focalY,
-        status, deleted_at AS deletedAt
-       FROM images WHERE id = ?`,
+        image.id,
+        image.original_key AS originalKey,
+        image.focal_x AS focalX,
+        image.focal_y AS focalY,
+        image.status,
+        image.deleted_at AS deletedAt,
+        album.status AS albumStatus,
+        album.deleted_at AS albumDeletedAt
+       FROM images image
+       INNER JOIN albums album ON album.id = image.album_id
+       WHERE image.id = ?`,
     )
     .bind(imageId)
     .first<ImageRow>();
 
-  if (!image || image.deletedAt || image.status !== "ready") {
+  const publicRequest = options.audience !== "admin";
+  if (
+    !image ||
+    image.deletedAt ||
+    image.albumDeletedAt ||
+    image.status !== "ready" ||
+    (publicRequest && image.albumStatus !== "published")
+  ) {
     throw new AppError(404, "IMAGE_NOT_FOUND", "Imagem não encontrada.");
   }
+
+  const cacheControl = publicRequest
+    ? "public, max-age=300, s-maxage=300"
+    : "private, no-store";
 
   let sourceBody: ReadableStream;
   let sourceContentType = "image/jpeg";
@@ -66,7 +88,7 @@ export async function serveMedia(
   if (!env.IMAGES) {
     return new Response(sourceBody, {
       headers: {
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": cacheControl,
         "Content-Type": sourceContentType,
         "Content-Disposition": "inline",
         "X-Content-Type-Options": "nosniff",
@@ -105,7 +127,7 @@ export async function serveMedia(
   }
 
   const headers = new Headers(transformed.headers);
-  headers.set("Cache-Control", "public, max-age=31536000, immutable");
+  headers.set("Cache-Control", cacheControl);
   headers.set("Content-Type", format);
   headers.set("Content-Disposition", "inline");
   headers.set("X-Content-Type-Options", "nosniff");

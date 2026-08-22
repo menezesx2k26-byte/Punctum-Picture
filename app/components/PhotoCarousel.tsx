@@ -4,9 +4,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ArchiveImage } from "../lib/portfolio";
+import type { CarouselImage } from "../lib/portfolio";
 
-export function PhotoCarousel({ images }: { images: ArchiveImage[] }) {
+export function PhotoCarousel({
+  images,
+  hint = "Arraste para atravessar o acervo",
+}: {
+  images: CarouselImage[];
+  hint?: string;
+}) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
 
@@ -46,12 +52,13 @@ export function PhotoCarousel({ images }: { images: ArchiveImage[] }) {
           <Link
             className={`photo-carousel-slide${index % 4 === 0 ? " wide" : ""}`}
             href={image.albumSlug ? `/ensaios/${image.albumSlug}` : "/#sobre"}
-            key={image.src}
+            key={image.id}
           >
             <Image
               src={image.src}
               alt={image.alt}
               fill
+              unoptimized
               sizes="(max-width: 720px) 78vw, 34vw"
             />
             <span>
@@ -65,7 +72,7 @@ export function PhotoCarousel({ images }: { images: ArchiveImage[] }) {
         <button type="button" onClick={() => move(-1)} aria-label="Fotografias anteriores">
           <ArrowLeft size={17} />
         </button>
-        <span>Arraste para atravessar o acervo</span>
+        <span>{hint}</span>
         <button type="button" onClick={() => move(1)} aria-label="Próximas fotografias">
           <ArrowRight size={17} />
         </button>

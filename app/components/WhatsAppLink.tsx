@@ -1,43 +1,26 @@
-"use client";
-
 import { MessageCircle } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import {
+  SITE_DEFAULTS,
+  type PublicSiteSettings,
+} from "../../shared/public-content";
 
-const DEFAULT_PHONE = "554797821657";
-const DEFAULT_MESSAGE =
-  "Olá Maria! vim pelo seu site, tenho interesse no seu trabalho.";
-
-function whatsappHref(phone: string, message: string) {
+export function whatsappHref(phone: string, message: string) {
   return `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`;
 }
 
 export function WhatsAppLink({
   className = "button ghost",
   variant = "inline",
+  site = SITE_DEFAULTS,
+  label = "Conversar no WhatsApp",
 }: {
   className?: string;
   variant?: "inline" | "floating";
+  site?: Pick<PublicSiteSettings, "whatsappE164" | "whatsappMessage">;
+  label?: string;
 }) {
-  const [href, setHref] = useState(() =>
-    whatsappHref(DEFAULT_PHONE, DEFAULT_MESSAGE),
-  );
-
-  useEffect(() => {
-    fetch("/api/public/site")
-      .then(
-        (response) =>
-          response.json() as Promise<{
-          site?: { whatsappE164?: string | null; whatsappMessage?: string | null };
-          }>,
-      )
-      .then((body) => {
-        const phone = body.site?.whatsappE164?.replace(/\D/g, "") || DEFAULT_PHONE;
-        const message = body.site?.whatsappMessage || DEFAULT_MESSAGE;
-        setHref(whatsappHref(phone, message));
-      })
-      .catch(() => undefined);
-  }, []);
+  const href = whatsappHref(site.whatsappE164, site.whatsappMessage);
 
   if (variant === "floating") {
     return (
@@ -63,7 +46,7 @@ export function WhatsAppLink({
 
   return (
     <a className={className} href={href} target="_blank" rel="noreferrer">
-      <MessageCircle size={15} /> Conversar no WhatsApp
+      <MessageCircle size={15} /> {label}
     </a>
   );
 }

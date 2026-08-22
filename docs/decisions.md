@@ -2,7 +2,7 @@
 
 | Item | Estado | Decisão mínima segura |
 | --- | --- | --- |
-| Brand assets e fotos finais | UNSPECIFIED | usar placeholders demo e substituir antes do lançamento |
+| Brand assets e fotos finais | Definidos | acervo em `public/photos` e logo fornecida pela fotógrafa |
 | Tagline, sobre e textos SEO finais | UNSPECIFIED | copy editorial provisória, editável no painel |
 | WhatsApp, Instagram e e-mail | UNSPECIFIED | CTA externo só aparece quando configurado |
 | E-mails autorizados no Access | UNSPECIFIED | Allow explícito para Maria Helena; nenhum acesso amplo |
@@ -24,7 +24,8 @@
   Tailwind/shadcn. Isso reduz dependências e mantém a estética editorial
   específica; não altera a arquitetura congelada.
 - vinext fornece o app React/Vite com SSR no Worker. O deploy continua único.
-- Fotos Unsplash estão apenas em `public/demo` como conteúdo transitório.
+- O acervo histórico em `public/photos` é associado ao D1 pelo seed idempotente;
+  não existe catálogo público alternativo em código.
 - Imagem `pending`, `failed`, deletada ou inexistente retorna 404 para não
   revelar estado interno.
 - JPEG é o fallback negociado. A pipeline Cloudflare controla a codificação;
