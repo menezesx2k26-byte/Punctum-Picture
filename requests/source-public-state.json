@@ -1,8 +1,9 @@
 {
-  "nonce": 3,
+  "nonce": 4,
   "mode": "snapshot-only",
   "origin": "https://punctumpicture.com",
-  "privateMigration": true,
+  "privateMigration": false,
+  "configureDestinationAdmin": true,
   "domain_touched": false,
   "site_config_activate": false
 }
