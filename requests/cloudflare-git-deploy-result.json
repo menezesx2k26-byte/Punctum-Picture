@@ -1,9 +1,11 @@
 {
-  "status": "success",
-  "checkedAt": "2026-08-23T18:48:28Z",
-  "sourceCommit": "8dc60795098a860a19a5461df71c71a409d64b76",
+  "status": "failure",
+  "checkedAt": "2026-08-23T22:06:53Z",
+  "sourceCommit": "5716bd0d08aed782751dbc98f5c4383f295d075f",
   "worker": "punctum-picture-migration",
   "workerUrl": "https://punctum-picture-migration.menezesx2k26.workers.dev",
+  "productionUrl": "https://punctumpicture.com",
+  "wwwUrl": "https://www.punctumpicture.com",
   "gitBranch": "main",
   "autoDeployEnabled": true,
   "stages": {
@@ -16,7 +18,7 @@
     "d1": "success",
     "generatedConfig": "success",
     "deploy": "success",
-    "smoke": "success"
+    "smoke": "failure"
   },
   "d1": "punctum-picture",
   "r2Originals": "punctum-picture-originals",
@@ -24,5 +26,5 @@
   "cloudflareImages": true,
   "cronsEnabled": true,
   "studioPresetExpected": "aconchegante-organico",
-  "domainTouched": false
+  "customDomainsConfigured": true
 }
