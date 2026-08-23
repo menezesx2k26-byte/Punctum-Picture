@@ -1,9 +1,10 @@
 {
-  "nonce": 9,
+  "nonce": 10,
   "mode": "snapshot-only",
   "origin": "https://punctumpicture.com",
   "privateMigration": false,
-  "configureDestinationAdmin": true,
+  "configureDestinationAdmin": false,
+  "adminParityAudit": true,
   "domain_touched": false,
   "site_config_activate": false
 }
