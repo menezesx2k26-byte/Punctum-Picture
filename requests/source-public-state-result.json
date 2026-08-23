@@ -1,6 +1,6 @@
 {
   "format": "punctum-live-public-state-v1",
-  "capturedAt": "2026-08-23T16:25:00.783Z",
+  "capturedAt": "2026-08-23T16:48:27.700Z",
   "origin": "https://punctumpicture.com",
   "counts": {
     "categories": 10,
@@ -12,8 +12,8 @@
     "ADMIN_PASSWORD_HASH": false,
     "ADMIN_SESSION_SECRET": false,
     "ADMIN_ALLOWED_EMAILS": false,
-    "SOURCE_ADMIN_EMAIL": false,
-    "SOURCE_ADMIN_PASSWORD": false,
+    "SOURCE_ADMIN_EMAIL": true,
+    "SOURCE_ADMIN_PASSWORD": true,
     "PUNCTUM_ADMIN_EMAIL": false,
     "PUNCTUM_ADMIN_PASSWORD": false
   },
@@ -5748,5 +5748,5 @@
       }
     ]
   },
-  "sha256": "1664ff41b3803a2d1188a60ab0aa91620ac1c0318e0e97f1535cd0395e48eee7"
+  "sha256": "b1fcb1f8f75fb03766cecf76bc47d9f6a115501f412a6dad7e19bf120eea4958"
 }

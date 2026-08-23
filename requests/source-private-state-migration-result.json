@@ -1,10 +1,10 @@
 {
   "status": "success",
-  "migratedAt": "2026-08-23T16:49:28.148Z",
+  "migratedAt": "2026-08-23T16:49:51.769Z",
   "sourceReadOnly": true,
   "destinationDatabaseId": "22697f13-7484-41e3-9441-f7b902c6577a",
-  "privateSnapshotBackupKey": "migration/source-private-state/2026-08-23T16-48-26-603Z.json",
-  "privateSnapshotSha256": "43224a708e16b2a8e5d83844b1aba5737f494f49538561f464ccde017e08f4d4",
+  "privateSnapshotBackupKey": "migration/source-private-state/2026-08-23T16-48-44-487Z.json",
+  "privateSnapshotSha256": "c97b8e6d4640fffc03ea7d2f04ba8f9e57db5bf1bf14cf9670d481664c5dbd1e",
   "counts": {
     "albums": 17,
     "albumStatuses": {
