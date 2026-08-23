@@ -1,0 +1,153 @@
+name: Release Miranda X100 v4
+
+on:
+  push:
+    branches: ["miranda-editorial"]
+    paths:
+      - "ops/miranda-release-v4"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: punctum-miranda-x100-release-v4
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_D1_API_TOKEN: ${{ secrets.CLOUDFLARE_D1_API_TOKEN }}
+      MIRANDA_ORIGIN: https://miranda.punctumpicture.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and build verified branch
+        id: build
+        env:
+          PUBLIC_SITE_URL: https://miranda.punctumpicture.com
+          SITE_ORIGIN: https://miranda.punctumpicture.com
+        run: |
+          set -euo pipefail
+          echo build >/tmp/miranda-v4-stage
+          npm ci
+          npm run build
+          npm install --global --no-audit --no-fund wrangler@4.125.0
+
+      - name: Resolve isolated D1
+        id: d1
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo d1 >/tmp/miranda-v4-stage
+          curl -fsS -H "Authorization: Bearer ${CLOUDFLARE_D1_API_TOKEN}" \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database" \
+            -o /tmp/miranda-v4-d1.json
+          DB_ID="$(jq -r '.result[]? | select(.name == "punctum-picture-miranda") | (.uuid // .id // empty)' /tmp/miranda-v4-d1.json | head -n1)"
+          test -n "$DB_ID"
+          echo "MIRANDA_DB_ID=$DB_ID" >> "$GITHUB_ENV"
+
+      - name: Patch generated Vinext config for Miranda
+        id: patch
+        run: |
+          set -euo pipefail
+          echo patch >/tmp/miranda-v4-stage
+          node <<'NODE'
+          import fs from 'node:fs';
+          const path = 'dist/server/wrangler.json';
+          const config = JSON.parse(fs.readFileSync(path, 'utf8'));
+          const origin = 'https://miranda.punctumpicture.com';
+          config.name = 'punctum-picture-miranda';
+          config.workers_dev = true;
+          config.preview_urls = true;
+          config.routes = [{ pattern: 'miranda.punctumpicture.com', custom_domain: true }];
+          delete config.env;
+          delete config.triggers;
+          config.d1_databases = [{ binding: 'DB', database_name: 'punctum-picture-miranda', database_id: process.env.MIRANDA_DB_ID }];
+          config.r2_buckets = [
+            { binding: 'ORIGINALS', bucket_name: 'punctum-picture-miranda-originals' },
+            { binding: 'BACKUPS', bucket_name: 'punctum-picture-miranda-backups' },
+          ];
+          config.images = { binding: 'IMAGES' };
+          config.vars = {
+            ENVIRONMENT: 'miranda',
+            SITE_ORIGIN: origin,
+            PUBLIC_SITE_URL: origin,
+            PUBLIC_WHATSAPP_E164: 'UNSPECIFIED',
+            PUBLIC_INSTAGRAM_URL: 'UNSPECIFIED',
+            MAX_UPLOAD_BYTES: '26214400',
+            ALLOWED_MIME_TYPES: 'image/jpeg,image/png,image/webp',
+            PRESIGNED_URL_TTL_SECONDS: '900',
+            CONTACT_RATE_LIMIT_WINDOW_SECONDS: '3600',
+            CONTACT_RATE_LIMIT_MAX: '5',
+            ADMIN_RATE_LIMIT_WINDOW_SECONDS: '60',
+            ADMIN_RATE_LIMIT_MAX: '60',
+            BACKUP_PREFIX: 'backups/d1',
+            BACKUP_RETENTION_DAYS: '180',
+            CLEANUP_ORPHAN_UPLOAD_AGE_HOURS: '24',
+            GIT_SHA: process.env.GITHUB_SHA || 'unknown',
+          };
+          fs.writeFileSync(path, JSON.stringify(config, null, 2) + '\n');
+          NODE
+
+      - name: Deploy only Miranda
+        id: deploy
+        run: |
+          set -euo pipefail
+          echo deploy >/tmp/miranda-v4-stage
+          wrangler deploy --config dist/server/wrangler.json
+
+      - name: Smoke test new experience
+        id: smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo smoke >/tmp/miranda-v4-stage
+          for attempt in $(seq 1 20); do
+            if curl -fsS "$MIRANDA_ORIGIN/" -o /tmp/miranda-v4-home.html && grep -q 'Histórias, não cartões.' /tmp/miranda-v4-home.html; then
+              break
+            fi
+            sleep 4
+          done
+          grep -q 'Histórias, não cartões.' /tmp/miranda-v4-home.html
+          curl -fsS "$MIRANDA_ORIGIN/api/public/stats" -o /tmp/miranda-v4-stats.json
+          jq -e '.stats.photoCount == 192 and .stats.albumCount == 16 and .stats.categoryCount == 7' /tmp/miranda-v4-stats.json >/dev/null
+
+      - name: Persist release result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p requests
+          cat > requests/miranda-release-v4-result.json <<EOF
+          {
+            "status": "${{ job.status }}",
+            "sourceCommit": "$GITHUB_SHA",
+            "branch": "miranda-editorial",
+            "domain": "https://miranda.punctumpicture.com",
+            "worker": "punctum-picture-miranda",
+            "stages": {
+              "build": "${{ steps.build.outcome }}",
+              "d1": "${{ steps.d1.outcome }}",
+              "patch": "${{ steps.patch.outcome }}",
+              "deploy": "${{ steps.deploy.outcome }}",
+              "smoke": "${{ steps.smoke.outcome }}"
+            },
+            "x100MarkerVerified": ${{ steps.smoke.outcome == 'success' }},
+            "productionDomainTouched": false
+          }
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add requests/miranda-release-v4-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record Miranda X100 v4 release"
+          git push origin HEAD:miranda-editorial
