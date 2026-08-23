@@ -1,0 +1,8 @@
+{
+  "nonce": 1,
+  "mode": "read-only-source-private-state-migration",
+  "source": "https://punctumpicture.com",
+  "destination": "isolated-cloudflare",
+  "activateStudio": false,
+  "touchDomain": false
+}
