@@ -1,0 +1,27 @@
+{
+  "status": "success",
+  "verifiedAt": "2026-08-23T19:54:00Z",
+  "domain": "punctumpicture.com",
+  "www": "www.punctumpicture.com",
+  "worker": "punctum-picture-migration",
+  "zoneStatus": "active",
+  "customDomainsAttached": true,
+  "rootHttp": 200,
+  "wwwHttp": 200,
+  "rootMatchesWorker": true,
+  "wwwMatchesWorker": true,
+  "adminPageHttp": 200,
+  "studioPageHttp": 200,
+  "adminLoginHttp": 200,
+  "adminMeHttp": 200,
+  "adminStudioHttp": 200,
+  "studioPreset": "aconchegante-organico",
+  "previousWebRecordCountBackedUp": 3,
+  "dnsCredential": "CLOUDFLARE_DNS_API_TOKEN",
+  "rollbackRequired": false,
+  "sourceSiteRetired": false,
+  "verification": [
+    "requests/cloudflare-domain-diagnose-result.json",
+    "requests/cloudflare-domain-admin-diagnose-result.json"
+  ]
+}
