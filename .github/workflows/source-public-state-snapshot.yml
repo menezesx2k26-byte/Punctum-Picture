@@ -17,7 +17,7 @@ concurrency:
 jobs:
   snapshot:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     env:
       ADMIN_PASSWORD_HASH: ${{ secrets.ADMIN_PASSWORD_HASH }}
       ADMIN_SESSION_SECRET: ${{ secrets.ADMIN_SESSION_SECRET }}
@@ -26,6 +26,9 @@ jobs:
       SOURCE_ADMIN_PASSWORD: ${{ secrets.SOURCE_ADMIN_PASSWORD }}
       PUNCTUM_ADMIN_EMAIL: ${{ secrets.PUNCTUM_ADMIN_EMAIL }}
       PUNCTUM_ADMIN_PASSWORD: ${{ secrets.PUNCTUM_ADMIN_PASSWORD }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_D1_API_TOKEN: ${{ secrets.CLOUDFLARE_D1_API_TOKEN }}
     steps:
       - uses: actions/checkout@v7
 
@@ -114,7 +117,20 @@ jobs:
           }));
           NODE
 
-      - name: Persist snapshot safely
+      - name: Optionally import snapshot to isolated Cloudflare
+        shell: bash
+        run: |
+          set -euo pipefail
+          if jq -e '.mode == "import-to-cloudflare"' requests/source-public-state.json >/dev/null; then
+            cp /tmp/source-public-state-result.json requests/source-public-state-result.json
+            npm install --global --no-audit --no-fund wrangler@4.125.0
+            node scripts/import-public-state.mjs
+          else
+            echo "snapshot-only mode"
+          fi
+
+      - name: Persist snapshot and import result safely
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
@@ -122,8 +138,13 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin main
           git reset --hard origin/main
-          cp /tmp/source-public-state-result.json requests/source-public-state-result.json
-          git add requests/source-public-state-result.json
+          if [ -f /tmp/source-public-state-result.json ]; then
+            cp /tmp/source-public-state-result.json requests/source-public-state-result.json
+          fi
+          if [ -f /tmp/cloudflare-import-public-state-v2-result.json ]; then
+            cp /tmp/cloudflare-import-public-state-v2-result.json requests/cloudflare-import-public-state-v2-result.json
+          fi
+          git add requests/source-public-state-result.json requests/cloudflare-import-public-state-v2-result.json 2>/dev/null || true
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "ci: record live public state snapshot"
+          git commit -m "ci: record live snapshot and isolated import"
           git push
