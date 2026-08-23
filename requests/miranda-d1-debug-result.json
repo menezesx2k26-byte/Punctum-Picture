@@ -1,0 +1,56 @@
+{
+  "status": "success",
+  "branch": "miranda-editorial",
+  "databaseName": "punctum-picture-miranda",
+  "productionDomainTouched": false,
+  "writesPerformed": 0,
+  "databaseId": "4e959036-a3f0-4faf-bda2-fca9b4c5e984",
+  "tables": [
+    "_cf_KV",
+    "admin_credentials",
+    "album_categories",
+    "albums",
+    "audit_log",
+    "backup_runs",
+    "categories",
+    "d1_migrations",
+    "images",
+    "inquiries",
+    "rate_limit_buckets",
+    "site_config",
+    "site_config_pointers",
+    "site_config_versions",
+    "site_settings",
+    "sqlite_sequence",
+    "upload_intents"
+  ],
+  "albums": {
+    "total": 17,
+    "published": 16,
+    "deleted": 0
+  },
+  "images": {
+    "total": 193,
+    "ready": 193,
+    "staticReady": 113,
+    "dynamicReady": 80,
+    "deleted": 0
+  },
+  "pointers": {
+    "total": 1,
+    "draftVersionId": "miranda-draft-git",
+    "publishedVersionId": "miranda-published-git"
+  },
+  "versions": {
+    "total": 2,
+    "drafts": 1,
+    "published": 1
+  },
+  "siteConfig": {
+    "total": 1,
+    "schemaVersion": 4
+  },
+  "albumImageJoin": {
+    "publicImages": 192
+  }
+}
