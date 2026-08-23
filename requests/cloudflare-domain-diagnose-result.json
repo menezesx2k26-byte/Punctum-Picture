@@ -1,6 +1,6 @@
 {
   "status": "success",
-  "checkedAt": "2026-08-23T19:57:00Z",
+  "checkedAt": "2026-08-23T22:10:53Z",
   "zoneStatus": "active",
   "dns": {
     "root": [
@@ -42,6 +42,13 @@
     "www": "200",
     "rootMatchesWorker": true,
     "wwwMatchesWorker": true
+  },
+  "hero": {
+    "http": "200",
+    "sha256": "84874a5332c2d73c9ba2a308a0b0110c52e9f6754f7051d477fd967f268846b8",
+    "expectedGitSha256": "60c907136abbd1aa38699061caca12a8878ce0478716efbc7237ba552e8d4604",
+    "bytes": 14773,
+    "matchesGit": false
   },
   "cloudflareStateChanged": false
 }
