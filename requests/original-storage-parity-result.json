@@ -1,0 +1,18 @@
+{
+  "status": "success",
+  "checkedAt": "2026-08-23T18:22:38.209Z",
+  "sourceReadOnly": true,
+  "destinationStorageReadOnly": true,
+  "readyImages": 193,
+  "matchedByteForByte": 193,
+  "mismatches": 0,
+  "storage": {
+    "staticGit": 113,
+    "r2": 80
+  },
+  "sourceBytes": 274972089,
+  "storedBytes": 274972089,
+  "mismatchDetails": [],
+  "domainTouched": false,
+  "publicStudioActivated": false
+}
