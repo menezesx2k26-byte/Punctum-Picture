@@ -1,0 +1,182 @@
+name: Backup live dynamic Punctum photos
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "requests/source-dynamic-photo-backup.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: punctum-source-dynamic-photo-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Download dynamic source photos
+        shell: bash
+        run: |
+          set -uo pipefail
+          rm -rf .source-dynamic-photo-backup
+          mkdir -p .source-dynamic-photo-backup/photos requests
+
+          set +e
+          node --input-type=module <<'NODE' > /tmp/source-dynamic-photo-backup.log 2>&1
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import crypto from 'node:crypto';
+
+          const ORIGIN = 'https://punctumpicture.com';
+          const archiveUrl = `${ORIGIN}/api/public/archive`;
+          const response = await fetch(archiveUrl, { headers: { accept: 'application/json' } });
+          if (!response.ok) throw new Error(`archive_http_${response.status}`);
+          const payload = await response.json();
+          const allImages = payload.images ?? [];
+          if (!Array.isArray(allImages)) throw new Error('archive_invalid');
+          const images = allImages.filter(image => image?.id && !String(image.id).startsWith('static-'));
+          console.log(`archive_total=${allImages.length}`);
+          console.log(`dynamic_images=${images.length}`);
+          if (images.length !== 80) throw new Error(`unexpected_dynamic_count_${images.length}`);
+
+          const extFromType = (type) => {
+            const t = (type || '').split(';')[0].trim().toLowerCase();
+            if (t === 'image/jpeg') return 'jpg';
+            if (t === 'image/png') return 'png';
+            if (t === 'image/webp') return 'webp';
+            if (t === 'image/avif') return 'avif';
+            if (t === 'image/gif') return 'gif';
+            return 'bin';
+          };
+          const safe = value => String(value || 'sem-album').replace(/[^a-zA-Z0-9._-]+/g, '-');
+          const manifest = [];
+          let cursor = 0;
+
+          async function fetchSource(image) {
+            const id = String(image.id);
+            const url = `${ORIGIN}/media/${encodeURIComponent(id)}/gallery`;
+            let last;
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              try {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 45000);
+                const r = await fetch(url, {
+                  headers: { accept: 'image/jpeg' },
+                  redirect: 'follow',
+                  signal: controller.signal,
+                });
+                clearTimeout(timer);
+                if (!r.ok) throw new Error(`http_${r.status}`);
+                const bytes = Buffer.from(await r.arrayBuffer());
+                return { url, bytes, contentType: r.headers.get('content-type') || 'application/octet-stream' };
+              } catch (error) {
+                last = error;
+                console.log(`retry id=${id} attempt=${attempt} error=${error instanceof Error ? error.message : String(error)}`);
+                await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+              }
+            }
+            throw new Error(`download_failed_${id}_${last instanceof Error ? last.message : String(last)}`);
+          }
+
+          async function worker() {
+            while (true) {
+              const index = cursor++;
+              if (index >= images.length) return;
+              const image = images[index];
+              const id = String(image.id);
+              const { url, bytes, contentType } = await fetchSource(image);
+              const ext = extFromType(contentType);
+              const albumSlug = safe(image.albumSlug || 'sem-album');
+              const dir = path.join('.source-dynamic-photo-backup', 'photos', albumSlug);
+              fs.mkdirSync(dir, { recursive: true });
+              const relativePath = path.join('photos', albumSlug, `${safe(id)}.${ext}`).replaceAll('\\', '/');
+              fs.writeFileSync(path.join('.source-dynamic-photo-backup', relativePath), bytes);
+              manifest.push({
+                id,
+                albumSlug: image.albumSlug ?? null,
+                albumTitle: image.albumTitle ?? null,
+                altText: image.altText ?? null,
+                categories: image.categories ?? [],
+                sourceUrl: url,
+                relativePath,
+                contentType,
+                bytes: bytes.length,
+                sha256: crypto.createHash('sha256').update(bytes).digest('hex'),
+              });
+              if (manifest.length % 10 === 0) console.log(`downloaded=${manifest.length}/${images.length}`);
+            }
+          }
+
+          await Promise.all(Array.from({ length: 12 }, () => worker()));
+          manifest.sort((a,b) => (a.albumSlug || '').localeCompare(b.albumSlug || '') || a.id.localeCompare(b.id));
+          const totalBytes = manifest.reduce((sum, item) => sum + item.bytes, 0);
+          const report = {
+            format: 'punctum-dynamic-source-photo-backup-v1',
+            capturedAt: new Date().toISOString(),
+            origin: ORIGIN,
+            publicArchiveCount: allImages.length,
+            dynamicImageCount: manifest.length,
+            totalBytes,
+            fidelityEvidence: 'A preflight probe showed identical SHA-256 and bytes for card/gallery/hero on a dynamic image, proving Sites serves source R2 bytes without transformation.',
+          };
+          fs.writeFileSync('.source-dynamic-photo-backup/manifest.json', JSON.stringify({ ...report, images: manifest }, null, 2) + '\n');
+          fs.writeFileSync('.source-dynamic-photo-backup/report.json', JSON.stringify(report, null, 2) + '\n');
+          console.log(JSON.stringify(report));
+          NODE
+          status=$?
+          set -e
+          cat /tmp/source-dynamic-photo-backup.log
+          if [ "$status" -ne 0 ]; then
+            detail="$(tail -n 60 /tmp/source-dynamic-photo-backup.log | cut -c1-5000)"
+            jq -n --arg detail "$detail" '{status:"failed",error:"dynamic_source_download_failed",detail:$detail}' > requests/source-dynamic-photo-backup-result.json
+            exit "$status"
+          fi
+
+      - name: Upload dynamic source backup artifact
+        id: artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: punctum-dynamic-source-photos
+          path: .source-dynamic-photo-backup/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+      - name: Record artifact handoff
+        if: success()
+        env:
+          ARTIFACT_ID: ${{ steps.artifact.outputs.artifact-id }}
+          ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
+        run: |
+          jq --arg artifactId "$ARTIFACT_ID" --arg artifactUrl "$ARTIFACT_URL" \
+            '. + {status:"success",artifactId:$artifactId,artifactUrl:$artifactUrl}' \
+            .source-dynamic-photo-backup/report.json > requests/source-dynamic-photo-backup-result.json
+
+      - name: Persist result safely
+        if: always()
+        run: |
+          if [ ! -f requests/source-dynamic-photo-backup-result.json ]; then
+            printf '%s\n' '{"status":"failed","error":"dynamic_backup_failed_before_result"}' > requests/source-dynamic-photo-backup-result.json
+          fi
+          cp requests/source-dynamic-photo-backup-result.json /tmp/source-dynamic-photo-backup-result.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git reset --hard origin/main
+          cp /tmp/source-dynamic-photo-backup-result.json requests/source-dynamic-photo-backup-result.json
+          git add requests/source-dynamic-photo-backup-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record dynamic source photo backup"
+          git push
