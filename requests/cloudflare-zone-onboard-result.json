@@ -1,0 +1,12 @@
+{
+  "status": "failed",
+  "error": "zone_create_failed",
+  "http": "403",
+  "cloudflareErrors": [
+    {
+      "code": 0,
+      "message": "Requires permission \"com.cloudflare.api.account.zone.create\" to create zones for the selected account"
+    }
+  ],
+  "domainTouched": false
+}
