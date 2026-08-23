@@ -2,26 +2,67 @@ name: Cloudflare migration probe
 
 on:
   workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "requests/cloudflare-probe.json"
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: cloudflare-migration-probe
+  cancel-in-progress: true
 
 jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           package-manager-cache: false
       - name: Install trusted Wrangler
         run: npm install --global --no-audit --no-fund wrangler@4.112.0
-      - name: Verify destination Cloudflare access
+      - name: Run read-only probe
+        id: probe
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          set -euo pipefail
-          wrangler whoami
-          wrangler d1 list
-          wrangler r2 bucket list
+          set +e
+          whoami_ok=false
+          d1_ok=false
+          r2_ok=false
+
+          wrangler whoami >/tmp/whoami.txt 2>&1 && whoami_ok=true
+          wrangler d1 list >/tmp/d1.txt 2>&1 && d1_ok=true
+          wrangler r2 bucket list >/tmp/r2.txt 2>&1 && r2_ok=true
+
+          overall=false
+          if [ "$whoami_ok" = true ] && [ "$d1_ok" = true ] && [ "$r2_ok" = true ]; then
+            overall=true
+          fi
+
+          mkdir -p requests
+          cat > requests/cloudflare-probe-result.json <<EOF
+          {
+            "checked_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "source_commit": "${GITHUB_SHA}",
+            "whoami": ${whoami_ok},
+            "d1_read": ${d1_ok},
+            "r2_read": ${r2_ok},
+            "overall": ${overall}
+          }
+          EOF
+      - name: Persist sanitized result
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add requests/cloudflare-probe-result.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "ci: record Cloudflare migration probe result"
+          git push
