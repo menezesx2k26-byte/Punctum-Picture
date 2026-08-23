@@ -1,16 +1,16 @@
 {
-  "checked_at": "2026-08-23T03:11:22Z",
-  "source_commit": "0b626bc82d782d0b5414ee3cee12e2c46da49f29",
+  "checked_at": "2026-08-23T03:15:19Z",
+  "source_commit": "41a39b8ac7a9fad22eb04f2c220e4ba70900cbb9",
   "whoami": true,
-  "d1_read": false,
+  "d1_read": true,
   "r2_read": true,
-  "overall": false,
-  "d1_token_present": false,
-  "d1_token_kind": "missing",
-  "d1_token_verify": false,
-  "d1_token_status": "unknown",
-  "d1_verify_http": "000",
-  "d1_error": "http=401 {\"result\":null,\"success\":false,\"errors\":[{\"code\":10000,\"message\":\"Authentication error\"}],\"messages\":[]}",
+  "overall": true,
+  "d1_token_present": true,
+  "d1_token_kind": "account",
+  "d1_token_verify": true,
+  "d1_token_status": "active",
+  "d1_verify_http": "200",
+  "d1_error": null,
   "r2_error": null,
-  "d1_verify_error": "http=000 {\"success\":false,\"errors\":[{\"message\":\"D1 secret missing\"}]} "
+  "d1_verify_error": null
 }
