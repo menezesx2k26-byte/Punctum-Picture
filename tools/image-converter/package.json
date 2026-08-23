@@ -1,0 +1,11 @@
+{
+  "name": "punctum-image-converter",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "convert": "node cli.mjs"
+  },
+  "dependencies": {
+    "sharp": "^0.34.3"
+  }
+}
