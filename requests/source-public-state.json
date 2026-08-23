@@ -1,5 +1,5 @@
 {
-  "nonce": 18,
+  "nonce": 19,
   "mode": "snapshot-only",
   "origin": "https://punctumpicture.com",
   "privateMigration": false,
@@ -7,7 +7,8 @@
   "adminParityAudit": false,
   "probePendingMedia": false,
   "mediaByteParityAudit": false,
-  "originalStorageParityAudit": true,
+  "originalStorageParityAudit": false,
+  "destinationD1Checkpoint": true,
   "domain_touched": false,
   "site_config_activate": false
 }
