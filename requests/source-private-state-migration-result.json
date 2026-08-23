@@ -1,0 +1,45 @@
+{
+  "status": "success",
+  "migratedAt": "2026-08-23T16:48:00.302Z",
+  "sourceReadOnly": true,
+  "destinationDatabaseId": "22697f13-7484-41e3-9441-f7b902c6577a",
+  "privateSnapshotBackupKey": "migration/source-private-state/2026-08-23T16-46-45-455Z.json",
+  "privateSnapshotSha256": "6bdd948d95beead75fdb23fb45b04902214cbc8e07c011ceebb0a69cf88d0d5e",
+  "counts": {
+    "albums": 17,
+    "albumStatuses": {
+      "published": 16,
+      "draft": 1
+    },
+    "images": 200,
+    "imageStatuses": {
+      "ready": 193,
+      "pending": 7
+    },
+    "publicImages": 192,
+    "privateReadyImages": 1,
+    "privateReadyUploaded": 0,
+    "unavailablePrivateImages": 7,
+    "categories": 10,
+    "inquiries": 1,
+    "studioHistorySummaries": 3
+  },
+  "studio": {
+    "draftCapturedToPrivateBackup": true,
+    "draftActivatedInDestination": false,
+    "hasUnpublishedChanges": false,
+    "revision": 11
+  },
+  "inquiriesPossiblyTruncated": false,
+  "forensicParityComplete": false,
+  "remainingRawD1Requirements": [
+    "audit_log",
+    "soft-deleted rows",
+    "upload_intents full table",
+    "admin_credentials",
+    "site_config_versions historical config_json bodies",
+    "site_config_pointers exact source IDs/timestamps",
+    "operational tables such as backup_runs/rate_limit_buckets"
+  ],
+  "domainTouched": false
+}
