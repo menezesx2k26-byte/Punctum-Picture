@@ -9,6 +9,12 @@ const BACKUP_TABLES = [
   "upload_intents",
   "inquiries",
   "audit_log",
+  "admin_credentials",
+  "rate_limit_buckets",
+  "backup_runs",
+  "site_config",
+  "site_config_versions",
+  "site_config_pointers",
 ] as const;
 
 async function logicalBackup(env: Env): Promise<void> {
