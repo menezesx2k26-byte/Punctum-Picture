@@ -1,6 +1,6 @@
 {
   "format": "punctum-live-public-state-v1",
-  "capturedAt": "2026-08-23T17:43:06.346Z",
+  "capturedAt": "2026-08-23T18:15:57.197Z",
   "origin": "https://punctumpicture.com",
   "counts": {
     "categories": 10,
@@ -5748,5 +5748,5 @@
       }
     ]
   },
-  "sha256": "70400e65ce20b610bd0ab1fe478aaee719476f2838516d1a7de977fa2132a369"
+  "sha256": "ae326983052a57d4fd70e636be0193f3cf21a3ac65c2941e41bcafd0c8e20b8a"
 }
