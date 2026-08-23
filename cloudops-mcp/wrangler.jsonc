@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "punctum-cloudops-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "punctum-media"
+    }
+  ],
+  "vars": {
+    "GITHUB_OWNER": "menezesx2k26-byte",
+    "GITHUB_REPO": "Punctum-Picture",
+    "ALLOWED_BRANCH_PREFIX": "miranda-"
+  }
+}
