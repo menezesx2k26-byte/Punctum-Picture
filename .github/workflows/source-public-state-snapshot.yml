@@ -146,6 +146,16 @@ jobs:
             echo "destination admin bootstrap skipped"
           fi
 
+      - name: Optionally audit authenticated private parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          if jq -e '.adminParityAudit == true' requests/source-public-state.json >/dev/null; then
+            node scripts/audit-private-admin-parity.mjs
+          else
+            echo "private admin parity audit skipped"
+          fi
+
       - name: Persist sanitized results safely
         if: always()
         shell: bash
@@ -159,7 +169,8 @@ jobs:
           if [ -f /tmp/cloudflare-import-public-state-v2-result.json ]; then cp /tmp/cloudflare-import-public-state-v2-result.json requests/cloudflare-import-public-state-v2-result.json; fi
           if [ -f /tmp/source-private-state-migration-result.json ]; then cp /tmp/source-private-state-migration-result.json requests/source-private-state-migration-result.json; fi
           if [ -f /tmp/destination-admin-bootstrap-result.json ]; then cp /tmp/destination-admin-bootstrap-result.json requests/destination-admin-bootstrap-result.json; fi
-          git add requests/source-public-state-result.json requests/cloudflare-import-public-state-v2-result.json requests/source-private-state-migration-result.json requests/destination-admin-bootstrap-result.json 2>/dev/null || true
+          if [ -f /tmp/private-admin-parity-result.json ]; then cp /tmp/private-admin-parity-result.json requests/private-admin-parity-result.json; fi
+          git add requests/source-public-state-result.json requests/cloudflare-import-public-state-v2-result.json requests/source-private-state-migration-result.json requests/destination-admin-bootstrap-result.json requests/private-admin-parity-result.json 2>/dev/null || true
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "ci: record live snapshot and migration results"
           git push
