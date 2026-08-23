@@ -5,7 +5,7 @@
   "zoneFound": true,
   "detailHttp": "200",
   "dnsHttp": "403",
-  "zoneStatus": "pending",
+  "zoneStatus": "active",
   "assignedNameServers": [
     "nia.ns.cloudflare.com",
     "pedro.ns.cloudflare.com"
