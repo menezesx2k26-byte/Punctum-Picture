@@ -1,6 +1,18 @@
 {
   "status": "failed",
   "branch": "miranda-editorial",
-  "stage": "verify-d1",
+  "stage": "deploy",
+  "d1Validation": {
+    "httpStatus": 200,
+    "success": true,
+    "row": {
+      "publishedAlbums": 16,
+      "publicImages": 192,
+      "dynamicReady": 80,
+      "pointers": 1,
+      "schemaVersion": 4
+    },
+    "errors": []
+  },
   "productionDomainTouched": false
 }
