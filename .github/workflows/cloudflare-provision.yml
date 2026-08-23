@@ -1,0 +1,176 @@
+name: Provision Punctum destination
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "requests/cloudflare-provision.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: punctum-cloudflare-provision
+  cancel-in-progress: false
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Install trusted Wrangler
+        run: npm install --global --no-audit --no-fund wrangler@4.112.0
+
+      - name: Provision isolated Cloudflare destination
+        id: provision
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p requests .migration
+
+          cat > requests/cloudflare-provision-result.json <<'EOF'
+          {
+            "status": "running",
+            "d1": false,
+            "r2_originals": false,
+            "r2_backups": false,
+            "migrations": false,
+            "worker": false,
+            "worker_name": "punctum-picture-migration",
+            "domain_touched": false
+          }
+          EOF
+
+          fail() {
+            message="$1"
+            jq --arg message "$message" '.status="failed" | .error=$message' requests/cloudflare-provision-result.json > /tmp/result.json
+            mv /tmp/result.json requests/cloudflare-provision-result.json
+            exit 1
+          }
+
+          # Read-only preflight. No resource is created unless both storage APIs are readable.
+          wrangler whoami >/tmp/whoami.txt 2>&1 || fail "cloudflare_auth_failed"
+          wrangler d1 list --json >/tmp/d1.json 2>/tmp/d1.err || fail "d1_read_failed"
+          wrangler r2 bucket list >/tmp/r2.txt 2>/tmp/r2.err || fail "r2_read_failed"
+
+          # D1: create only if absent.
+          if ! jq -e '.[] | select(.name == "punctum-picture")' /tmp/d1.json >/dev/null; then
+            wrangler d1 create punctum-picture >/tmp/d1-create.txt 2>&1 || fail "d1_create_failed"
+            wrangler d1 list --json >/tmp/d1.json 2>/tmp/d1.err || fail "d1_refresh_failed"
+          fi
+
+          DB_ID="$(jq -r '.[] | select(.name == "punctum-picture") | (.uuid // .id // .database_id // empty)' /tmp/d1.json | head -n1)"
+          [ -n "$DB_ID" ] || fail "d1_id_missing"
+          jq --arg id "$DB_ID" '.d1=true | .d1_database_name="punctum-picture" | .d1_database_id=$id' requests/cloudflare-provision-result.json > /tmp/result.json
+          mv /tmp/result.json requests/cloudflare-provision-result.json
+
+          # R2: private buckets, create only if absent.
+          if ! wrangler r2 bucket info punctum-picture-originals --json >/tmp/r2-originals.json 2>/tmp/r2-originals.err; then
+            wrangler r2 bucket create punctum-picture-originals >/tmp/r2-originals-create.txt 2>&1 || fail "r2_originals_create_failed"
+          fi
+          wrangler r2 bucket info punctum-picture-originals --json >/tmp/r2-originals.json 2>/tmp/r2-originals.err || fail "r2_originals_verify_failed"
+          jq '.r2_originals=true | .r2_originals_bucket="punctum-picture-originals"' requests/cloudflare-provision-result.json > /tmp/result.json
+          mv /tmp/result.json requests/cloudflare-provision-result.json
+
+          if ! wrangler r2 bucket info punctum-picture-backups --json >/tmp/r2-backups.json 2>/tmp/r2-backups.err; then
+            wrangler r2 bucket create punctum-picture-backups >/tmp/r2-backups-create.txt 2>&1 || fail "r2_backups_create_failed"
+          fi
+          wrangler r2 bucket info punctum-picture-backups --json >/tmp/r2-backups.json 2>/tmp/r2-backups.err || fail "r2_backups_verify_failed"
+          jq '.r2_backups=true | .r2_backups_bucket="punctum-picture-backups"' requests/cloudflare-provision-result.json > /tmp/result.json
+          mv /tmp/result.json requests/cloudflare-provision-result.json
+
+          # Build an EPHEMERAL Wrangler config. It deliberately has NO custom-domain routes or cron triggers.
+          DB_ID="$DB_ID" node <<'NODE'
+          import fs from 'node:fs';
+          const databaseId = process.env.DB_ID;
+          const config = {
+            "$schema": "./node_modules/wrangler/config-schema.json",
+            "name": "punctum-picture-migration",
+            "main": "worker/index.ts",
+            "compatibility_date": "2026-05-22",
+            "compatibility_flags": ["nodejs_compat"],
+            "workers_dev": true,
+            "assets": {
+              "directory": "./dist/client",
+              "binding": "ASSETS",
+              "not_found_handling": "single-page-application",
+              "run_worker_first": ["/api/*", "/admin/*", "/media/*", "/sitemap.xml", "/robots.txt"]
+            },
+            "d1_databases": [{
+              "binding": "DB",
+              "database_name": "punctum-picture",
+              "database_id": databaseId,
+              "migrations_dir": "migrations"
+            }],
+            "r2_buckets": [
+              { "binding": "ORIGINALS", "bucket_name": "punctum-picture-originals" },
+              { "binding": "BACKUPS", "bucket_name": "punctum-picture-backups" }
+            ],
+            "images": { "binding": "IMAGES" },
+            "observability": { "enabled": true },
+            "vars": {
+              "ENVIRONMENT": "migration",
+              "SITE_ORIGIN": "https://migration.invalid",
+              "PUBLIC_SITE_URL": "https://migration.invalid",
+              "PUBLIC_WHATSAPP_E164": "UNSPECIFIED",
+              "PUBLIC_INSTAGRAM_URL": "UNSPECIFIED",
+              "MAX_UPLOAD_BYTES": "26214400",
+              "ALLOWED_MIME_TYPES": "image/jpeg,image/png,image/webp",
+              "PRESIGNED_URL_TTL_SECONDS": "900",
+              "CONTACT_RATE_LIMIT_WINDOW_SECONDS": "3600",
+              "CONTACT_RATE_LIMIT_MAX": "5",
+              "ADMIN_RATE_LIMIT_WINDOW_SECONDS": "60",
+              "ADMIN_RATE_LIMIT_MAX": "60",
+              "BACKUP_PREFIX": "backups/d1",
+              "BACKUP_RETENTION_DAYS": "180",
+              "CLEANUP_ORPHAN_UPLOAD_AGE_HOURS": "24"
+            }
+          };
+          fs.writeFileSync('.migration/wrangler.jsonc', JSON.stringify(config, null, 2) + '\n');
+          fs.copyFileSync('.migration/wrangler.jsonc', 'wrangler.jsonc');
+          NODE
+
+          # Initialize only the NEW destination database.
+          wrangler d1 migrations apply punctum-picture --remote --config wrangler.jsonc >/tmp/migrations.txt 2>&1 || fail "d1_migrations_failed"
+          jq '.migrations=true' requests/cloudflare-provision-result.json > /tmp/result.json
+          mv /tmp/result.json requests/cloudflare-provision-result.json
+
+          # Build and deploy ONLY to workers.dev. No punctumpicture.com route exists in this config.
+          npm ci
+          npm run typecheck
+          npm run lint
+          npm test
+          npm run build
+          wrangler deploy --config wrangler.jsonc 2>&1 | tee /tmp/deploy.txt || fail "worker_deploy_failed"
+
+          WORKER_URL="$(grep -Eo 'https://[^ ]+\.workers\.dev' /tmp/deploy.txt | tail -n1 || true)"
+          jq --arg url "$WORKER_URL" '.status="success" | .worker=true | .worker_url=(if $url == "" then null else $url end) | .domain_touched=false' requests/cloudflare-provision-result.json > /tmp/result.json
+          mv /tmp/result.json requests/cloudflare-provision-result.json
+
+      - name: Persist sanitized provisioning result
+        if: always()
+        run: |
+          if [ ! -f requests/cloudflare-provision-result.json ]; then
+            cat > requests/cloudflare-provision-result.json <<'EOF'
+          {"status":"failed","error":"workflow_failed_before_result","domain_touched":false}
+          EOF
+          fi
+          git restore --worktree --staged wrangler.jsonc 2>/dev/null || true
+          rm -rf .migration
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add requests/cloudflare-provision-result.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "ci: record Punctum Cloudflare provisioning result"
+          git push
