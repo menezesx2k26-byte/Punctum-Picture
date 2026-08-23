@@ -51,6 +51,17 @@ jobs:
           if [ "$ROOT_HTTP" = "200" ] && jq -e '.stats.photoCount == 192 and .stats.albumCount == 16' /tmp/root-body >/dev/null 2>&1; then ROOT_OK=true; fi
           if [ "$WWW_HTTP" = "200" ] && jq -e '.stats.photoCount == 192 and .stats.albumCount == 16' /tmp/www-body >/dev/null 2>&1; then WWW_OK=true; fi
 
+          EXPECTED_HERO_SHA='60c907136abbd1aa38699061caca12a8878ce0478716efbc7237ba552e8d4604'
+          HERO_HTTP="$(curl -sS -L --max-time 20 -o /tmp/hero-p001.jpg -w '%{http_code}' 'https://punctumpicture.com/photos/p001.jpg?verify=5716bd0d' || true)"
+          HERO_SHA=''
+          HERO_BYTES=0
+          HERO_MATCH=false
+          if [ "$HERO_HTTP" = "200" ] && [ -s /tmp/hero-p001.jpg ]; then
+            HERO_SHA="$(sha256sum /tmp/hero-p001.jpg | awk '{print $1}')"
+            HERO_BYTES="$(wc -c < /tmp/hero-p001.jpg | tr -d ' ')"
+            if [ "$HERO_SHA" = "$EXPECTED_HERO_SHA" ]; then HERO_MATCH=true; fi
+          fi
+
           ROOT_RECORDS="$(jq -c '[.result[] | {type,name,content,proxied,ttl}]' /tmp/dns-punctumpicture.com.json)"
           WWW_RECORDS="$(jq -c '[.result[] | {type,name,content,proxied,ttl}]' /tmp/dns-www.punctumpicture.com.json)"
           WORKER_DOMAINS='[]'
@@ -64,12 +75,17 @@ jobs:
             --arg domainsHttp "$DOMAINS_HTTP" \
             --arg rootHttp "$ROOT_HTTP" \
             --arg wwwHttp "$WWW_HTTP" \
+            --arg heroHttp "$HERO_HTTP" \
+            --arg heroSha "$HERO_SHA" \
+            --arg expectedHeroSha "$EXPECTED_HERO_SHA" \
+            --argjson heroBytes "$HERO_BYTES" \
+            --argjson heroMatchesGit "$HERO_MATCH" \
             --argjson rootOk "$ROOT_OK" \
             --argjson wwwOk "$WWW_OK" \
             --argjson rootRecords "$ROOT_RECORDS" \
             --argjson wwwRecords "$WWW_RECORDS" \
             --argjson workerDomains "$WORKER_DOMAINS" \
-            '{status:"success",checkedAt:$checkedAt,zoneStatus:$zoneStatus,dns:{root:$rootRecords,www:$wwwRecords},workerDomainsHttp:$domainsHttp,workerDomains:$workerDomains,http:{root:$rootHttp,www:$wwwHttp,rootMatchesWorker:$rootOk,wwwMatchesWorker:$wwwOk},cloudflareStateChanged:false}' \
+            '{status:"success",checkedAt:$checkedAt,zoneStatus:$zoneStatus,dns:{root:$rootRecords,www:$wwwRecords},workerDomainsHttp:$domainsHttp,workerDomains:$workerDomains,http:{root:$rootHttp,www:$wwwHttp,rootMatchesWorker:$rootOk,wwwMatchesWorker:$wwwOk},hero:{http:$heroHttp,sha256:$heroSha,expectedGitSha256:$expectedHeroSha,bytes:$heroBytes,matchesGit:$heroMatchesGit},cloudflareStateChanged:false}' \
             > /tmp/domain-diagnose-result.json
 
       - name: Persist sanitized result
