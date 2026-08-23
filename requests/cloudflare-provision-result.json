@@ -1,0 +1,11 @@
+{
+  "status": "failed",
+  "d1": false,
+  "r2_originals": false,
+  "r2_backups": false,
+  "migrations": false,
+  "worker": false,
+  "worker_name": "punctum-picture-migration",
+  "domain_touched": false,
+  "error": "d1_read_failed"
+}
