@@ -1,0 +1,257 @@
+name: Audit live Punctum parity
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "requests/live-parity-audit.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: punctum-live-parity-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Compare production site with isolated workers.dev state
+        env:
+          PROD_ORIGIN: https://punctumpicture.com
+          DEST_ORIGIN: https://punctum-picture-migration.menezesx2k26.workers.dev
+        run: |
+          mkdir -p requests
+          node <<'NODE'
+          import fs from 'node:fs';
+          import crypto from 'node:crypto';
+
+          const prod = process.env.PROD_ORIGIN;
+          const dest = process.env.DEST_ORIGIN;
+          const timeoutMs = 30000;
+
+          const hash = (value) => crypto.createHash('sha256').update(value).digest('hex');
+          const truncate = (value, max = 500) => {
+            const s = typeof value === 'string' ? value : JSON.stringify(value);
+            return s.length <= max ? s : `${s.slice(0, max)}…`;
+          };
+
+          async function fetchText(url, redirect = 'follow') {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+              const res = await fetch(url, {
+                redirect,
+                signal: controller.signal,
+                headers: { 'user-agent': 'Punctum-Parity-Audit/1.0' },
+              });
+              const text = await res.text();
+              return {
+                ok: true,
+                status: res.status,
+                finalUrl: res.url,
+                location: res.headers.get('location'),
+                contentType: res.headers.get('content-type'),
+                cacheControl: res.headers.get('cache-control'),
+                text,
+              };
+            } catch (error) {
+              return { ok: false, error: error instanceof Error ? error.message : String(error), text: '' };
+            } finally {
+              clearTimeout(timer);
+            }
+          }
+
+          function htmlSummary(response) {
+            if (!response.ok) return response;
+            const title = response.text.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.replace(/\s+/g, ' ').trim() ?? null;
+            const assets = [...response.text.matchAll(/(?:src|href)=["']([^"']+)["']/gi)]
+              .map((m) => m[1])
+              .filter((v) => v.startsWith('/') || v.startsWith('http'))
+              .sort();
+            return {
+              ok: true,
+              status: response.status,
+              finalUrl: response.finalUrl,
+              location: response.location,
+              contentType: response.contentType,
+              cacheControl: response.cacheControl,
+              title,
+              bodyBytes: Buffer.byteLength(response.text),
+              bodySha256: hash(response.text),
+              assetRefs: [...new Set(assets)],
+            };
+          }
+
+          function normalize(value) {
+            if (Array.isArray(value)) return value.map(normalize);
+            if (value && typeof value === 'object') {
+              return Object.fromEntries(Object.keys(value).sort().map((k) => [k, normalize(value[k])]));
+            }
+            return value;
+          }
+
+          function deepDiff(a, b, path = '$', out = []) {
+            if (out.length >= 500) return out;
+            if (Object.is(a, b)) return out;
+            if (typeof a !== typeof b || a === null || b === null) {
+              out.push({ path, production: truncate(a), destination: truncate(b) });
+              return out;
+            }
+            if (Array.isArray(a) || Array.isArray(b)) {
+              if (!Array.isArray(a) || !Array.isArray(b)) {
+                out.push({ path, production: truncate(a), destination: truncate(b) });
+                return out;
+              }
+              const max = Math.max(a.length, b.length);
+              for (let i = 0; i < max && out.length < 500; i++) {
+                if (i >= a.length || i >= b.length) out.push({ path: `${path}[${i}]`, production: truncate(a[i]), destination: truncate(b[i]) });
+                else deepDiff(a[i], b[i], `${path}[${i}]`, out);
+              }
+              return out;
+            }
+            if (typeof a === 'object') {
+              const keys = [...new Set([...Object.keys(a), ...Object.keys(b)])].sort();
+              for (const key of keys) {
+                if (!(key in a) || !(key in b)) out.push({ path: `${path}.${key}`, production: truncate(a[key]), destination: truncate(b[key]) });
+                else deepDiff(a[key], b[key], `${path}.${key}`, out);
+                if (out.length >= 500) break;
+              }
+              return out;
+            }
+            out.push({ path, production: truncate(a), destination: truncate(b) });
+            return out;
+          }
+
+          async function jsonPair(path) {
+            const [p, d] = await Promise.all([fetchText(`${prod}${path}`), fetchText(`${dest}${path}`)]);
+            const parse = (r) => {
+              if (!r.ok) return { transportError: r.error };
+              try { return JSON.parse(r.text); } catch { return { parseError: true, status: r.status, body: truncate(r.text, 1000) }; }
+            };
+            const pj = parse(p), dj = parse(d);
+            const pn = normalize(pj), dn = normalize(dj);
+            const diffs = deepDiff(pn, dn);
+            return {
+              path,
+              productionStatus: p.status ?? null,
+              destinationStatus: d.status ?? null,
+              equal: diffs.length === 0,
+              diffCount: diffs.length,
+              diffs,
+              productionSha256: hash(JSON.stringify(pn)),
+              destinationSha256: hash(JSON.stringify(dn)),
+            };
+          }
+
+          function setDiff(left = [], right = []) {
+            const l = new Set(left), r = new Set(right);
+            return {
+              onlyProduction: [...l].filter((x) => !r.has(x)).sort(),
+              onlyDestination: [...r].filter((x) => !l.has(x)).sort(),
+            };
+          }
+
+          const routePaths = ['/', '/acesso', '/admin', '/admin/studio'];
+          const routes = {};
+          for (const path of routePaths) {
+            const [pManual, dManual, pFollow, dFollow] = await Promise.all([
+              fetchText(`${prod}${path}`, 'manual'),
+              fetchText(`${dest}${path}`, 'manual'),
+              fetchText(`${prod}${path}`, 'follow'),
+              fetchText(`${dest}${path}`, 'follow'),
+            ]);
+            const ps = htmlSummary(pFollow), ds = htmlSummary(dFollow);
+            routes[path] = {
+              productionInitial: { status: pManual.status ?? null, location: pManual.location ?? null, error: pManual.error ?? null },
+              destinationInitial: { status: dManual.status ?? null, location: dManual.location ?? null, error: dManual.error ?? null },
+              production: ps,
+              destination: ds,
+              sameFinalStatus: ps.status === ds.status,
+              sameTitle: ps.title === ds.title,
+              sameBodyHash: ps.bodySha256 === ds.bodySha256,
+              assets: setDiff(ps.assetRefs ?? [], ds.assetRefs ?? []),
+            };
+          }
+
+          const jsonPaths = [
+            '/api/public/site',
+            '/api/public/stats',
+            '/api/public/albums?limit=100',
+            '/api/public/archive',
+          ];
+          const api = {};
+          for (const path of jsonPaths) api[path] = await jsonPair(path);
+
+          const textPaths = ['/sitemap.xml', '/robots.txt'];
+          const text = {};
+          for (const path of textPaths) {
+            const [p, d] = await Promise.all([fetchText(`${prod}${path}`), fetchText(`${dest}${path}`)]);
+            text[path] = {
+              productionStatus: p.status ?? null,
+              destinationStatus: d.status ?? null,
+              equal: p.text === d.text,
+              productionSha256: hash(p.text),
+              destinationSha256: hash(d.text),
+              productionBytes: Buffer.byteLength(p.text),
+              destinationBytes: Buffer.byteLength(d.text),
+              productionExcerpt: truncate(p.text, 1500),
+              destinationExcerpt: truncate(d.text, 1500),
+            };
+          }
+
+          const siteDiffs = api['/api/public/site']?.diffs ?? [];
+          const statsDiffs = api['/api/public/stats']?.diffs ?? [];
+          const albumsDiffs = api['/api/public/albums?limit=100']?.diffs ?? [];
+          const archiveDiffs = api['/api/public/archive']?.diffs ?? [];
+
+          const report = {
+            checkedAt: new Date().toISOString(),
+            productionOrigin: prod,
+            destinationOrigin: dest,
+            scope: {
+              authenticatedAdminCompared: false,
+              note: 'Admin e Studio autenticados exigem sessão válida. O audit compara rota/redirect público e o siteConfig publicado exposto pela API pública.'
+            },
+            summary: {
+              publicSiteEqual: siteDiffs.length === 0,
+              publicSiteDiffCount: siteDiffs.length,
+              statsEqual: statsDiffs.length === 0,
+              statsDiffCount: statsDiffs.length,
+              albumsEqual: albumsDiffs.length === 0,
+              albumsDiffCount: albumsDiffs.length,
+              archiveEqual: archiveDiffs.length === 0,
+              archiveDiffCount: archiveDiffs.length,
+              homeHtmlEqual: routes['/']?.sameBodyHash ?? false,
+              adminRouteEquivalent: routes['/admin']?.sameFinalStatus && routes['/admin']?.sameTitle,
+              studioRouteEquivalent: routes['/admin/studio']?.sameFinalStatus && routes['/admin/studio']?.sameTitle,
+              sitemapEqual: text['/sitemap.xml']?.equal ?? false,
+              robotsEqual: text['/robots.txt']?.equal ?? false,
+            },
+            routes,
+            api,
+            text,
+          };
+
+          fs.writeFileSync('requests/live-parity-audit-result.json', JSON.stringify(report, null, 2) + '\n');
+          NODE
+
+      - name: Persist parity report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add requests/live-parity-audit-result.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "ci: record live Punctum parity audit"
+          git push
