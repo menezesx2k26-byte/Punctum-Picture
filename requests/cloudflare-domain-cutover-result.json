@@ -1,10 +1,10 @@
 {
-  "status": "blocked",
-  "zoneFound": false,
-  "zoneActive": false,
-  "workerPreflight": false,
-  "build": false,
-  "tests": false,
+  "status": "running",
+  "zoneFound": true,
+  "zoneActive": true,
+  "workerPreflight": true,
+  "build": true,
+  "tests": true,
   "dnsBackupCaptured": false,
   "conflictingWebRecordsRemoved": false,
   "deploy": false,
@@ -16,5 +16,5 @@
   "rollbackSucceeded": false,
   "domainTouched": false,
   "worker": "punctum-picture-migration",
-  "error": "domain_zone_not_in_owner_cloudflare_account"
+  "zoneStatus": "active"
 }
