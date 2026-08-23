@@ -1,0 +1,8 @@
+{
+  "nonce": 1,
+  "mode": "local-restore-validation",
+  "destinationD1Writes": false,
+  "sourceWrites": false,
+  "domainChanges": false,
+  "studioActivation": false
+}
