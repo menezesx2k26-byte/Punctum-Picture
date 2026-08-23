@@ -1,0 +1,25 @@
+{
+  "status": "success",
+  "checkedAt": "2026-08-23T19:54:00Z",
+  "http": {
+    "public": "200",
+    "adminPage": "200",
+    "studioPage": "200",
+    "login": "200",
+    "me": "200",
+    "studio": "200"
+  },
+  "login": {
+    "responseKeys": [
+      "ok"
+    ],
+    "error": "",
+    "cookieIssued": true
+  },
+  "studio": {
+    "preset": "aconchegante-organico",
+    "hasUnpublishedChanges": ""
+  },
+  "credentialsExposed": false,
+  "dnsTouched": false
+}
