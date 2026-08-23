@@ -22,6 +22,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_D1_API_TOKEN: ${{ secrets.CLOUDFLARE_D1_API_TOKEN }}
+      CLOUDFLARE_DNS_API_TOKEN: ${{ secrets.CLOUDFLARE_DNS_API_TOKEN }}
       SOURCE_ADMIN_EMAIL: ${{ secrets.SOURCE_ADMIN_EMAIL }}
       SOURCE_ADMIN_PASSWORD: ${{ secrets.SOURCE_ADMIN_PASSWORD }}
     steps:
@@ -53,7 +54,8 @@ jobs:
             "rollbackAttempted": false,
             "rollbackSucceeded": false,
             "domainTouched": false,
-            "worker": "punctum-picture-migration"
+            "worker": "punctum-picture-migration",
+            "dnsCredential": "CLOUDFLARE_DNS_API_TOKEN"
           }
           EOF
 
@@ -161,10 +163,10 @@ jobs:
         run: |
           set -euo pipefail
           API='https://api.cloudflare.com/client/v4'
-          AUTH=(-H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" -H 'Content-Type: application/json')
+          DNS_AUTH=(-H "Authorization: Bearer ${CLOUDFLARE_DNS_API_TOKEN}" -H 'Content-Type: application/json')
           : > /tmp/dns-backup.jsonl
           for NAME in punctumpicture.com www.punctumpicture.com; do
-            curl -fsS -G "${AUTH[@]}" --data-urlencode "name=$NAME" "$API/zones/${ZONE_ID}/dns_records?per_page=100" > "/tmp/dns-${NAME}.json"
+            curl -fsS -G "${DNS_AUTH[@]}" --data-urlencode "name=$NAME" "$API/zones/${ZONE_ID}/dns_records?per_page=100" > "/tmp/dns-${NAME}.json"
             jq -c '.result[] | select(.type == "A" or .type == "AAAA" or .type == "CNAME") | {type,name,content,ttl,proxied,comment,tags}' "/tmp/dns-${NAME}.json" >> /tmp/dns-backup.jsonl
           done
           COUNT="$(wc -l < /tmp/dns-backup.jsonl | tr -d ' ')"
@@ -173,7 +175,7 @@ jobs:
           for NAME in punctumpicture.com www.punctumpicture.com; do
             jq -r '.result[] | select(.type == "A" or .type == "AAAA" or .type == "CNAME") | .id' "/tmp/dns-${NAME}.json" | while read -r ID; do
               [ -n "$ID" ] || continue
-              curl -fsS -X DELETE "${AUTH[@]}" "$API/zones/${ZONE_ID}/dns_records/$ID" >/dev/null
+              curl -fsS -X DELETE "${DNS_AUTH[@]}" "$API/zones/${ZONE_ID}/dns_records/$ID" >/dev/null
             done
           done
           jq '.conflictingWebRecordsRemoved=true | .domainTouched=true' /tmp/domain-cutover-result.json > /tmp/x && mv /tmp/x /tmp/domain-cutover-result.json
@@ -183,7 +185,7 @@ jobs:
         run: |
           set -uo pipefail
           API='https://api.cloudflare.com/client/v4'
-          AUTH=(-H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" -H 'Content-Type: application/json')
+          DNS_AUTH=(-H "Authorization: Bearer ${CLOUDFLARE_DNS_API_TOKEN}" -H 'Content-Type: application/json')
 
           restore_dns() {
             jq '.rollbackAttempted=true' /tmp/domain-cutover-result.json > /tmp/x && mv /tmp/x /tmp/domain-cutover-result.json
@@ -191,7 +193,7 @@ jobs:
             while IFS= read -r ROW; do
               [ -n "$ROW" ] || continue
               BODY="$(printf '%s' "$ROW" | jq '{type,name,content,ttl,proxied,comment,tags}')"
-              HTTP="$(curl -sS -o /tmp/restore.json -w '%{http_code}' -X POST "${AUTH[@]}" --data "$BODY" "$API/zones/${ZONE_ID}/dns_records" || true)"
+              HTTP="$(curl -sS -o /tmp/restore.json -w '%{http_code}' -X POST "${DNS_AUTH[@]}" --data "$BODY" "$API/zones/${ZONE_ID}/dns_records" || true)"
               if [ "$HTTP" != "200" ] || ! jq -e '.success == true' /tmp/restore.json >/dev/null 2>&1; then OK=0; fi
             done < /tmp/dns-backup.jsonl
             if [ "$OK" = "1" ]; then
