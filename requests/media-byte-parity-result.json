@@ -1,6 +1,6 @@
 {
   "status": "failed",
-  "checkedAt": "2026-08-23T18:16:23.279Z",
+  "checkedAt": "2026-08-23T18:16:59.996Z",
   "sourceReadOnly": true,
   "destinationReadOnly": true,
   "readyImages": 193,
@@ -9,22 +9,6 @@
   "sourceBytes": 274972089,
   "destinationBytes": 51197414,
   "mismatches": [
-    {
-      "id": "0424b098-3e9c-4dfa-883a-21e041de7d79",
-      "albumTitle": "Jogo do Grêmio",
-      "source": {
-        "status": 200,
-        "bytes": 1155567,
-        "sha256": "30960ca04815e8858dffa2c2267c1a964b5aae8ea13307ec3d213a830579cd4d",
-        "contentType": "image/jpeg"
-      },
-      "destination": {
-        "status": 200,
-        "bytes": 343082,
-        "sha256": "107d06eddabe5273a72dcd14b31c020c1e73b92a7c357f9d31dff4732abd1859",
-        "contentType": "image/jpeg"
-      }
-    },
     {
       "id": "061859df-5503-4431-b685-98ea85a93ce8",
       "albumTitle": "Jogo do Grêmio",
@@ -38,22 +22,6 @@
         "status": 200,
         "bytes": 375956,
         "sha256": "8ef53143bfb60d63b22850293ce7a0a40e5a1c5109c38d57cc395238d604f160",
-        "contentType": "image/jpeg"
-      }
-    },
-    {
-      "id": "0be820a5-0205-499c-8fe6-e089e975c351",
-      "albumTitle": "Jogo do Grêmio",
-      "source": {
-        "status": 200,
-        "bytes": 1396590,
-        "sha256": "75c201ae2507453fd1b781e034c60f1f93a76cecb16bca88521c812ad9041114",
-        "contentType": "image/jpeg"
-      },
-      "destination": {
-        "status": 200,
-        "bytes": 444868,
-        "sha256": "1b5a74551c30f4b5f3ce5c326a7088cee1b931be72336cefb057267bc4a04111",
         "contentType": "image/jpeg"
       }
     },
@@ -74,50 +42,18 @@
       }
     },
     {
-      "id": "1b81dc1e-e244-445c-83d2-d6fe8e849c99",
+      "id": "0424b098-3e9c-4dfa-883a-21e041de7d79",
       "albumTitle": "Jogo do Grêmio",
       "source": {
         "status": 200,
-        "bytes": 851173,
-        "sha256": "7cb3be50b74b53eaca03268888646bb28653152e44125b754a06fc9dd2a40ff2",
+        "bytes": 1155567,
+        "sha256": "30960ca04815e8858dffa2c2267c1a964b5aae8ea13307ec3d213a830579cd4d",
         "contentType": "image/jpeg"
       },
       "destination": {
         "status": 200,
-        "bytes": 259912,
-        "sha256": "2157ec9d2a5f5569090e3f0d71c829a70e13e206248873e08b4a9d0b84c3c349",
-        "contentType": "image/jpeg"
-      }
-    },
-    {
-      "id": "185f78c5-5423-4ac5-a106-380d91a653e1",
-      "albumTitle": "Jogo do Grêmio",
-      "source": {
-        "status": 200,
-        "bytes": 861959,
-        "sha256": "fa7231c3672da572c144153aea47c3e1f095f729446161eda335da8d76c44e3d",
-        "contentType": "image/jpeg"
-      },
-      "destination": {
-        "status": 200,
-        "bytes": 242245,
-        "sha256": "1db63191d3faf764dcc0df2d8254f91310362efc963200959687d9ec97db50c8",
-        "contentType": "image/jpeg"
-      }
-    },
-    {
-      "id": "0db54699-d838-4ea3-a8bd-6397e78dfde3",
-      "albumTitle": "Lugar ao Sol",
-      "source": {
-        "status": 200,
-        "bytes": 11031911,
-        "sha256": "a098a99fa1fe14ac3db8d621a4ba6551e451c143557a47c65bffb5af146f4a5f",
-        "contentType": "image/jpeg"
-      },
-      "destination": {
-        "status": 200,
-        "bytes": 280609,
-        "sha256": "ddfe030e113e74067dcbdc25bd991941cac950c399571b0981f0b0f2704d4c65",
+        "bytes": 343082,
+        "sha256": "107d06eddabe5273a72dcd14b31c020c1e73b92a7c357f9d31dff4732abd1859",
         "contentType": "image/jpeg"
       }
     },
@@ -138,6 +74,22 @@
       }
     },
     {
+      "id": "0be820a5-0205-499c-8fe6-e089e975c351",
+      "albumTitle": "Jogo do Grêmio",
+      "source": {
+        "status": 200,
+        "bytes": 1396590,
+        "sha256": "75c201ae2507453fd1b781e034c60f1f93a76cecb16bca88521c812ad9041114",
+        "contentType": "image/jpeg"
+      },
+      "destination": {
+        "status": 200,
+        "bytes": 444868,
+        "sha256": "1b5a74551c30f4b5f3ce5c326a7088cee1b931be72336cefb057267bc4a04111",
+        "contentType": "image/jpeg"
+      }
+    },
+    {
       "id": "12bf0c61-1bda-42b6-b59f-393e4f89c51e",
       "albumTitle": "Jogo do Grêmio",
       "source": {
@@ -154,6 +106,22 @@
       }
     },
     {
+      "id": "185f78c5-5423-4ac5-a106-380d91a653e1",
+      "albumTitle": "Jogo do Grêmio",
+      "source": {
+        "status": 200,
+        "bytes": 861959,
+        "sha256": "fa7231c3672da572c144153aea47c3e1f095f729446161eda335da8d76c44e3d",
+        "contentType": "image/jpeg"
+      },
+      "destination": {
+        "status": 200,
+        "bytes": 242245,
+        "sha256": "1db63191d3faf764dcc0df2d8254f91310362efc963200959687d9ec97db50c8",
+        "contentType": "image/jpeg"
+      }
+    },
+    {
       "id": "1fe2175a-fbfd-4241-b18f-0fc06b70e48a",
       "albumTitle": "Jogo do Grêmio",
       "source": {
@@ -166,6 +134,70 @@
         "status": 200,
         "bytes": 203111,
         "sha256": "215d1ffad2775251c56b7c31281f0b18689615b5a60a4bc273f600145d2ae491",
+        "contentType": "image/jpeg"
+      }
+    },
+    {
+      "id": "202c86f5-df1e-4a7f-858f-6847fd559232",
+      "albumTitle": "Jogo do Grêmio",
+      "source": {
+        "status": 200,
+        "bytes": 1136775,
+        "sha256": "9a92a5ce93703ba11db0be74e8f6d2e385bc0c6fe58cd37c0b2a72d7d6f21595",
+        "contentType": "image/jpeg"
+      },
+      "destination": {
+        "status": 200,
+        "bytes": 339777,
+        "sha256": "7b0b8a9d081e78e8fa4132e86a646f688ab28e37934dffc178ed7cd79ae0248d",
+        "contentType": "image/jpeg"
+      }
+    },
+    {
+      "id": "1b81dc1e-e244-445c-83d2-d6fe8e849c99",
+      "albumTitle": "Jogo do Grêmio",
+      "source": {
+        "status": 200,
+        "bytes": 851173,
+        "sha256": "7cb3be50b74b53eaca03268888646bb28653152e44125b754a06fc9dd2a40ff2",
+        "contentType": "image/jpeg"
+      },
+      "destination": {
+        "status": 200,
+        "bytes": 259912,
+        "sha256": "2157ec9d2a5f5569090e3f0d71c829a70e13e206248873e08b4a9d0b84c3c349",
+        "contentType": "image/jpeg"
+      }
+    },
+    {
+      "id": "0db54699-d838-4ea3-a8bd-6397e78dfde3",
+      "albumTitle": "Lugar ao Sol",
+      "source": {
+        "status": 200,
+        "bytes": 11031911,
+        "sha256": "a098a99fa1fe14ac3db8d621a4ba6551e451c143557a47c65bffb5af146f4a5f",
+        "contentType": "image/jpeg"
+      },
+      "destination": {
+        "status": 200,
+        "bytes": 280609,
+        "sha256": "ddfe030e113e74067dcbdc25bd991941cac950c399571b0981f0b0f2704d4c65",
+        "contentType": "image/jpeg"
+      }
+    },
+    {
+      "id": "2cfa467a-a6d8-4931-af9c-936a76730698",
+      "albumTitle": "Jogo do Grêmio",
+      "source": {
+        "status": 200,
+        "bytes": 928323,
+        "sha256": "19ba3cbc88cf51148f124204a7b2d282c180d7f3fcc591e6414289eed7277225",
+        "contentType": "image/jpeg"
+      },
+      "destination": {
+        "status": 200,
+        "bytes": 263500,
+        "sha256": "3036a7035a70409e18eb597b2a03b36c198017be713903f9b791d3fd5dbd2447",
         "contentType": "image/jpeg"
       }
     },
@@ -198,38 +230,6 @@
         "status": 200,
         "bytes": 317493,
         "sha256": "1424c067d2960d39d5f323c6eb9922c3fb1caf69565b08a5166c2c2f9eaea53b",
-        "contentType": "image/jpeg"
-      }
-    },
-    {
-      "id": "202c86f5-df1e-4a7f-858f-6847fd559232",
-      "albumTitle": "Jogo do Grêmio",
-      "source": {
-        "status": 200,
-        "bytes": 1136775,
-        "sha256": "9a92a5ce93703ba11db0be74e8f6d2e385bc0c6fe58cd37c0b2a72d7d6f21595",
-        "contentType": "image/jpeg"
-      },
-      "destination": {
-        "status": 200,
-        "bytes": 339777,
-        "sha256": "7b0b8a9d081e78e8fa4132e86a646f688ab28e37934dffc178ed7cd79ae0248d",
-        "contentType": "image/jpeg"
-      }
-    },
-    {
-      "id": "2cfa467a-a6d8-4931-af9c-936a76730698",
-      "albumTitle": "Jogo do Grêmio",
-      "source": {
-        "status": 200,
-        "bytes": 928323,
-        "sha256": "19ba3cbc88cf51148f124204a7b2d282c180d7f3fcc591e6414289eed7277225",
-        "contentType": "image/jpeg"
-      },
-      "destination": {
-        "status": 200,
-        "bytes": 263500,
-        "sha256": "3036a7035a70409e18eb597b2a03b36c198017be713903f9b791d3fd5dbd2447",
         "contentType": "image/jpeg"
       }
     },
@@ -346,22 +346,6 @@
       }
     },
     {
-      "id": "3b7c6341-a552-469e-b492-6236f6e18d6a",
-      "albumTitle": "Lugar ao Sol",
-      "source": {
-        "status": 200,
-        "bytes": 12513627,
-        "sha256": "8da22c9b92f5b1c17143ad0fc44a5a7056d41d0c5abcf510abc7523a2f85f9e3",
-        "contentType": "image/jpeg"
-      },
-      "destination": {
-        "status": 200,
-        "bytes": 405399,
-        "sha256": "7198009e1567731a757f425ec77cc403ddd0df9cdef19f7d2d0a1b14e7000cc2",
-        "contentType": "image/jpeg"
-      }
-    },
-    {
       "id": "506feb1c-a6f1-4aca-9ace-d147c86f8d1d",
       "albumTitle": "Beach Tennis",
       "source": {
@@ -378,6 +362,38 @@
       }
     },
     {
+      "id": "3b7c6341-a552-469e-b492-6236f6e18d6a",
+      "albumTitle": "Lugar ao Sol",
+      "source": {
+        "status": 200,
+        "bytes": 12513627,
+        "sha256": "8da22c9b92f5b1c17143ad0fc44a5a7056d41d0c5abcf510abc7523a2f85f9e3",
+        "contentType": "image/jpeg"
+      },
+      "destination": {
+        "status": 200,
+        "bytes": 405399,
+        "sha256": "7198009e1567731a757f425ec77cc403ddd0df9cdef19f7d2d0a1b14e7000cc2",
+        "contentType": "image/jpeg"
+      }
+    },
+    {
+      "id": "5e54750f-3d72-4f38-95ec-dd8ce3f32d49",
+      "albumTitle": "Beach Tennis",
+      "source": {
+        "status": 200,
+        "bytes": 1087566,
+        "sha256": "bf7486a7545e1226b10b16bee0b252e74db451de6f10ce46e785515db73a34ec",
+        "contentType": "image/jpeg"
+      },
+      "destination": {
+        "status": 200,
+        "bytes": 306199,
+        "sha256": "cb4084cd316f84613de4139db160b2d39038edb06966a42718f99efc608a410f",
+        "contentType": "image/jpeg"
+      }
+    },
+    {
       "id": "3ea05dcd-272c-47c4-96f2-7593a4f5fc64",
       "albumTitle": "Lugar ao Sol",
       "source": {
@@ -390,22 +406,6 @@
         "status": 200,
         "bytes": 621598,
         "sha256": "cf31e4ceac8b4c208f34c6526afb1419c83a168eaff579d2d757211668107852",
-        "contentType": "image/jpeg"
-      }
-    },
-    {
-      "id": "61e47675-9aed-4f51-9935-71f689142c89",
-      "albumTitle": "Jogo do Grêmio",
-      "source": {
-        "status": 200,
-        "bytes": 539760,
-        "sha256": "f3033319bca555d067113b7b108dda2ae53604ec35bd6547e67ff664eb8fe502",
-        "contentType": "image/jpeg"
-      },
-      "destination": {
-        "status": 200,
-        "bytes": 142303,
-        "sha256": "361791b566f6ceff4587fef752a38ab9da757a9f2c5acd9bfb92a435ddc098a1",
         "contentType": "image/jpeg"
       }
     }
