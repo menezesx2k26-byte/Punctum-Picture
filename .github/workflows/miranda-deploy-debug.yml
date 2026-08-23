@@ -1,0 +1,124 @@
+name: Diagnose Miranda deploy
+
+on:
+  push:
+    branches: ["miranda-editorial"]
+    paths:
+      - "ops/miranda-deploy-debug"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy-debug:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_D1_API_TOKEN: ${{ secrets.CLOUDFLARE_D1_API_TOKEN }}
+      MIRANDA_DB: punctum-picture-miranda
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build branch and attempt Miranda-only deploy
+        shell: bash
+        env:
+          PUBLIC_SITE_URL: https://miranda.punctumpicture.com
+          SITE_ORIGIN: https://miranda.punctumpicture.com
+        run: |
+          set -euo pipefail
+          npm ci
+          npm install --global --no-audit --no-fund wrangler@4.125.0
+          mkdir -p .miranda requests
+
+          curl -fsS \
+            -H "Authorization: Bearer ${CLOUDFLARE_D1_API_TOKEN}" \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database" \
+            -o /tmp/miranda-d1-list.json
+          DB_ID="$(jq -r --arg name "$MIRANDA_DB" '.result[]? | select(.name == $name) | (.uuid // .id // empty)' /tmp/miranda-d1-list.json | head -n1)"
+          test -n "$DB_ID"
+          export MIRANDA_DB_ID="$DB_ID"
+
+          npm run build
+
+          node <<'NODE'
+          import fs from 'node:fs';
+          const config = {
+            "$schema": "../node_modules/wrangler/config-schema.json",
+            name: "punctum-picture-miranda",
+            main: "../worker/index.ts",
+            compatibility_date: "2026-05-22",
+            compatibility_flags: ["nodejs_compat"],
+            workers_dev: true,
+            assets: {
+              directory: "../dist/client",
+              binding: "ASSETS",
+              not_found_handling: "single-page-application",
+              run_worker_first: ["/api/*", "/admin/*", "/media/*", "/sitemap.xml", "/robots.txt"]
+            },
+            routes: [{ pattern: "miranda.punctumpicture.com", custom_domain: true }],
+            d1_databases: [{
+              binding: "DB",
+              database_name: "punctum-picture-miranda",
+              database_id: process.env.MIRANDA_DB_ID,
+              migrations_dir: "../migrations"
+            }],
+            r2_buckets: [
+              { binding: "ORIGINALS", bucket_name: "punctum-picture-miranda-originals" },
+              { binding: "BACKUPS", bucket_name: "punctum-picture-miranda-backups" }
+            ],
+            images: { binding: "IMAGES" },
+            observability: { enabled: true },
+            vars: {
+              ENVIRONMENT: "miranda",
+              SITE_ORIGIN: "https://miranda.punctumpicture.com",
+              PUBLIC_SITE_URL: "https://miranda.punctumpicture.com",
+              PUBLIC_WHATSAPP_E164: "UNSPECIFIED",
+              PUBLIC_INSTAGRAM_URL: "UNSPECIFIED",
+              MAX_UPLOAD_BYTES: "26214400",
+              ALLOWED_MIME_TYPES: "image/jpeg,image/png,image/webp",
+              PRESIGNED_URL_TTL_SECONDS: "900",
+              CONTACT_RATE_LIMIT_WINDOW_SECONDS: "3600",
+              CONTACT_RATE_LIMIT_MAX: "5",
+              ADMIN_RATE_LIMIT_WINDOW_SECONDS: "60",
+              ADMIN_RATE_LIMIT_MAX: "60",
+              BACKUP_PREFIX: "backups/d1",
+              BACKUP_RETENTION_DAYS: "180",
+              CLEANUP_ORPHAN_UPLOAD_AGE_HOURS: "24"
+            }
+          };
+          fs.writeFileSync('.miranda/wrangler-debug.jsonc', JSON.stringify(config, null, 2) + '\n');
+          NODE
+
+          set +e
+          wrangler deploy --config .miranda/wrangler-debug.jsonc > /tmp/miranda-deploy-debug.log 2>&1
+          CODE=$?
+          set -e
+          tail -n 120 /tmp/miranda-deploy-debug.log > /tmp/miranda-deploy-debug-tail.log
+          LOG="$(cat /tmp/miranda-deploy-debug-tail.log)"
+          jq -n \
+            --argjson exitCode "$CODE" \
+            --arg databaseId "$DB_ID" \
+            --arg log "$LOG" \
+            '{branch:"miranda-editorial",target:"miranda.punctumpicture.com",exitCode:$exitCode,databaseId:$databaseId,logTail:$log,productionDomainTouched:false}' \
+            > requests/miranda-deploy-debug-result.json
+
+      - name: Persist deploy diagnostic
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f requests/miranda-deploy-debug-result.json ]; then
+            jq -n '{branch:"miranda-editorial",target:"miranda.punctumpicture.com",status:"failed-before-wrangler",productionDomainTouched:false}' > requests/miranda-deploy-debug-result.json
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add requests/miranda-deploy-debug-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record Miranda deploy diagnostic"
+          git push origin HEAD:miranda-editorial
