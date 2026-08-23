@@ -1,0 +1,63 @@
+{
+  "status": "success",
+  "checkedAt": "2026-08-23T17:00:09.441Z",
+  "sourceReadOnly": true,
+  "destinationReadOnly": true,
+  "counts": {
+    "source": {
+      "albums": 17,
+      "images": 200,
+      "categories": 10,
+      "inquiries": 1,
+      "studioHistory": 3,
+      "studioRevision": 11
+    },
+    "destination": {
+      "albums": 17,
+      "images": 200,
+      "categories": 10,
+      "inquiries": 1,
+      "studioHistory": 1,
+      "studioRevision": 1
+    }
+  },
+  "parity": {
+    "albumsAndImages": true,
+    "categories": true,
+    "settings": true,
+    "inquiries": true,
+    "studioConfig": false
+  },
+  "diffPaths": {
+    "albumsAndImages": [],
+    "categories": [],
+    "settings": [],
+    "inquiries": [],
+    "studioConfig": [
+      "$.editorial.chrome.footer.tagline",
+      "$.identity.sourcePresetId",
+      "$.pages.home.sections[0].variant",
+      "$.pages.home.sections[4].variant",
+      "$.theme.image.treatment",
+      "$.theme.shape.radius",
+      "$.theme.typography.bodyFamily",
+      "$.theme.typography.headingFamily",
+      "$.theme.typography.headingScale",
+      "$.theme.typography.headingTracking"
+    ]
+  },
+  "hashes": {
+    "sourceAlbumsAndImages": "c67e15f873ca2d192ddddd8e3efc998438c0c83f56640e5c1b85479169522d19",
+    "destinationAlbumsAndImages": "c67e15f873ca2d192ddddd8e3efc998438c0c83f56640e5c1b85479169522d19",
+    "sourceCategories": "6e167e6e2ddd2ad88f0a6de4e5fe5c492d54414ea3d4383d6e2b0ee76bdaf755",
+    "destinationCategories": "6e167e6e2ddd2ad88f0a6de4e5fe5c492d54414ea3d4383d6e2b0ee76bdaf755",
+    "sourceSettings": "4d2bae50ff2c7fca6d9843c0737f3b41bb80679686ebfe634e7fafd70453ea6e",
+    "destinationSettings": "4d2bae50ff2c7fca6d9843c0737f3b41bb80679686ebfe634e7fafd70453ea6e",
+    "sourceInquiries": "49af6802ab24c521610b5d7dd05776ada857c70dfbcb46803a43b68add0d43a9",
+    "destinationInquiries": "49af6802ab24c521610b5d7dd05776ada857c70dfbcb46803a43b68add0d43a9",
+    "sourceStudioConfig": "d91a4421ed9ed268e6814965e99cc02dd212d2be243ea30ac3225c7a8a4de3c5",
+    "destinationStudioConfig": "24ba362b8812ac1a6da54f3baf3c6c40e6f07af6959ade3d0309bddb34be2507"
+  },
+  "domainTouched": false,
+  "publicStudioActivated": false
+}
