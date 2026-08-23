@@ -1,0 +1,186 @@
+{
+  "status": "success",
+  "checkedAt": "2026-08-23T17:38:44.282Z",
+  "sourceReadOnly": true,
+  "pendingCount": 7,
+  "recoveredCount": 0,
+  "galleryHttpStatuses": {
+    "404": 7
+  },
+  "pendingByAlbumStatus": {
+    "published": 7
+  },
+  "probes": [
+    {
+      "id": "2f406084-ae65-4483-a932-994dcdb164a3",
+      "albumId": "dba079ca-64f7-415b-84b9-2db8754a11c0",
+      "albumStatus": "published",
+      "expectedSize": 694893,
+      "createdAt": "2026-08-13T03:00:44.259Z",
+      "statuses": {
+        "thumb": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        },
+        "card": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        },
+        "gallery": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        }
+      },
+      "recoveredKey": null,
+      "recoveredSha256": null,
+      "recoveredBytes": null
+    },
+    {
+      "id": "919f6b3a-6c0e-41ee-88fd-ef3230773b24",
+      "albumId": "dba079ca-64f7-415b-84b9-2db8754a11c0",
+      "albumStatus": "published",
+      "expectedSize": 1030375,
+      "createdAt": "2026-08-13T03:00:44.568Z",
+      "statuses": {
+        "thumb": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        },
+        "card": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        },
+        "gallery": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        }
+      },
+      "recoveredKey": null,
+      "recoveredSha256": null,
+      "recoveredBytes": null
+    },
+    {
+      "id": "38d62095-340a-4c8e-a816-850b9c0c22d4",
+      "albumId": "dba079ca-64f7-415b-84b9-2db8754a11c0",
+      "albumStatus": "published",
+      "expectedSize": 1234424,
+      "createdAt": "2026-08-13T03:00:44.906Z",
+      "statuses": {
+        "thumb": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        },
+        "card": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        },
+        "gallery": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        }
+      },
+      "recoveredKey": null,
+      "recoveredSha256": null,
+      "recoveredBytes": null
+    },
+    {
+      "id": "1e5dbfa5-04ba-4572-9c85-a7294cef2fc0",
+      "albumId": "dba079ca-64f7-415b-84b9-2db8754a11c0",
+      "albumStatus": "published",
+      "expectedSize": 1369359,
+      "createdAt": "2026-08-13T03:00:44.959Z",
+      "statuses": {
+        "thumb": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        },
+        "card": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        },
+        "gallery": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        }
+      },
+      "recoveredKey": null,
+      "recoveredSha256": null,
+      "recoveredBytes": null
+    },
+    {
+      "id": "709837bb-2236-4c6d-9572-2389b5f376d0",
+      "albumId": "dba079ca-64f7-415b-84b9-2db8754a11c0",
+      "albumStatus": "published",
+      "expectedSize": 640501,
+      "createdAt": "2026-08-13T03:00:46.272Z",
+      "statuses": {
+        "thumb": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        },
+        "card": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        },
+        "gallery": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        }
+      },
+      "recoveredKey": null,
+      "recoveredSha256": null,
+      "recoveredBytes": null
+    },
+    {
+      "id": "b1f32f84-870f-4d93-9632-841fa9efcc8c",
+      "albumId": "dba079ca-64f7-415b-84b9-2db8754a11c0",
+      "albumStatus": "published",
+      "expectedSize": 968464,
+      "createdAt": "2026-08-13T03:00:46.817Z",
+      "statuses": {
+        "thumb": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        },
+        "card": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        },
+        "gallery": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        }
+      },
+      "recoveredKey": null,
+      "recoveredSha256": null,
+      "recoveredBytes": null
+    },
+    {
+      "id": "29a0b182-ad8b-4aae-85bd-b485ce9ee234",
+      "albumId": "dba079ca-64f7-415b-84b9-2db8754a11c0",
+      "albumStatus": "published",
+      "expectedSize": 934326,
+      "createdAt": "2026-08-13T03:00:47.189Z",
+      "statuses": {
+        "thumb": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        },
+        "card": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        },
+        "gallery": {
+          "status": 404,
+          "contentType": "text/plain; charset=utf-8"
+        }
+      },
+      "recoveredKey": null,
+      "recoveredSha256": null,
+      "recoveredBytes": null
+    }
+  ],
+  "conclusion": "No pending database row exposed retrievable media through the authenticated application media routes.",
+  "domainTouched": false,
+  "publicStudioActivated": false
+}
