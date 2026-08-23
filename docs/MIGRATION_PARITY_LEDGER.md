@@ -55,15 +55,27 @@ The 7 pending image rows all belong to `Jogo do Grêmio` and were created within
 
 Authenticated reads of `thumb`, `card`, and `gallery` return 404 for all 7 rows on the source. No recoverable media bytes are exposed for these rows. They are treated as incomplete upload records, not missing ready photographs.
 
+## Original media storage parity — PASS
+
+All 193 `ready` source images were compared against their actual destination source storage without passing through Cloudflare Images transformations.
+
+- ready images checked: 193
+- byte-for-byte matches: 193
+- mismatches: 0
+- repo-backed `static:` originals: 113
+- destination R2 originals: 80
+- source bytes: 274,972,089
+- destination stored bytes: 274,972,089
+
+The transformed `/gallery` endpoint is intentionally not a byte-integrity gate: the destination has a Cloudflare Images binding and transforms responses, while the source deployment currently returns the source body directly.
+
 ## Dynamic photographs — RECOVERED
 
 - 80 dynamic public originals recovered from the live Site
 - copied to destination R2
 - independent backup copied to Google Drive in split ZIP parts with SHA-256 manifest
 - 112 static public photographs remain repo-backed
-- one additional private ready image is represented in authenticated admin state
-
-A transformed endpoint comparison is intentionally not an integrity gate: the destination has a Cloudflare Images binding and transforms `/media/.../gallery`, while the source deployment currently returns the source body directly. Original-storage byte parity is tracked separately.
+- one additional private ready image is repo-backed, bringing the original ready-image set to 113 static + 80 R2 = 193
 
 ## Studio — CURRENT STATE PRESERVED, NOT ACTIVATED
 
@@ -89,14 +101,9 @@ Destination Studio remains deliberately on its destination/default pointer. The 
 
 A raw JSON snapshot of all state exposed through the authenticated admin APIs was written to the destination private backups R2 bucket. The sanitized Git result records its R2 key and SHA-256.
 
-## Original-media storage parity — IN PROGRESS
+## Destination D1 checkpoint — IN PROGRESS
 
-Correct integrity comparison:
-
-- source original bytes vs repo file for `static:` image rows
-- source original bytes vs raw destination R2 object for dynamic image rows
-
-Do not use transformed `/gallery` output as a byte-integrity test when Cloudflare Images is enabled.
+Before any future Studio restoration/activation, export the current destination D1 to the private backups R2 bucket and record SHA-256 plus per-table row counts. This checkpoint is a rollback boundary for the fully migrated non-Studio state.
 
 ## Forensic D1 parity — BLOCKED BY SOURCE RAW D1 ACCESS
 
@@ -116,7 +123,7 @@ The current Studio configuration is preserved. The principal user-visible histor
 
 Custom domain / DNS / routes remain BLOCKED until:
 
-1. original-media storage parity passes;
+1. destination D1 checkpoint is stored and verified;
 2. raw D1 forensic export is obtained, or the owner explicitly accepts functional-state parity in lieu of forensic parity;
 3. source Studio state is restored with the intended pointer/history policy;
 4. authenticated admin smoke checks pass;
