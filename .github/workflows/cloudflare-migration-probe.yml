@@ -40,22 +40,36 @@ jobs:
           wrangler d1 list >/tmp/d1.txt 2>&1 && d1_ok=true
           wrangler r2 bucket list >/tmp/r2.txt 2>&1 && r2_ok=true
 
+          sanitize() {
+            tail -n 12 "$1" \
+              | sed -E 's/[A-Fa-f0-9]{24,}/[redacted-id]/g' \
+              | sed -E 's/[A-Za-z0-9_-]{35,}/[redacted-secret]/g' \
+              | tr '\n' ' ' \
+              | cut -c1-1200
+          }
+
+          d1_error=""
+          r2_error=""
+          if [ "$d1_ok" != true ]; then d1_error="$(sanitize /tmp/d1.txt)"; fi
+          if [ "$r2_ok" != true ]; then r2_error="$(sanitize /tmp/r2.txt)"; fi
+
           overall=false
           if [ "$whoami_ok" = true ] && [ "$d1_ok" = true ] && [ "$r2_ok" = true ]; then
             overall=true
           fi
 
           mkdir -p requests
-          cat > requests/cloudflare-probe-result.json <<EOF
-          {
-            "checked_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "source_commit": "${GITHUB_SHA}",
-            "whoami": ${whoami_ok},
-            "d1_read": ${d1_ok},
-            "r2_read": ${r2_ok},
-            "overall": ${overall}
-          }
-          EOF
+          jq -n \
+            --arg checked_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg source_commit "$GITHUB_SHA" \
+            --argjson whoami "$whoami_ok" \
+            --argjson d1_read "$d1_ok" \
+            --argjson r2_read "$r2_ok" \
+            --argjson overall "$overall" \
+            --arg d1_error "$d1_error" \
+            --arg r2_error "$r2_error" \
+            '{checked_at:$checked_at,source_commit:$source_commit,whoami:$whoami,d1_read:$d1_read,r2_read:$r2_read,overall:$overall,d1_error:(if $d1_error=="" then null else $d1_error end),r2_error:(if $r2_error=="" then null else $r2_error end)}' \
+            > requests/cloudflare-probe-result.json
       - name: Persist sanitized result
         run: |
           git config user.name "github-actions[bot]"
