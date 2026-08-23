@@ -1,0 +1,81 @@
+name: Final smoke Punctum custom domain
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "requests/cloudflare-domain-final-smoke.json"
+
+permissions:
+  contents: write
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SOURCE_ADMIN_EMAIL: ${{ secrets.SOURCE_ADMIN_EMAIL }}
+      SOURCE_ADMIN_PASSWORD: ${{ secrets.SOURCE_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Validate public, admin and Studio on custom domain
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT='https://punctumpicture.com'
+          WWW='https://www.punctumpicture.com'
+
+          ROOT_HTTP="$(curl -sS -o /tmp/root.json -w '%{http_code}' "$ROOT/api/public/stats")"
+          WWW_HTTP="$(curl -sS -o /tmp/www.json -w '%{http_code}' "$WWW/api/public/stats")"
+          [ "$ROOT_HTTP" = "200" ]
+          [ "$WWW_HTTP" = "200" ]
+          jq -e '.stats.photoCount == 192 and .stats.albumCount == 16 and .stats.categoryCount == 7' /tmp/root.json >/dev/null
+          jq -e '.stats.photoCount == 192 and .stats.albumCount == 16 and .stats.categoryCount == 7' /tmp/www.json >/dev/null
+
+          ADMIN_PAGE_HTTP="$(curl -sS -L -o /tmp/admin-page -w '%{http_code}' "$ROOT/admin")"
+          STUDIO_PAGE_HTTP="$(curl -sS -L -o /tmp/studio-page -w '%{http_code}' "$ROOT/admin/studio")"
+
+          LOGIN_HTTP="$(curl -sS -o /tmp/login.json -D /tmp/login.headers -w '%{http_code}' \
+            -X POST "$ROOT/admin/api/session" \
+            -H "Origin: $ROOT" \
+            -H 'Content-Type: application/json' \
+            --data-binary "$(jq -nc --arg e "$SOURCE_ADMIN_EMAIL" --arg p "$SOURCE_ADMIN_PASSWORD" '{email:$e,password:$p}')")"
+          [ "$LOGIN_HTTP" = "200" ]
+          COOKIE="$(grep -i '^set-cookie:' /tmp/login.headers | head -n1 | sed -E 's/^[Ss]et-[Cc]ookie:[[:space:]]*([^;]+).*/\1/' | tr -d '\r')"
+          [ -n "$COOKIE" ]
+
+          ME_HTTP="$(curl -sS -o /tmp/me.json -w '%{http_code}' "$ROOT/admin/api/me" -H "Cookie: $COOKIE")"
+          STUDIO_HTTP="$(curl -sS -o /tmp/studio.json -w '%{http_code}' "$ROOT/admin/api/studio" -H "Cookie: $COOKIE")"
+          [ "$ME_HTTP" = "200" ]
+          [ "$STUDIO_HTTP" = "200" ]
+          jq -e '.hasUnpublishedChanges == false and .siteConfig.identity.sourcePresetId == "aconchegante-organico"' /tmp/studio.json >/dev/null
+
+          jq -n \
+            --arg checkedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg rootHttp "$ROOT_HTTP" \
+            --arg wwwHttp "$WWW_HTTP" \
+            --arg adminPageHttp "$ADMIN_PAGE_HTTP" \
+            --arg studioPageHttp "$STUDIO_PAGE_HTTP" \
+            --arg loginHttp "$LOGIN_HTTP" \
+            --arg meHttp "$ME_HTTP" \
+            --arg studioHttp "$STUDIO_HTTP" \
+            '{status:"success",checkedAt:$checkedAt,root:$rootHttp,www:$wwwHttp,adminPage:$adminPageHttp,studioPage:$studioPageHttp,adminLogin:$loginHttp,adminMe:$meHttp,adminStudio:$studioHttp,studioPreset:"aconchegante-organico",hasUnpublishedChanges:false,domain:"punctumpicture.com"}' \
+            > /tmp/final-smoke-result.json
+
+      - name: Persist sanitized result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          [ -f /tmp/final-smoke-result.json ] || printf '%s\n' '{"status":"failed","error":"final_smoke_failed"}' > /tmp/final-smoke-result.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git reset --hard origin/main
+          cp /tmp/final-smoke-result.json requests/cloudflare-domain-final-smoke-result.json
+          git add requests/cloudflare-domain-final-smoke-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record Punctum custom-domain final smoke"
+          git push
