@@ -1,0 +1,89 @@
+name: Diagnose Punctum custom domain
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "requests/cloudflare-domain-diagnose.json"
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_DNS_API_TOKEN: ${{ secrets.CLOUDFLARE_DNS_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Read Cloudflare and HTTP state only
+        shell: bash
+        run: |
+          set -euo pipefail
+          API='https://api.cloudflare.com/client/v4'
+          AUTH=(-H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" -H 'Content-Type: application/json')
+          DNS_AUTH=(-H "Authorization: Bearer ${CLOUDFLARE_DNS_API_TOKEN}" -H 'Content-Type: application/json')
+
+          curl -fsS -G "${AUTH[@]}" \
+            --data-urlencode 'name=punctumpicture.com' \
+            --data-urlencode "account.id=${CLOUDFLARE_ACCOUNT_ID}" \
+            "$API/zones" > /tmp/zones.json
+          ZONE_ID="$(jq -r '.result[0].id // empty' /tmp/zones.json)"
+          ZONE_STATUS="$(jq -r '.result[0].status // empty' /tmp/zones.json)"
+
+          for NAME in punctumpicture.com www.punctumpicture.com; do
+            curl -fsS -G "${DNS_AUTH[@]}" --data-urlencode "name=$NAME" \
+              "$API/zones/${ZONE_ID}/dns_records?per_page=100" > "/tmp/dns-${NAME}.json"
+          done
+
+          DOMAINS_HTTP="$(curl -sS -o /tmp/worker-domains.json -w '%{http_code}' "${AUTH[@]}" \
+            "$API/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/domains/records" || true)"
+
+          ROOT_HTTP="$(curl -sS -L --max-time 20 -o /tmp/root-body -w '%{http_code}' https://punctumpicture.com/api/public/stats || true)"
+          WWW_HTTP="$(curl -sS -L --max-time 20 -o /tmp/www-body -w '%{http_code}' https://www.punctumpicture.com/api/public/stats || true)"
+          ROOT_OK=false
+          WWW_OK=false
+          if [ "$ROOT_HTTP" = "200" ] && jq -e '.stats.photoCount == 192 and .stats.albumCount == 16' /tmp/root-body >/dev/null 2>&1; then ROOT_OK=true; fi
+          if [ "$WWW_HTTP" = "200" ] && jq -e '.stats.photoCount == 192 and .stats.albumCount == 16' /tmp/www-body >/dev/null 2>&1; then WWW_OK=true; fi
+
+          ROOT_RECORDS="$(jq -c '[.result[] | {type,name,content,proxied,ttl}]' /tmp/dns-punctumpicture.com.json)"
+          WWW_RECORDS="$(jq -c '[.result[] | {type,name,content,proxied,ttl}]' /tmp/dns-www.punctumpicture.com.json)"
+          WORKER_DOMAINS='[]'
+          if [ "$DOMAINS_HTTP" = "200" ]; then
+            WORKER_DOMAINS="$(jq -c '[.result[]? | select(.hostname == "punctumpicture.com" or .hostname == "www.punctumpicture.com") | {id,hostname,service,zone_id}]' /tmp/worker-domains.json 2>/dev/null || echo '[]')"
+          fi
+
+          jq -n \
+            --arg checkedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg zoneStatus "$ZONE_STATUS" \
+            --arg domainsHttp "$DOMAINS_HTTP" \
+            --arg rootHttp "$ROOT_HTTP" \
+            --arg wwwHttp "$WWW_HTTP" \
+            --argjson rootOk "$ROOT_OK" \
+            --argjson wwwOk "$WWW_OK" \
+            --argjson rootRecords "$ROOT_RECORDS" \
+            --argjson wwwRecords "$WWW_RECORDS" \
+            --argjson workerDomains "$WORKER_DOMAINS" \
+            '{status:"success",checkedAt:$checkedAt,zoneStatus:$zoneStatus,dns:{root:$rootRecords,www:$wwwRecords},workerDomainsHttp:$domainsHttp,workerDomains:$workerDomains,http:{root:$rootHttp,www:$wwwHttp,rootMatchesWorker:$rootOk,wwwMatchesWorker:$wwwOk},cloudflareStateChanged:false}' \
+            > /tmp/domain-diagnose-result.json
+
+      - name: Persist sanitized result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          [ -f /tmp/domain-diagnose-result.json ] || printf '%s\n' '{"status":"failed","error":"diagnosis_failed","cloudflareStateChanged":false}' > /tmp/domain-diagnose-result.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git reset --hard origin/main
+          cp /tmp/domain-diagnose-result.json requests/cloudflare-domain-diagnose-result.json
+          git add requests/cloudflare-domain-diagnose-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record Punctum domain diagnosis"
+          git push
