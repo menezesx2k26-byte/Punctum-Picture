@@ -1,0 +1,165 @@
+name: Git main → Cloudflare Worker
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "app/**"
+      - "worker/**"
+      - "shared/**"
+      - "public/**"
+      - "scripts/**"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.config.*"
+      - "vinext.config.*"
+      - "tsconfig.json"
+      - "requests/cloudflare-git-deploy.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: punctum-git-main-cloudflare
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_D1_API_TOKEN: ${{ secrets.CLOUDFLARE_D1_API_TOKEN }}
+      SOURCE_ADMIN_EMAIL: ${{ secrets.SOURCE_ADMIN_EMAIL }}
+      SOURCE_ADMIN_PASSWORD: ${{ secrets.SOURCE_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build vinext worker
+        run: npm run build
+
+      - name: Tests
+        run: npm test
+
+      - name: Install trusted Wrangler
+        run: npm install --global --no-audit --no-fund wrangler@4.125.0
+
+      - name: Resolve production D1
+        shell: bash
+        run: |
+          set -euo pipefail
+          HTTP="$(curl -sS -o /tmp/d1.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${CLOUDFLARE_D1_API_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database")"
+          [ "$HTTP" = "200" ]
+          jq -e '.success == true' /tmp/d1.json >/dev/null
+          DB_ID="$(jq -r '.result[]? | select(.name == "punctum-picture") | (.uuid // .id // empty)' /tmp/d1.json | head -n1)"
+          [ -n "$DB_ID" ]
+          echo "DB_ID=$DB_ID" >> "$GITHUB_ENV"
+
+      - name: Patch generated config for owner Cloudflare
+        run: |
+          node <<'NODE'
+          import fs from 'node:fs';
+          const path = 'dist/server/wrangler.json';
+          const config = JSON.parse(fs.readFileSync(path, 'utf8'));
+          const workerUrl = 'https://punctum-picture-migration.menezesx2k26.workers.dev';
+
+          config.name = 'punctum-picture-migration';
+          config.workers_dev = true;
+          config.preview_urls = true;
+          delete config.routes;
+          delete config.env;
+
+          config.d1_databases = [{
+            binding: 'DB',
+            database_name: 'punctum-picture',
+            database_id: process.env.DB_ID,
+          }];
+          config.r2_buckets = [
+            { binding: 'ORIGINALS', bucket_name: 'punctum-picture-originals' },
+            { binding: 'BACKUPS', bucket_name: 'punctum-picture-backups' },
+          ];
+          config.images = { binding: 'IMAGES' };
+          config.triggers = { crons: ['0 3 * * *', '0 * * * *'] };
+          config.observability = {
+            enabled: true,
+            logs: { head_sampling_rate: 1 },
+            traces: { enabled: true, head_sampling_rate: 0.1 },
+          };
+          config.vars = {
+            ENVIRONMENT: 'production',
+            SITE_ORIGIN: workerUrl,
+            PUBLIC_SITE_URL: workerUrl,
+            PUBLIC_WHATSAPP_E164: 'UNSPECIFIED',
+            PUBLIC_INSTAGRAM_URL: 'UNSPECIFIED',
+            MAX_UPLOAD_BYTES: '26214400',
+            ALLOWED_MIME_TYPES: 'image/jpeg,image/png,image/webp',
+            PRESIGNED_URL_TTL_SECONDS: '900',
+            CONTACT_RATE_LIMIT_WINDOW_SECONDS: '3600',
+            CONTACT_RATE_LIMIT_MAX: '5',
+            ADMIN_RATE_LIMIT_WINDOW_SECONDS: '60',
+            ADMIN_RATE_LIMIT_MAX: '60',
+            BACKUP_PREFIX: 'backups/d1',
+            BACKUP_RETENTION_DAYS: '180',
+            CLEANUP_ORPHAN_UPLOAD_AGE_HOURS: '24',
+            GIT_SHA: process.env.GITHUB_SHA || 'unknown',
+          };
+          fs.writeFileSync(path, JSON.stringify(config, null, 2) + '\n');
+          NODE
+
+      - name: Deploy to Cloudflare
+        run: wrangler deploy --config dist/server/wrangler.json
+
+      - name: Smoke test public and admin
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='https://punctum-picture-migration.menezesx2k26.workers.dev'
+          for attempt in 1 2 3 4 5; do
+            if curl -fsS "$BASE/api/public/stats" >/tmp/stats.json; then break; fi
+            sleep 6
+          done
+          jq -e '.stats.photoCount == 192 and .stats.albumCount == 16 and .stats.categoryCount == 7' /tmp/stats.json >/dev/null
+
+          LOGIN_HTTP="$(curl -sS -o /tmp/login.json -D /tmp/login.headers -w '%{http_code}' \
+            -X POST "$BASE/admin/api/session" \
+            -H "Origin: $BASE" \
+            -H 'Content-Type: application/json' \
+            --data-binary "$(jq -nc --arg e "$SOURCE_ADMIN_EMAIL" --arg p "$SOURCE_ADMIN_PASSWORD" '{email:$e,password:$p}')")"
+          [ "$LOGIN_HTTP" = "200" ]
+          COOKIE="$(grep -i '^set-cookie:' /tmp/login.headers | head -n1 | sed -E 's/^[Ss]et-[Cc]ookie:[[:space:]]*([^;]+).*/\1/' | tr -d '\r')"
+          [ -n "$COOKIE" ]
+          curl -fsS "$BASE/admin/api/studio" -H "Cookie: $COOKIE" >/tmp/studio.json
+          jq -e '.hasUnpublishedChanges == false and .siteConfig.identity.sourcePresetId == "aconchegante-organico"' /tmp/studio.json >/dev/null
+
+      - name: Deployment summary
+        run: |
+          {
+            echo '### Punctum Cloudflare deploy'
+            echo '- Git branch: `main`'
+            echo '- Worker: `punctum-picture-migration`'
+            echo '- D1: `punctum-picture`'
+            echo '- R2 originals/backups: connected'
+            echo '- Cloudflare Images: connected'
+            echo '- Crons: enabled'
+            echo '- Studio migrated state: verified'
+            echo '- Custom domain: untouched'
+          } >> "$GITHUB_STEP_SUMMARY"
