@@ -1,7 +1,7 @@
 {
   "status": "success",
   "format": "punctum-d1-drive-backup-v1",
-  "createdAt": "2026-08-23T18:47:39.677Z",
+  "createdAt": "2026-08-23T18:48:09.860Z",
   "databaseName": "punctum-picture",
   "databaseId": "22697f13-7484-41e3-9441-f7b902c6577a",
   "bytes": 148078,
@@ -24,12 +24,12 @@
     "upload_intents": 0
   },
   "r2Bucket": "punctum-picture-backups",
-  "r2Key": "backups/d1/drive/2026-08-23T18-47-39-677Z.sql",
+  "r2Key": "backups/d1/drive/2026-08-23T18-48-09-860Z.sql",
   "sourceTouched": false,
   "domainTouched": false,
   "sqlArtifactFilename": "punctum-d1-current.sql",
   "manifestArtifactFilename": "punctum-d1-current-manifest.json",
-  "githubRunId": 32659147528,
+  "githubRunId": 32659172132,
   "githubRunAttempt": 1,
   "artifactName": "punctum-d1-drive-backup"
 }
