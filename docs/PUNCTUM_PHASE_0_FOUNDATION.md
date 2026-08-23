@@ -194,9 +194,12 @@ Workflow daqui para frente:
 7. somente após autorização, aplicar remotamente com
    `npm run db:migrate:remote`.
 
-O empacotamento de Sites agora copia `migrations/` para o destino
-`dist/.openai/drizzle`, nome exigido pelo artefato de hosting. A origem continua
-sendo uma só.
+`migrations/` continua sendo a fonte canônica para Wrangler e para toda nova
+migration. Como a produção foi comprovadamente inicializada pelo histórico
+legado do Sites, o artefato preserva `drizzle/` como baseline imutável que o
+provedor reconhece e acrescenta somente as migrations canônicas a partir da
+`0005`. Isso evita reaplicar a criação de tabelas sem reintroduzir uma segunda
+trilha para mudanças futuras.
 
 ### Papel de `drizzle/`
 
@@ -280,11 +283,9 @@ Validação executada até este ponto:
 
 ## 11. Itens UNDETERMINED
 
-- **UNDETERMINED:** migrations que já constam como aplicadas no D1 remoto de
-  produção/preview. Requer leitura do histórico remoto antes do próximo deploy.
-- **UNDETERMINED:** se o deploy que originou a produção usou o tracker legado do
-  Sites (`drizzle/`) ou Wrangler (`migrations/`). Não aplicar nem rebaselinear
-  remotamente sem inspeção.
+- **RESOLVIDO EM 23/08/2026:** a primeira tentativa de publicação versionada
+  confirmou que a produção usa o tracker legado do Sites (`drizzle/`). O
+  artefato mantém esse baseline e anexa apenas migrations canônicas novas.
 - **UNDETERMINED — REQUIRES REMOTE ACCESS POLICY INSPECTION:** regras, paths,
   duração e allowlist efetivos no Cloudflare Zero Trust.
 - **UNDETERMINED:** se a camada Access intercepta `/admin/api/session` antes do

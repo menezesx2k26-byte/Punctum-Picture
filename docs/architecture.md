@@ -26,8 +26,9 @@ permanece apenas como registradora do domínio.
 - `worker/media/`: leitura privada do R2 e presets de transformação.
 - `worker/utils/`: Access, validação, rate limit, auditoria e respostas.
 - `migrations/`: fonte canônica do schema D1 versionado e seeds idempotentes.
-- `drizzle/`: histórico legado congelado; diffs novos do Drizzle Kit são
-  gerados em `.drizzle-generated/` apenas para revisão.
+- `drizzle/`: baseline legado congelado usado somente para compatibilidade do
+  tracker de produção do Sites; migrations novas continuam em `migrations/` e
+  são anexadas ao artefato a partir da `0005`.
 - `worker/scheduled.ts`: backup lógico e higiene horária.
 
 ## Dados e publicação
