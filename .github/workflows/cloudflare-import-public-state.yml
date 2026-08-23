@@ -1,0 +1,332 @@
+name: Import Punctum public state to isolated Cloudflare
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "requests/cloudflare-import-public-state.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: punctum-cloudflare-import-public-state
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_D1_API_TOKEN: ${{ secrets.CLOUDFLARE_D1_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Install trusted Wrangler
+        run: npm install --global --no-audit --no-fund wrangler@4.125.0
+
+      - name: Import published content and dynamic originals
+        shell: bash
+        run: |
+          set +e
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import crypto from 'node:crypto';
+          import { execFileSync } from 'node:child_process';
+
+          const resultPath = '/tmp/cloudflare-import-public-state-result.json';
+          const origin = 'https://punctumpicture.com';
+          const workerOrigin = 'https://punctum-picture-migration.menezesx2k26.workers.dev';
+          const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+          const d1Token = process.env.CLOUDFLARE_D1_API_TOKEN;
+          const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+          if (!accountId || !d1Token || !apiToken) throw new Error('required_cloudflare_secret_missing');
+
+          const snapshot = JSON.parse(fs.readFileSync('requests/source-public-state-result.json', 'utf8'));
+          if (snapshot.counts?.albums !== 16 || snapshot.counts?.archiveImages !== 192 || snapshot.counts?.dynamicImages !== 80) {
+            throw new Error(`source_snapshot_counts_unexpected:${JSON.stringify(snapshot.counts)}`);
+          }
+
+          const cfBase = `https://api.cloudflare.com/client/v4/accounts/${accountId}`;
+          async function cf(pathname, options = {}) {
+            const response = await fetch(`${cfBase}${pathname}`, {
+              ...options,
+              headers: {
+                Authorization: `Bearer ${d1Token}`,
+                'Content-Type': 'application/json',
+                ...(options.headers || {}),
+              },
+            });
+            const text = await response.text();
+            let payload;
+            try { payload = JSON.parse(text); } catch { payload = { raw: text.slice(0, 500) }; }
+            if (!response.ok || payload?.success === false) {
+              throw new Error(`cloudflare_api_${response.status}:${JSON.stringify(payload?.errors || payload).slice(0, 1000)}`);
+            }
+            return payload;
+          }
+
+          const dbList = await cf('/d1/database');
+          const db = (dbList.result || []).find((item) => item.name === 'punctum-picture');
+          const dbId = db?.uuid || db?.id;
+          if (!dbId) throw new Error('destination_d1_not_found');
+
+          async function query(sql, params = []) {
+            const payload = await cf(`/d1/database/${dbId}/query`, {
+              method: 'POST',
+              body: JSON.stringify({ sql, params }),
+            });
+            const parts = payload.result || [];
+            if (parts.some((part) => part?.success === false)) {
+              throw new Error(`d1_query_failed:${JSON.stringify(parts).slice(0, 1000)}`);
+            }
+            return parts[0] || {};
+          }
+
+          const beforePointers = (await query('SELECT * FROM site_config_pointers WHERE id = 1')).results ?? [];
+          const beforeVersionCount = Number(((await query('SELECT COUNT(*) AS count FROM site_config_versions')).results ?? [])[0]?.count ?? 0);
+
+          const albums = snapshot.albums || [];
+          const categories = snapshot.categories?.categories || [];
+          const allImages = albums.flatMap((album) => (album.images || []).map((image) => ({ ...image, album })));
+          const dynamicImages = allImages.filter((image) => !String(image.id).startsWith('static-'));
+          const staticImages = allImages.filter((image) => String(image.id).startsWith('static-'));
+          if (albums.length !== 16 || allImages.length !== 192 || dynamicImages.length !== 80 || staticImages.length !== 112) {
+            throw new Error(`flattened_source_counts_unexpected:${albums.length}/${allImages.length}/${dynamicImages.length}/${staticImages.length}`);
+          }
+
+          const now = new Date().toISOString();
+          const downloadDir = '/tmp/punctum-public-import';
+          fs.rmSync(downloadDir, { recursive: true, force: true });
+          fs.mkdirSync(downloadDir, { recursive: true });
+          const dynamicMeta = new Map();
+
+          function extFromType(type) {
+            const normalized = String(type || '').split(';')[0].trim().toLowerCase();
+            if (normalized === 'image/jpeg') return 'jpg';
+            if (normalized === 'image/png') return 'png';
+            if (normalized === 'image/webp') return 'webp';
+            if (normalized === 'image/avif') return 'avif';
+            if (normalized === 'image/gif') return 'gif';
+            return 'bin';
+          }
+
+          console.log(`Downloading ${dynamicImages.length} source originals...`);
+          let downloaded = 0;
+          for (const image of dynamicImages) {
+            const sourceUrl = `${origin}/media/${encodeURIComponent(image.id)}/gallery`;
+            const response = await fetch(sourceUrl, { headers: { accept: 'image/jpeg' }, redirect: 'follow' });
+            if (!response.ok) throw new Error(`source_image_http_${response.status}:${image.id}`);
+            const bytes = Buffer.from(await response.arrayBuffer());
+            const contentType = response.headers.get('content-type') || 'application/octet-stream';
+            const ext = extFromType(contentType);
+            const sha256 = crypto.createHash('sha256').update(bytes).digest('hex');
+            const objectKey = `migration/public/${image.id}.${ext}`;
+            const localPath = path.join(downloadDir, `${image.id}.${ext}`);
+            fs.writeFileSync(localPath, bytes);
+            dynamicMeta.set(image.id, { bytes: bytes.length, contentType, ext, sha256, objectKey, localPath });
+            downloaded++;
+            if (downloaded % 10 === 0) console.log(`downloaded ${downloaded}/${dynamicImages.length}`);
+          }
+
+          console.log('Uploading dynamic originals to destination R2...');
+          let uploaded = 0;
+          for (const image of dynamicImages) {
+            const meta = dynamicMeta.get(image.id);
+            execFileSync('wrangler', [
+              'r2', 'object', 'put', `punctum-picture-originals/${meta.objectKey}`,
+              '--file', meta.localPath,
+              '--content-type', meta.contentType,
+              '--remote',
+            ], { stdio: 'pipe', env: process.env });
+            uploaded++;
+            if (uploaded % 10 === 0) console.log(`uploaded ${uploaded}/${dynamicImages.length}`);
+          }
+
+          const sourceSite = snapshot.site?.site || {};
+          await query(
+            `INSERT INTO site_settings (
+              id, brand_name, tagline, about_text, whatsapp_e164, whatsapp_message,
+              instagram_url, contact_email, seo_title, seo_description, updated_at
+            ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+              brand_name=excluded.brand_name, tagline=excluded.tagline, about_text=excluded.about_text,
+              whatsapp_e164=excluded.whatsapp_e164, whatsapp_message=excluded.whatsapp_message,
+              instagram_url=excluded.instagram_url, contact_email=excluded.contact_email,
+              seo_title=excluded.seo_title, seo_description=excluded.seo_description,
+              updated_at=excluded.updated_at`,
+            [
+              sourceSite.brandName, sourceSite.tagline, sourceSite.aboutText,
+              sourceSite.whatsappE164, sourceSite.whatsappMessage,
+              sourceSite.instagramUrl, sourceSite.contactEmail,
+              sourceSite.seoTitle, sourceSite.seoDescription, now,
+            ],
+          );
+
+          for (const category of categories) {
+            await query(
+              `INSERT INTO categories (
+                id, name, slug, description, sort_order, is_visible, created_at, updated_at
+              ) VALUES (?, ?, ?, ?, ?, 1, ?, ?)
+              ON CONFLICT(id) DO UPDATE SET
+                name=excluded.name, slug=excluded.slug, description=excluded.description,
+                sort_order=excluded.sort_order, is_visible=1, updated_at=excluded.updated_at`,
+              [category.id, category.name, category.slug, category.description ?? null, category.sortOrder ?? 0, now, now],
+            );
+          }
+
+          for (let albumIndex = 0; albumIndex < albums.length; albumIndex++) {
+            const album = albums[albumIndex];
+            const createdAt = album.publishedAt || now;
+            await query(
+              `INSERT INTO albums (
+                id, slug, title, subtitle, description, location, shoot_date, status,
+                cover_image_id, featured, sort_order, seo_title, seo_description,
+                published_at, created_at, updated_at, deleted_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, 'published', ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+              ON CONFLICT(id) DO UPDATE SET
+                slug=excluded.slug, title=excluded.title, subtitle=excluded.subtitle,
+                description=excluded.description, location=excluded.location, shoot_date=excluded.shoot_date,
+                status='published', cover_image_id=excluded.cover_image_id, featured=excluded.featured,
+                sort_order=excluded.sort_order, seo_title=excluded.seo_title,
+                seo_description=excluded.seo_description, published_at=excluded.published_at,
+                updated_at=excluded.updated_at, deleted_at=NULL`,
+              [
+                album.id, album.slug, album.title, album.subtitle ?? null, album.description ?? null,
+                album.location ?? null, album.shootDate ?? null, album.coverImageId ?? null,
+                album.featured ? 1 : 0, (albumIndex + 1) * 1000, album.seoTitle ?? null,
+                album.seoDescription ?? null, album.publishedAt ?? null, createdAt, now,
+              ],
+            );
+
+            await query('DELETE FROM album_categories WHERE album_id = ?', [album.id]);
+            for (const category of album.categories || []) {
+              await query(
+                'INSERT OR IGNORE INTO album_categories (album_id, category_id) VALUES (?, ?)',
+                [album.id, category.id],
+              );
+            }
+          }
+
+          for (const image of staticImages) {
+            const update = await query(
+              `UPDATE images SET
+                album_id=?, alt_text=?, width=?, height=?, position=?, status='ready',
+                updated_at=?, deleted_at=NULL
+               WHERE id=?`,
+              [image.album.id, image.altText ?? null, image.width ?? null, image.height ?? null, image.position ?? 0, now, image.id],
+            );
+            const changes = Number(update.meta?.changes ?? 0);
+            if (changes !== 1) throw new Error(`static_image_missing_in_destination:${image.id}`);
+          }
+
+          for (const image of dynamicImages) {
+            const meta = dynamicMeta.get(image.id);
+            await query(
+              `INSERT INTO images (
+                id, album_id, original_key, original_filename, mime_type, size_bytes,
+                width, height, checksum, alt_text, focal_x, focal_y, position,
+                status, created_at, updated_at, deleted_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, 'ready', ?, ?, NULL)
+              ON CONFLICT(id) DO UPDATE SET
+                album_id=excluded.album_id, original_key=excluded.original_key,
+                original_filename=excluded.original_filename, mime_type=excluded.mime_type,
+                size_bytes=excluded.size_bytes, width=excluded.width, height=excluded.height,
+                checksum=excluded.checksum, alt_text=excluded.alt_text, position=excluded.position,
+                status='ready', updated_at=excluded.updated_at, deleted_at=NULL`,
+              [
+                image.id, image.album.id, meta.objectKey, `${image.id}.${meta.ext}`,
+                meta.contentType, meta.bytes, image.width ?? null, image.height ?? null,
+                meta.sha256, image.altText ?? null, image.position ?? 0, now, now,
+              ],
+            );
+          }
+
+          const afterPointers = (await query('SELECT * FROM site_config_pointers WHERE id = 1')).results ?? [];
+          const afterVersionCount = Number(((await query('SELECT COUNT(*) AS count FROM site_config_versions')).results ?? [])[0]?.count ?? 0);
+          const publicCounts = ((await query(
+            `SELECT
+              (SELECT COUNT(*) FROM categories WHERE is_visible=1) AS visibleCategories,
+              (SELECT COUNT(*) FROM albums WHERE status='published' AND deleted_at IS NULL) AS publishedAlbums,
+              (SELECT COUNT(*) FROM images image INNER JOIN albums album ON album.id=image.album_id
+                WHERE image.status='ready' AND image.deleted_at IS NULL
+                  AND album.status='published' AND album.deleted_at IS NULL) AS publishedImages,
+              (SELECT COUNT(*) FROM images WHERE id NOT LIKE 'static-%' AND status='ready' AND deleted_at IS NULL) AS dynamicImages`,
+          )).results ?? [])[0] ?? {};
+
+          const pointersUnchanged = JSON.stringify(beforePointers) === JSON.stringify(afterPointers)
+            && beforeVersionCount === afterVersionCount;
+          if (!pointersUnchanged) throw new Error('site_config_pointer_or_history_changed_unexpectedly');
+          if (Number(publicCounts.publishedAlbums) !== 16 || Number(publicCounts.publishedImages) !== 192 || Number(publicCounts.dynamicImages) !== 80) {
+            throw new Error(`destination_counts_unexpected:${JSON.stringify(publicCounts)}`);
+          }
+
+          const workerStatsResponse = await fetch(`${workerOrigin}/api/public/stats`, { headers: { accept: 'application/json' } });
+          const workerStats = workerStatsResponse.ok ? await workerStatsResponse.json() : { httpStatus: workerStatsResponse.status };
+
+          const sample = dynamicImages[0];
+          const sampleMeta = dynamicMeta.get(sample.id);
+          const verifyPath = '/tmp/r2-verify-sample';
+          execFileSync('wrangler', [
+            'r2', 'object', 'get', `punctum-picture-originals/${sampleMeta.objectKey}`,
+            '--file', verifyPath,
+            '--remote',
+          ], { stdio: 'pipe', env: process.env });
+          const verifyBytes = fs.readFileSync(verifyPath);
+          const verifyHash = crypto.createHash('sha256').update(verifyBytes).digest('hex');
+          if (verifyHash !== sampleMeta.sha256) throw new Error('r2_sample_hash_mismatch');
+
+          const result = {
+            status: 'success',
+            importedAt: new Date().toISOString(),
+            sourceSnapshotSha256: snapshot.sha256 ?? null,
+            destinationDatabaseId: dbId,
+            sourceCounts: snapshot.counts,
+            destinationCounts: publicCounts,
+            dynamicOriginalsUploaded: uploaded,
+            r2SampleVerified: true,
+            siteConfigActivated: false,
+            siteConfigPointersUnchanged: pointersUnchanged,
+            siteConfigVersionCountBefore: beforeVersionCount,
+            siteConfigVersionCountAfter: afterVersionCount,
+            workerStats,
+            domainTouched: false,
+            note: 'Published SiteConfig remains staged only in the repository snapshot; active Studio pointers were intentionally not changed.',
+          };
+          fs.writeFileSync(resultPath, JSON.stringify(result, null, 2) + '\n');
+          console.log(JSON.stringify(result));
+          NODE
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            if [ ! -f /tmp/cloudflare-import-public-state-result.json ]; then
+              printf '%s\n' '{"status":"failed","error":"import_failed","domainTouched":false,"siteConfigActivated":false}' > /tmp/cloudflare-import-public-state-result.json
+            fi
+          fi
+          exit "$status"
+
+      - name: Persist sanitized import result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f /tmp/cloudflare-import-public-state-result.json ]; then
+            printf '%s\n' '{"status":"failed","error":"workflow_failed_before_result","domainTouched":false,"siteConfigActivated":false}' > /tmp/cloudflare-import-public-state-result.json
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git reset --hard origin/main
+          cp /tmp/cloudflare-import-public-state-result.json requests/cloudflare-import-public-state-result.json
+          git add requests/cloudflare-import-public-state-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record isolated public-state import"
+          git push
