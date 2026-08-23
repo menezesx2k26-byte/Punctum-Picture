@@ -1,0 +1,12 @@
+{
+  "format": "punctum-dynamic-source-photo-backup-v1",
+  "capturedAt": "2026-08-23T04:13:56.112Z",
+  "origin": "https://punctumpicture.com",
+  "publicArchiveCount": 192,
+  "dynamicImageCount": 80,
+  "totalBytes": 215639198,
+  "fidelityEvidence": "Preflight proved identical SHA-256/bytes across card, gallery and hero for a dynamic image.",
+  "status": "success",
+  "artifactId": "9487329440",
+  "artifactUrl": "https://github.com/menezesx2k26-byte/Punctum-Picture/actions/runs/32617342236/artifacts/9487329440"
+}
