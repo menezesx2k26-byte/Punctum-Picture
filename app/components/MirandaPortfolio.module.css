@@ -1,0 +1,122 @@
+.root {
+  padding: 0 0 clamp(8rem, 12vw, 12rem);
+}
+
+.filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 1rem;
+  width: min(100% - 2.4rem, 94rem);
+  margin: 0 auto clamp(3rem, 6vw, 6rem);
+  padding-top: 1rem;
+  border-top: 1px solid rgba(18, 18, 16, 0.15);
+}
+
+.filter button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: rgba(18, 18, 16, 0.48);
+  font: inherit;
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.filter button:hover,
+.filter button.active {
+  color: #121210;
+}
+
+.grid {
+  column-count: 3;
+  column-gap: clamp(0.8rem, 1.5vw, 1.5rem);
+  width: min(100% - 2.4rem, 96rem);
+  margin: 0 auto;
+}
+
+.card {
+  display: inline-block;
+  width: 100%;
+  margin: 0 0 clamp(2rem, 3.5vw, 3.5rem);
+  break-inside: avoid;
+  color: inherit;
+}
+
+.image {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: #d8d2c8;
+}
+
+.card:nth-child(3n + 1) .image {
+  aspect-ratio: 3 / 2;
+}
+
+.card:nth-child(4n) .image {
+  aspect-ratio: 1 / 1.25;
+}
+
+.image img {
+  object-fit: cover;
+  transition: transform 900ms cubic-bezier(0.2, 0.75, 0.2, 1);
+}
+
+.card:hover .image img {
+  transform: scale(1.022);
+}
+
+.caption {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  gap: 0.8rem;
+  align-items: start;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(18, 18, 16, 0.13);
+}
+
+.index {
+  color: rgba(18, 18, 16, 0.42);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+}
+
+.caption h2 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: clamp(1.5rem, 2.8vw, 2.8rem);
+  font-weight: 400;
+  line-height: 0.95;
+}
+
+.caption p {
+  margin: 0.35rem 0 0;
+  color: rgba(18, 18, 16, 0.48);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    column-count: 2;
+  }
+}
+
+@media (max-width: 620px) {
+  .grid {
+    column-count: 1;
+  }
+
+  .card:nth-child(n) .image {
+    aspect-ratio: 4 / 5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .image img {
+    transition: none;
+  }
+}
