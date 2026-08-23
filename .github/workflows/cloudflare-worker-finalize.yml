@@ -1,0 +1,168 @@
+name: Finalize Punctum migration worker
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "requests/cloudflare-worker-finalize.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: punctum-cloudflare-worker-finalize
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Install trusted Wrangler
+        run: npm install --global --no-audit --no-fund wrangler@4.125.0
+
+      - name: Validate existing destination and build
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_D1_API_TOKEN: ${{ secrets.CLOUDFLARE_D1_API_TOKEN }}
+        run: |
+          set -uo pipefail
+          mkdir -p requests .migration
+
+          cat > requests/cloudflare-worker-finalize-result.json <<'EOF'
+          {
+            "status": "running",
+            "d1": false,
+            "r2_originals": false,
+            "r2_backups": false,
+            "npm_ci": false,
+            "typecheck": false,
+            "lint": false,
+            "tests": false,
+            "build": false,
+            "worker": false,
+            "worker_name": "punctum-picture-migration",
+            "domain_touched": false
+          }
+          EOF
+
+          fail() {
+            message="$1"
+            jq --arg message "$message" '.status="failed" | .error=$message' requests/cloudflare-worker-finalize-result.json > /tmp/result.json
+            mv /tmp/result.json requests/cloudflare-worker-finalize-result.json
+            exit 1
+          }
+
+          mark() {
+            key="$1"
+            jq --arg key "$key" '.[$key]=true' requests/cloudflare-worker-finalize-result.json > /tmp/result.json
+            mv /tmp/result.json requests/cloudflare-worker-finalize-result.json
+          }
+
+          # Resolve the already-created D1 database using the dedicated D1 token.
+          D1_HTTP="$(curl -sS -o /tmp/d1.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${CLOUDFLARE_D1_API_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database" || true)"
+          [ "$D1_HTTP" = "200" ] && jq -e '.success == true' /tmp/d1.json >/dev/null 2>&1 || fail "d1_read_failed"
+          DB_ID="$(jq -r '.result[]? | select(.name == "punctum-picture") | (.uuid // .id // empty)' /tmp/d1.json | head -n1)"
+          [ -n "$DB_ID" ] || fail "d1_database_missing"
+          mark d1
+          jq --arg id "$DB_ID" '.d1_database_id=$id' requests/cloudflare-worker-finalize-result.json > /tmp/result.json
+          mv /tmp/result.json requests/cloudflare-worker-finalize-result.json
+
+          # Verify both existing private R2 buckets.
+          wrangler r2 bucket info punctum-picture-originals --json >/tmp/r2-originals.json 2>/tmp/r2-originals.err || fail "r2_originals_missing"
+          mark r2_originals
+          wrangler r2 bucket info punctum-picture-backups --json >/tmp/r2-backups.json 2>/tmp/r2-backups.err || fail "r2_backups_missing"
+          mark r2_backups
+
+          # Ephemeral config: workers.dev only; deliberately no custom routes and no cron triggers.
+          DB_ID="$DB_ID" node <<'NODE'
+          import fs from 'node:fs';
+          const databaseId = process.env.DB_ID;
+          const config = {
+            "$schema": "./node_modules/wrangler/config-schema.json",
+            "name": "punctum-picture-migration",
+            "main": "worker/index.ts",
+            "compatibility_date": "2026-05-22",
+            "compatibility_flags": ["nodejs_compat"],
+            "workers_dev": true,
+            "assets": {
+              "directory": "./dist/client",
+              "binding": "ASSETS",
+              "not_found_handling": "single-page-application",
+              "run_worker_first": ["/api/*", "/admin/*", "/media/*", "/sitemap.xml", "/robots.txt"]
+            },
+            "d1_databases": [{
+              "binding": "DB",
+              "database_name": "punctum-picture",
+              "database_id": databaseId,
+              "migrations_dir": "migrations"
+            }],
+            "r2_buckets": [
+              { "binding": "ORIGINALS", "bucket_name": "punctum-picture-originals" },
+              { "binding": "BACKUPS", "bucket_name": "punctum-picture-backups" }
+            ],
+            "images": { "binding": "IMAGES" },
+            "observability": { "enabled": true },
+            "vars": {
+              "ENVIRONMENT": "migration",
+              "SITE_ORIGIN": "https://migration.invalid",
+              "PUBLIC_SITE_URL": "https://migration.invalid",
+              "PUBLIC_WHATSAPP_E164": "UNSPECIFIED",
+              "PUBLIC_INSTAGRAM_URL": "UNSPECIFIED",
+              "MAX_UPLOAD_BYTES": "26214400",
+              "ALLOWED_MIME_TYPES": "image/jpeg,image/png,image/webp",
+              "PRESIGNED_URL_TTL_SECONDS": "900",
+              "CONTACT_RATE_LIMIT_WINDOW_SECONDS": "3600",
+              "CONTACT_RATE_LIMIT_MAX": "5",
+              "ADMIN_RATE_LIMIT_WINDOW_SECONDS": "60",
+              "ADMIN_RATE_LIMIT_MAX": "60",
+              "BACKUP_PREFIX": "backups/d1",
+              "BACKUP_RETENTION_DAYS": "180",
+              "CLEANUP_ORPHAN_UPLOAD_AGE_HOURS": "24"
+            }
+          };
+          fs.writeFileSync('.migration/wrangler.jsonc', JSON.stringify(config, null, 2) + '\n');
+          NODE
+
+          npm ci >/tmp/npm-ci.log 2>&1 || fail "npm_ci_failed"
+          mark npm_ci
+          npm run typecheck >/tmp/typecheck.log 2>&1 || fail "typecheck_failed"
+          mark typecheck
+          npm run lint >/tmp/lint.log 2>&1 || fail "lint_failed"
+          mark lint
+          npm test >/tmp/tests.log 2>&1 || fail "tests_failed"
+          mark tests
+          npm run build >/tmp/build.log 2>&1 || fail "build_failed"
+          mark build
+
+          wrangler deploy --config .migration/wrangler.jsonc 2>&1 | tee /tmp/deploy.txt || fail "worker_deploy_failed"
+          WORKER_URL="$(grep -Eo 'https://[^ ]+\.workers\.dev' /tmp/deploy.txt | tail -n1 || true)"
+          jq --arg url "$WORKER_URL" '.status="success" | .worker=true | .worker_url=(if $url == "" then null else $url end) | .domain_touched=false' requests/cloudflare-worker-finalize-result.json > /tmp/result.json
+          mv /tmp/result.json requests/cloudflare-worker-finalize-result.json
+
+      - name: Persist sanitized finalization result
+        if: always()
+        run: |
+          if [ ! -f requests/cloudflare-worker-finalize-result.json ]; then
+            printf '%s\n' '{"status":"failed","error":"workflow_failed_before_result","domain_touched":false}' > requests/cloudflare-worker-finalize-result.json
+          fi
+          rm -rf .migration
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add requests/cloudflare-worker-finalize-result.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "ci: record Punctum worker finalization result"
+          git push
