@@ -1,5 +1,5 @@
 {
-  "nonce": 1,
+  "nonce": 2,
   "mode": "read-only-source-private-state-migration",
   "source": "https://punctumpicture.com",
   "destination": "isolated-cloudflare",
