@@ -24,9 +24,8 @@ jobs:
           node-version: 22
           package-manager-cache: false
       - name: Install trusted Wrangler
-        run: npm install --global --no-audit --no-fund wrangler@4.112.0
+        run: npm install --global --no-audit --no-fund wrangler@4.125.0
       - name: Run read-only probe
-        id: probe
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -37,11 +36,19 @@ jobs:
           r2_ok=false
 
           wrangler whoami >/tmp/whoami.txt 2>&1 && whoami_ok=true
-          wrangler d1 list >/tmp/d1.txt 2>&1 && d1_ok=true
+
+          D1_HTTP="$(curl -sS -o /tmp/d1.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database" || true)"
+          if [ "$D1_HTTP" = "200" ] && jq -e '.success == true' /tmp/d1.json >/dev/null 2>&1; then
+            d1_ok=true
+          fi
+
           wrangler r2 bucket list >/tmp/r2.txt 2>&1 && r2_ok=true
 
-          sanitize() {
-            tail -n 12 "$1" \
+          sanitize_file() {
+            tail -n 20 "$1" \
               | sed -E 's/[A-Fa-f0-9]{24,}/[redacted-id]/g' \
               | sed -E 's/[A-Za-z0-9_-]{35,}/[redacted-secret]/g' \
               | tr '\n' ' ' \
@@ -50,8 +57,8 @@ jobs:
 
           d1_error=""
           r2_error=""
-          if [ "$d1_ok" != true ]; then d1_error="$(sanitize /tmp/d1.txt)"; fi
-          if [ "$r2_ok" != true ]; then r2_error="$(sanitize /tmp/r2.txt)"; fi
+          if [ "$d1_ok" != true ]; then d1_error="http=${D1_HTTP} $(sanitize_file /tmp/d1.json)"; fi
+          if [ "$r2_ok" != true ]; then r2_error="$(sanitize_file /tmp/r2.txt)"; fi
 
           overall=false
           if [ "$whoami_ok" = true ] && [ "$d1_ok" = true ] && [ "$r2_ok" = true ]; then
