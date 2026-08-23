@@ -1,11 +1,14 @@
 {
-  "status": "failed",
-  "d1": false,
-  "r2_originals": false,
-  "r2_backups": false,
-  "migrations": false,
+  "status": "running",
+  "d1": true,
+  "r2_originals": true,
+  "r2_backups": true,
+  "migrations": true,
   "worker": false,
   "worker_name": "punctum-picture-migration",
   "domain_touched": false,
-  "error": "d1_read_failed"
+  "d1_database_name": "punctum-picture",
+  "d1_database_id": "22697f13-7484-41e3-9441-f7b902c6577a",
+  "r2_originals_bucket": "punctum-picture-originals",
+  "r2_backups_bucket": "punctum-picture-backups"
 }
