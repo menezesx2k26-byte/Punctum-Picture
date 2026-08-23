@@ -1,7 +1,8 @@
 {
-  "nonce": 5,
+  "nonce": 6,
   "requested_by": "chat",
   "mode": "isolated-workers-dev",
   "domain_changes": false,
-  "authorized": "deploy-workers-dev"
+  "authorized": "deploy-workers-dev",
+  "site_origin": "workers-dev"
 }
