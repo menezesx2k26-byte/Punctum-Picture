@@ -144,7 +144,7 @@ jobs:
           config.observability = { enabled: true };
           config.vars = {
             ENVIRONMENT: 'migration',
-            SITE_ORIGIN: 'https://migration.invalid',
+            SITE_ORIGIN: 'https://punctum-picture-migration.menezesx2k26.workers.dev',
             PUBLIC_SITE_URL: 'https://migration.invalid',
             PUBLIC_WHATSAPP_E164: 'UNSPECIFIED',
             PUBLIC_INSTAGRAM_URL: 'UNSPECIFIED',
