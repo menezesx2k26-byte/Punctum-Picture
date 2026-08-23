@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Punctum Image Converter</title>
+  <style>
+    :root { color-scheme: light dark; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #111; color: #f5f5f5; }
+    main { width: min(920px, calc(100% - 32px)); margin: 32px auto; }
+    .card { border: 1px solid #2d2d2d; background: #181818; border-radius: 20px; padding: 24px; box-shadow: 0 18px 70px rgba(0,0,0,.35); }
+    h1 { margin: 0 0 8px; font-size: clamp(28px, 5vw, 44px); }
+    p { color: #bdbdbd; line-height: 1.55; }
+    .drop { margin-top: 20px; min-height: 180px; border: 1px dashed #555; border-radius: 16px; display: grid; place-items: center; text-align: center; padding: 24px; cursor: pointer; }
+    .drop.drag { border-color: #fff; background: #202020; }
+    .controls { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin-top: 18px; }
+    label { display: grid; gap: 7px; font-size: 13px; color: #cfcfcf; }
+    select, input, button, textarea { width: 100%; border: 1px solid #3b3b3b; background: #101010; color: #fff; border-radius: 12px; padding: 11px 12px; font: inherit; }
+    input[type=range] { padding: 0; }
+    button { cursor: pointer; font-weight: 700; }
+    button.primary { background: #f2f2f2; color: #111; border-color: #f2f2f2; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    .actions { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin-top: 16px; }
+    .preview { display: none; margin-top: 20px; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .preview.active { display: grid; }
+    .pane { border: 1px solid #2f2f2f; border-radius: 14px; padding: 14px; background: #141414; overflow: hidden; }
+    .pane img { width: 100%; max-height: 420px; object-fit: contain; border-radius: 10px; background: #0b0b0b; }
+    .meta { margin-top: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #bdbdbd; white-space: pre-wrap; overflow-wrap: anywhere; }
+    details { margin-top: 18px; }
+    textarea { min-height: 130px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+    .status { margin-top: 14px; min-height: 24px; font-size: 13px; color: #d0d0d0; }
+    @media (max-width: 720px) {
+      .controls, .actions, .preview { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <section class="card">
+    <h1>Punctum Image Converter</h1>
+    <p>Conversão local no navegador. Nenhuma imagem é enviada a servidor. Converte JPEG/PNG/WebP, redimensiona, calcula SHA-256 e só gera Base64 quando você pedir.</p>
+
+    <input id="file" type="file" accept="image/jpeg,image/png,image/webp" hidden />
+    <div id="drop" class="drop" role="button" tabindex="0">
+      <div>
+        <strong>Arraste uma imagem aqui</strong>
+        <p>ou toque para escolher um arquivo</p>
+      </div>
+    </div>
+
+    <div class="controls">
+      <label>Formato de saída
+        <select id="format">
+          <option value="image/webp">WebP</option>
+          <option value="image/jpeg">JPEG</option>
+        </select>
+      </label>
+      <label>Qualidade <span id="qualityValue">84%</span>
+        <input id="quality" type="range" min="40" max="100" value="84" />
+      </label>
+      <label>Maior lado (px)
+        <input id="maxSide" type="number" min="320" max="8192" step="64" value="2048" />
+      </label>
+    </div>
+
+    <div class="actions">
+      <button id="convert" class="primary" disabled>Converter</button>
+      <button id="download" disabled>Baixar resultado</button>
+      <button id="base64Btn" disabled>Gerar Base64</button>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <div id="preview" class="preview">
+      <div class="pane">
+        <strong>Original</strong>
+        <img id="originalImg" alt="Prévia original" />
+        <div id="originalMeta" class="meta"></div>
+      </div>
+      <div class="pane">
+        <strong>Convertida</strong>
+        <img id="convertedImg" alt="Prévia convertida" />
+        <div id="convertedMeta" class="meta"></div>
+      </div>
+    </div>
+
+    <details id="base64Box">
+      <summary>Base64 / Data URL</summary>
+      <textarea id="base64" readonly placeholder="Clique em “Gerar Base64” somente quando precisar."></textarea>
+      <div class="actions">
+        <button id="copyBase64" disabled>Copiar Base64</button>
+      </div>
+    </details>
+  </section>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const state = { file: null, sourceUrl: null, resultUrl: null, resultBlob: null, resultName: null, sourceSize: null };
+
+  function humanBytes(bytes) {
+    if (!Number.isFinite(bytes)) return '—';
+    const units = ['B','KB','MB','GB'];
+    let i = 0, value = bytes;
+    while (value >= 1024 && i < units.length - 1) { value /= 1024; i++; }
+    return `${value.toFixed(i ? 2 : 0)} ${units[i]}`;
+  }
+
+  function fit(width, height, maxSide) {
+    const largest = Math.max(width, height);
+    if (largest <= maxSide) return { width, height };
+    const scale = maxSide / largest;
+    return { width: Math.round(width * scale), height: Math.round(height * scale) };
+  }
+
+  async function sha256(blob) {
+    const buffer = await blob.arrayBuffer();
+    const digest = await crypto.subtle.digest('SHA-256', buffer);
+    return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  async function blobToDataUrl(blob) {
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function loadImage(url) {
+    return await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+
+  function resetResult() {
+    if (state.resultUrl) URL.revokeObjectURL(state.resultUrl);
+    state.resultUrl = null;
+    state.resultBlob = null;
+    state.resultName = null;
+    $('download').disabled = true;
+    $('base64Btn').disabled = true;
+    $('copyBase64').disabled = true;
+    $('base64').value = '';
+    $('convertedImg').removeAttribute('src');
+    $('convertedMeta').textContent = '';
+  }
+
+  async function setFile(file) {
+    if (!file || !/^image\/(jpeg|png|webp)$/.test(file.type)) {
+      $('status').textContent = 'Use um arquivo JPEG, PNG ou WebP.';
+      return;
+    }
+    resetResult();
+    if (state.sourceUrl) URL.revokeObjectURL(state.sourceUrl);
+    state.file = file;
+    state.sourceUrl = URL.createObjectURL(file);
+    const img = await loadImage(state.sourceUrl);
+    state.sourceSize = { width: img.naturalWidth, height: img.naturalHeight };
+    $('originalImg').src = state.sourceUrl;
+    $('originalMeta').textContent = `${file.name}\n${img.naturalWidth}×${img.naturalHeight}\n${humanBytes(file.size)}\n${file.type}`;
+    $('preview').classList.add('active');
+    $('convert').disabled = false;
+    $('status').textContent = 'Imagem carregada. Pronta para converter.';
+  }
+
+  async function convert() {
+    if (!state.file || !state.sourceUrl) return;
+    resetResult();
+    $('convert').disabled = true;
+    $('status').textContent = 'Convertendo…';
+    try {
+      const img = await loadImage(state.sourceUrl);
+      const maxSide = Math.max(320, Math.min(8192, Number($('maxSide').value) || 2048));
+      const { width, height } = fit(img.naturalWidth, img.naturalHeight, maxSide);
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d', { alpha: $('format').value !== 'image/jpeg' });
+      if ($('format').value === 'image/jpeg') {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, width, height);
+      }
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, width, height);
+      const quality = Number($('quality').value) / 100;
+      const mime = $('format').value;
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, mime, quality));
+      if (!blob) throw new Error('O navegador não conseguiu codificar a imagem.');
+
+      state.resultBlob = blob;
+      state.resultUrl = URL.createObjectURL(blob);
+      const ext = mime === 'image/webp' ? 'webp' : 'jpg';
+      const base = state.file.name.replace(/\.[^.]+$/, '');
+      state.resultName = `${base}.${ext}`;
+      const hash = await sha256(blob);
+      const savings = state.file.size ? (1 - blob.size / state.file.size) * 100 : 0;
+
+      $('convertedImg').src = state.resultUrl;
+      $('convertedMeta').textContent = `${state.resultName}\n${width}×${height}\n${humanBytes(blob.size)}\n${mime}\nSHA-256: ${hash}\n${savings >= 0 ? 'Redução' : 'Aumento'}: ${Math.abs(savings).toFixed(1)}%`;
+      $('download').disabled = false;
+      $('base64Btn').disabled = false;
+      $('status').textContent = 'Conversão concluída.';
+    } catch (error) {
+      console.error(error);
+      $('status').textContent = `Erro: ${error.message || error}`;
+    } finally {
+      $('convert').disabled = false;
+    }
+  }
+
+  $('drop').addEventListener('click', () => $('file').click());
+  $('drop').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') $('file').click();
+  });
+  $('drop').addEventListener('dragover', (event) => { event.preventDefault(); $('drop').classList.add('drag'); });
+  $('drop').addEventListener('dragleave', () => $('drop').classList.remove('drag'));
+  $('drop').addEventListener('drop', (event) => {
+    event.preventDefault();
+    $('drop').classList.remove('drag');
+    setFile(event.dataTransfer.files?.[0]);
+  });
+  $('file').addEventListener('change', (event) => setFile(event.target.files?.[0]));
+  $('quality').addEventListener('input', () => $('qualityValue').textContent = `${$('quality').value}%`);
+  $('convert').addEventListener('click', convert);
+  $('download').addEventListener('click', () => {
+    if (!state.resultUrl) return;
+    const a = document.createElement('a');
+    a.href = state.resultUrl;
+    a.download = state.resultName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  });
+  $('base64Btn').addEventListener('click', async () => {
+    if (!state.resultBlob) return;
+    $('status').textContent = 'Gerando Base64…';
+    $('base64').value = await blobToDataUrl(state.resultBlob);
+    $('copyBase64').disabled = false;
+    $('base64Box').open = true;
+    $('status').textContent = `Base64 pronto (${humanBytes(new Blob([$('base64').value]).size)} em texto).`;
+  });
+  $('copyBase64').addEventListener('click', async () => {
+    await navigator.clipboard.writeText($('base64').value);
+    $('status').textContent = 'Base64 copiado.';
+  });
+</script>
+</body>
+</html>
