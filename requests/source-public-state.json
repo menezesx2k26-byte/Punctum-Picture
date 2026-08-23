@@ -1,5 +1,7 @@
 {
-  "nonce": 1,
-  "mode": "read-only-live-public-state",
-  "origin": "https://punctumpicture.com"
+  "nonce": 2,
+  "mode": "import-to-cloudflare",
+  "origin": "https://punctumpicture.com",
+  "domain_touched": false,
+  "site_config_activate": false
 }
