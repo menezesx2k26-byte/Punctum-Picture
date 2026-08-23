@@ -167,6 +167,16 @@ jobs:
             echo "pending media probe skipped"
           fi
 
+      - name: Optionally audit media bytes read-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          if jq -e '.mediaByteParityAudit == true' requests/source-public-state.json >/dev/null; then
+            node scripts/audit-media-byte-parity.mjs
+          else
+            echo "media byte parity audit skipped"
+          fi
+
       - name: Persist sanitized results safely
         if: always()
         shell: bash
@@ -182,7 +192,8 @@ jobs:
           if [ -f /tmp/destination-admin-bootstrap-result.json ]; then cp /tmp/destination-admin-bootstrap-result.json requests/destination-admin-bootstrap-result.json; fi
           if [ -f /tmp/private-admin-parity-result.json ]; then cp /tmp/private-admin-parity-result.json requests/private-admin-parity-result.json; fi
           if [ -f /tmp/source-pending-media-probe-result.json ]; then cp /tmp/source-pending-media-probe-result.json requests/source-pending-media-probe-result.json; fi
-          git add requests/source-public-state-result.json requests/cloudflare-import-public-state-v2-result.json requests/source-private-state-migration-result.json requests/destination-admin-bootstrap-result.json requests/private-admin-parity-result.json requests/source-pending-media-probe-result.json 2>/dev/null || true
+          if [ -f /tmp/media-byte-parity-result.json ]; then cp /tmp/media-byte-parity-result.json requests/media-byte-parity-result.json; fi
+          git add requests/source-public-state-result.json requests/cloudflare-import-public-state-v2-result.json requests/source-private-state-migration-result.json requests/destination-admin-bootstrap-result.json requests/private-admin-parity-result.json requests/source-pending-media-probe-result.json requests/media-byte-parity-result.json 2>/dev/null || true
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "ci: record live snapshot and migration results"
           git push
