@@ -1,0 +1,116 @@
+name: Diagnose Miranda D1
+
+on:
+  push:
+    branches: ["miranda-editorial"]
+    paths:
+      - "ops/miranda-d1-debug"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_D1_API_TOKEN: ${{ secrets.CLOUDFLARE_D1_API_TOKEN }}
+      MIRANDA_DB: punctum-picture-miranda
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read Miranda D1 only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p requests
+          node <<'NODE'
+          import fs from 'node:fs';
+
+          const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+          const token = process.env.CLOUDFLARE_D1_API_TOKEN;
+          const dbName = process.env.MIRANDA_DB;
+          const out = {
+            status: 'unknown',
+            branch: 'miranda-editorial',
+            databaseName: dbName,
+            productionDomainTouched: false,
+            writesPerformed: 0,
+          };
+
+          async function cf(path, options = {}) {
+            const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}${path}`, {
+              ...options,
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                ...(options.headers || {}),
+              },
+            });
+            const text = await res.text();
+            let body;
+            try { body = JSON.parse(text); } catch { body = { raw: text.slice(0, 1000) }; }
+            return { res, body };
+          }
+
+          async function query(dbId, sql) {
+            const { res, body } = await cf(`/d1/database/${dbId}/query`, {
+              method: 'POST',
+              body: JSON.stringify({ sql }),
+            });
+            if (!res.ok || body?.success === false || body?.result?.some?.((x) => x?.success === false)) {
+              throw new Error(`query_failed:${res.status}:${JSON.stringify(body?.errors || body).slice(0, 1500)}`);
+            }
+            return body?.result?.[0]?.results ?? [];
+          }
+
+          try {
+            if (!accountId || !token) throw new Error('missing_cloudflare_secrets');
+            const { res, body } = await cf('/d1/database');
+            if (!res.ok || body?.success === false) {
+              throw new Error(`list_failed:${res.status}:${JSON.stringify(body?.errors || body).slice(0, 1500)}`);
+            }
+            const db = (body.result || []).find((x) => x.name === dbName);
+            if (!db) throw new Error('miranda_database_not_found');
+            const dbId = db.uuid || db.id;
+            out.databaseId = dbId;
+
+            const tables = await query(dbId, `SELECT name FROM sqlite_schema WHERE type='table' ORDER BY name`);
+            out.tables = tables.map((x) => x.name);
+
+            async function safeCount(label, sql) {
+              try {
+                const rows = await query(dbId, sql);
+                out[label] = rows[0] ?? null;
+              } catch (error) {
+                out[label] = { error: String(error?.message || error) };
+              }
+            }
+
+            await safeCount('albums', `SELECT COUNT(*) AS total, SUM(CASE WHEN status='published' AND deleted_at IS NULL THEN 1 ELSE 0 END) AS published, SUM(CASE WHEN deleted_at IS NOT NULL THEN 1 ELSE 0 END) AS deleted FROM albums`);
+            await safeCount('images', `SELECT COUNT(*) AS total, SUM(CASE WHEN status='ready' AND deleted_at IS NULL THEN 1 ELSE 0 END) AS ready, SUM(CASE WHEN id LIKE 'static-%' AND status='ready' AND deleted_at IS NULL THEN 1 ELSE 0 END) AS staticReady, SUM(CASE WHEN id NOT LIKE 'static-%' AND status='ready' AND deleted_at IS NULL THEN 1 ELSE 0 END) AS dynamicReady, SUM(CASE WHEN deleted_at IS NOT NULL THEN 1 ELSE 0 END) AS deleted FROM images`);
+            await safeCount('pointers', `SELECT COUNT(*) AS total, MIN(draft_version_id) AS draftVersionId, MIN(published_version_id) AS publishedVersionId FROM site_config_pointers`);
+            await safeCount('versions', `SELECT COUNT(*) AS total, SUM(CASE WHEN state='draft' THEN 1 ELSE 0 END) AS drafts, SUM(CASE WHEN state='published' THEN 1 ELSE 0 END) AS published FROM site_config_versions`);
+            await safeCount('siteConfig', `SELECT COUNT(*) AS total, MIN(schema_version) AS schemaVersion FROM site_config`);
+            await safeCount('albumImageJoin', `SELECT COUNT(*) AS publicImages FROM images i INNER JOIN albums a ON a.id=i.album_id WHERE i.status='ready' AND i.deleted_at IS NULL AND a.status='published' AND a.deleted_at IS NULL`);
+
+            out.status = 'success';
+          } catch (error) {
+            out.status = 'failed';
+            out.error = String(error?.message || error);
+          }
+
+          fs.writeFileSync('requests/miranda-d1-debug-result.json', JSON.stringify(out, null, 2) + '\n');
+          NODE
+
+      - name: Persist diagnostic result
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add requests/miranda-d1-debug-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record Miranda D1 diagnostic"
+          git push origin HEAD:miranda-editorial
