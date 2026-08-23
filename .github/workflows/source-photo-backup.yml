@@ -1,0 +1,157 @@
+name: Backup live Punctum photos
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "requests/source-photo-backup.json"
+
+permissions:
+  contents: write
+
+timeout-minutes: 60
+
+concurrency:
+  group: punctum-source-photo-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Download public source photos byte-for-byte
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .source-photo-backup
+          mkdir -p .source-photo-backup/photos requests
+
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const crypto = require('crypto');
+
+          const ORIGIN = 'https://punctumpicture.com';
+          const archiveUrl = `${ORIGIN}/api/public/archive?limit=500`;
+
+          const response = await fetch(archiveUrl, { headers: { accept: 'application/json' } });
+          if (!response.ok) throw new Error(`archive_http_${response.status}`);
+          const payload = await response.json();
+          const images = payload.images ?? payload.photos ?? [];
+          if (!Array.isArray(images) || images.length === 0) throw new Error('archive_empty');
+
+          const extFromType = (type) => {
+            const t = (type || '').split(';')[0].trim().toLowerCase();
+            if (t === 'image/jpeg') return 'jpg';
+            if (t === 'image/png') return 'png';
+            if (t === 'image/webp') return 'webp';
+            if (t === 'image/avif') return 'avif';
+            if (t === 'image/gif') return 'gif';
+            return 'bin';
+          };
+          const safe = (value) => String(value || 'sem-album').replace(/[^a-zA-Z0-9._-]+/g, '-');
+          const manifest = [];
+          let cursor = 0;
+          const concurrency = 8;
+
+          async function worker() {
+            while (true) {
+              const i = cursor++;
+              if (i >= images.length) return;
+              const image = images[i];
+              const id = image.id;
+              if (!id) throw new Error(`image_without_id_at_${i}`);
+              const url = `${ORIGIN}/media/${encodeURIComponent(id)}/gallery`;
+              const r = await fetch(url, {
+                headers: { accept: 'image/jpeg' },
+                redirect: 'follow',
+              });
+              if (!r.ok) throw new Error(`image_http_${r.status}_${id}`);
+              const bytes = Buffer.from(await r.arrayBuffer());
+              const contentType = r.headers.get('content-type') || 'application/octet-stream';
+              const ext = extFromType(contentType);
+              const albumSlug = safe(image.albumSlug || 'sem-album');
+              const dir = path.join('.source-photo-backup', 'photos', albumSlug);
+              fs.mkdirSync(dir, { recursive: true });
+              const relativePath = path.join('photos', albumSlug, `${safe(id)}.${ext}`).replaceAll('\\', '/');
+              fs.writeFileSync(path.join('.source-photo-backup', relativePath), bytes);
+              manifest.push({
+                id,
+                albumSlug: image.albumSlug ?? null,
+                albumTitle: image.albumTitle ?? null,
+                altText: image.altText ?? null,
+                categories: image.categories ?? [],
+                sourceUrl: url,
+                relativePath,
+                contentType,
+                bytes: bytes.length,
+                sha256: crypto.createHash('sha256').update(bytes).digest('hex'),
+              });
+              if ((i + 1) % 20 === 0) console.log(`downloaded ${i + 1}/${images.length}`);
+            }
+          }
+
+          await Promise.all(Array.from({ length: concurrency }, () => worker()));
+          manifest.sort((a,b) => (a.albumSlug || '').localeCompare(b.albumSlug || '') || a.id.localeCompare(b.id));
+          const totalBytes = manifest.reduce((sum, x) => sum + x.bytes, 0);
+          const uniqueIds = new Set(manifest.map(x => x.id));
+          if (uniqueIds.size !== manifest.length) throw new Error('duplicate_image_ids');
+
+          const report = {
+            format: 'punctum-public-source-photo-backup-v1',
+            capturedAt: new Date().toISOString(),
+            origin: ORIGIN,
+            archiveUrl,
+            imageCount: manifest.length,
+            totalBytes,
+            note: 'Media fidelity probe confirmed identical source bytes across card/gallery/hero for a dynamic R2 image before this backup.',
+          };
+          fs.writeFileSync('.source-photo-backup/manifest.json', JSON.stringify({ ...report, images: manifest }, null, 2) + '\n');
+          fs.writeFileSync('.source-photo-backup/report.json', JSON.stringify(report, null, 2) + '\n');
+          console.log(JSON.stringify(report));
+          NODE
+
+          test "$(jq -r '.imageCount' .source-photo-backup/report.json)" = "192"
+
+      - name: Upload backup artifact
+        id: artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: punctum-public-source-photos
+          path: .source-photo-backup/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+      - name: Record artifact handoff
+        if: success()
+        env:
+          ARTIFACT_ID: ${{ steps.artifact.outputs.artifact-id }}
+          ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
+        run: |
+          jq \
+            --arg artifactId "$ARTIFACT_ID" \
+            --arg artifactUrl "$ARTIFACT_URL" \
+            '. + {status:"success", artifactId:$artifactId, artifactUrl:$artifactUrl}' \
+            .source-photo-backup/report.json > requests/source-photo-backup-result.json
+
+      - name: Persist sanitized backup result
+        if: always()
+        run: |
+          if [ ! -f requests/source-photo-backup-result.json ]; then
+            printf '%s\n' '{"status":"failed","error":"backup_failed_before_artifact"}' > requests/source-photo-backup-result.json
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add requests/source-photo-backup-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record live source photo backup"
+          git push
