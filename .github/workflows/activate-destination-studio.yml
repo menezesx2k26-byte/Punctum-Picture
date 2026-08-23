@@ -1,0 +1,50 @@
+name: Activate migrated Studio on destination
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "requests/activate-destination-studio.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: punctum-activate-destination-studio
+  cancel-in-progress: false
+
+jobs:
+  activate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SOURCE_ADMIN_EMAIL: ${{ secrets.SOURCE_ADMIN_EMAIL }}
+      SOURCE_ADMIN_PASSWORD: ${{ secrets.SOURCE_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Activate source Studio state on isolated destination
+        run: node scripts/activate-destination-studio.mjs
+
+      - name: Persist sanitized result
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ ! -f /tmp/destination-studio-activation-result.json ]; then
+            printf '%s\n' '{"status":"failed","error":"activation_failed_before_result","publicStudioActivated":false,"domainTouched":false}' > /tmp/destination-studio-activation-result.json
+          fi
+          cp /tmp/destination-studio-activation-result.json requests/destination-studio-activation-result.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git reset --hard origin/main
+          cp /tmp/destination-studio-activation-result.json requests/destination-studio-activation-result.json
+          git add requests/destination-studio-activation-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record destination Studio activation"
+          git push
