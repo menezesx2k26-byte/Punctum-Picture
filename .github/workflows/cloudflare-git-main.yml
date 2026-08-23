@@ -18,7 +18,7 @@ on:
       - "requests/cloudflare-git-deploy.json"
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: punctum-git-main-cloudflare
@@ -43,24 +43,31 @@ jobs:
           package-manager-cache: false
 
       - name: Install dependencies
+        id: deps
         run: npm ci
 
       - name: Typecheck
+        id: typecheck
         run: npm run typecheck
 
       - name: Lint
+        id: lint
         run: npm run lint
 
       - name: Build vinext worker
+        id: build
         run: npm run build
 
       - name: Tests
+        id: tests
         run: npm test
 
       - name: Install trusted Wrangler
+        id: wrangler
         run: npm install --global --no-audit --no-fund wrangler@4.125.0
 
       - name: Resolve production D1
+        id: d1
         shell: bash
         run: |
           set -euo pipefail
@@ -75,6 +82,7 @@ jobs:
           echo "DB_ID=$DB_ID" >> "$GITHUB_ENV"
 
       - name: Patch generated config for owner Cloudflare
+        id: patch
         run: |
           node <<'NODE'
           import fs from 'node:fs';
@@ -126,9 +134,11 @@ jobs:
           NODE
 
       - name: Deploy to Cloudflare
+        id: deploy_worker
         run: wrangler deploy --config dist/server/wrangler.json
 
       - name: Smoke test public and admin
+        id: smoke
         shell: bash
         run: |
           set -euo pipefail
@@ -151,6 +161,7 @@ jobs:
           jq -e '.hasUnpublishedChanges == false and .siteConfig.identity.sourcePresetId == "aconchegante-organico"' /tmp/studio.json >/dev/null
 
       - name: Deployment summary
+        if: success()
         run: |
           {
             echo '### Punctum Cloudflare deploy'
@@ -163,3 +174,50 @@ jobs:
             echo '- Studio migrated state: verified'
             echo '- Custom domain: untouched'
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Persist sanitized deploy result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          STATUS='${{ job.status }}'
+          cat > /tmp/cloudflare-git-deploy-result.json <<EOF
+          {
+            "status": "$STATUS",
+            "checkedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "sourceCommit": "$GITHUB_SHA",
+            "worker": "punctum-picture-migration",
+            "workerUrl": "https://punctum-picture-migration.menezesx2k26.workers.dev",
+            "gitBranch": "main",
+            "autoDeployEnabled": true,
+            "stages": {
+              "npmCi": "${{ steps.deps.outcome }}",
+              "typecheck": "${{ steps.typecheck.outcome }}",
+              "lint": "${{ steps.lint.outcome }}",
+              "build": "${{ steps.build.outcome }}",
+              "tests": "${{ steps.tests.outcome }}",
+              "wrangler": "${{ steps.wrangler.outcome }}",
+              "d1": "${{ steps.d1.outcome }}",
+              "generatedConfig": "${{ steps.patch.outcome }}",
+              "deploy": "${{ steps.deploy_worker.outcome }}",
+              "smoke": "${{ steps.smoke.outcome }}"
+            },
+            "d1": "punctum-picture",
+            "r2Originals": "punctum-picture-originals",
+            "r2Backups": "punctum-picture-backups",
+            "cloudflareImages": true,
+            "cronsEnabled": true,
+            "studioPresetExpected": "aconchegante-organico",
+            "domainTouched": false
+          }
+          EOF
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git reset --hard origin/main
+          cp /tmp/cloudflare-git-deploy-result.json requests/cloudflare-git-deploy-result.json
+          git add requests/cloudflare-git-deploy-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record Git-driven Cloudflare deploy"
+          git push
