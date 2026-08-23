@@ -1,10 +1,10 @@
 {
-  "checked_at": "2026-08-23T02:39:13Z",
-  "source_commit": "f431a1cbb947af02aab3f20f15b04130da32a429",
+  "checked_at": "2026-08-23T02:40:22Z",
+  "source_commit": "f215360ee016402d734b2d53b97b7dff134539d0",
   "whoami": true,
   "d1_read": false,
   "r2_read": true,
   "overall": false,
-  "d1_error": " Getting User settings... 👋 You are logged in with an Account API Token, associated with the account Menezesx2k26@gmail.com's Account. ℹ️  The API Token is read from the CLOUDFLARE_API_TOKEN environment variable. ┌──────────────────────────────────┬──────────────────────────────────┐ │ Account Name                     │ Account ID                       │ ├──────────────────────────────────┼──────────────────────────────────┤ │ Menezesx2k26@gmail.com's Account │ [redacted-id] │ └──────────────────────────────────┴──────────────────────────────────┘ 🔓 To see token permissions visit https://dash.cloudflare.com/[redacted-id]/api-tokens 🎢 Unable to get membership roles. Make sure you have permissions to read the account. Are you missing the `Us",
+  "d1_error": "http=401 {\"result\":null,\"success\":false,\"errors\":[{\"code\":10000,\"message\":\"Authentication error\"}],\"messages\":[]}",
   "r2_error": null
 }
