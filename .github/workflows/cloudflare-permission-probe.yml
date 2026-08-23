@@ -18,6 +18,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_D1_API_TOKEN: ${{ secrets.CLOUDFLARE_D1_API_TOKEN }}
+      CLOUDFLARE_DNS_API_TOKEN: ${{ secrets.CLOUDFLARE_DNS_API_TOKEN }}
     steps:
       - uses: actions/checkout@v7
 
@@ -27,13 +28,18 @@ jobs:
           set -euo pipefail
           API='https://api.cloudflare.com/client/v4'
           AUTH=(-H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" -H 'Content-Type: application/json')
+          DNS_AUTH=(-H "Authorization: Bearer ${CLOUDFLARE_DNS_API_TOKEN}" -H 'Content-Type: application/json')
 
           http_get() {
             local url="$1" out="$2"
             curl -sS -o "$out" -w '%{http_code}' "${AUTH[@]}" "$url" || true
           }
+          dns_get() {
+            local url="$1" out="$2"
+            curl -sS -o "$out" -w '%{http_code}' "${DNS_AUTH[@]}" "$url" || true
+          }
 
-          VERIFY_HTTP="$(http_get "$API/user/tokens/verify" /tmp/verify.json)"
+          VERIFY_HTTP="$(curl -sS -o /tmp/verify.json -w '%{http_code}' "${DNS_AUTH[@]}" "$API/user/tokens/verify" || true)"
 
           ZONE_LIST_HTTP="$(curl -sS -G -o /tmp/zones.json -w '%{http_code}' "${AUTH[@]}" \
             --data-urlencode 'name=punctumpicture.com' \
@@ -45,11 +51,10 @@ jobs:
           DNS_READ_HTTP='000'
           DNS_EDIT_HTTP='000'
           if [ -n "$ZONE_ID" ]; then
-            DNS_READ_HTTP="$(http_get "$API/zones/${ZONE_ID}/dns_records?per_page=1" /tmp/dns-read.json)"
-            # Permission probe only: invalid/nonexistent record id can never match a real DNS record.
-            # 400/404 => authorization passed and validation/resource lookup rejected it.
-            # 401/403 => token lacks authorization for DNS edit.
-            DNS_EDIT_HTTP="$(curl -sS -o /tmp/dns-edit.json -w '%{http_code}' -X DELETE "${AUTH[@]}" \
+            DNS_READ_HTTP="$(dns_get "$API/zones/${ZONE_ID}/dns_records?per_page=1" /tmp/dns-read.json)"
+            # Permission probe only: this impossible record id can never match a real DNS record.
+            # 400/404/405/409/422 => authorization passed; 401/403 => token lacks DNS edit authorization.
+            DNS_EDIT_HTTP="$(curl -sS -o /tmp/dns-edit.json -w '%{http_code}' -X DELETE "${DNS_AUTH[@]}" \
               "$API/zones/${ZONE_ID}/dns_records/00000000000000000000000000000000" || true)"
           else
             printf '%s\n' '{"success":false,"errors":[{"message":"zone id unavailable"}]}' >/tmp/dns-read.json
@@ -97,7 +102,7 @@ jobs:
             --argjson workerErrors "$(sanitize_errors /tmp/workers.json)" \
             --argjson r2Errors "$(sanitize_errors /tmp/r2.json)" \
             --argjson d1Errors "$(sanitize_errors /tmp/d1.json)" \
-            '{status:"success",checkedAt:$checkedAt,tokenValid:$verifyOk,zoneStatus:$zoneStatus,permissions:{zoneRead:$zoneRead,dnsRead:$dnsRead,dnsEdit:$dnsEdit,workerRead:$workerRead,r2Read:$r2Read,d1ReadViaDedicatedToken:$d1Read},http:{verify:$verifyHttp,zoneRead:$zoneHttp,dnsRead:$dnsReadHttp,dnsEditProbe:$dnsEditHttp,workerRead:$workerHttp,r2Read:$r2Http,d1Read:$d1Http},errors:{zone:$zoneErrors,dnsRead:$dnsReadErrors,dnsEdit:$dnsEditErrors,worker:$workerErrors,r2:$r2Errors,d1:$d1Errors},cloudflareStateChanged:false,note:"DNS edit tested only against an impossible/nonexistent record id; no record can be modified."}' \
+            '{status:"success",checkedAt:$checkedAt,dedicatedDnsTokenValid:$verifyOk,zoneStatus:$zoneStatus,permissions:{zoneReadViaGeneralToken:$zoneRead,dnsReadViaDedicatedToken:$dnsRead,dnsEditViaDedicatedToken:$dnsEdit,workerReadViaGeneralToken:$workerRead,r2ReadViaGeneralToken:$r2Read,d1ReadViaDedicatedToken:$d1Read},http:{dnsTokenVerify:$verifyHttp,zoneRead:$zoneHttp,dnsRead:$dnsReadHttp,dnsEditProbe:$dnsEditHttp,workerRead:$workerHttp,r2Read:$r2Http,d1Read:$d1Http},errors:{zone:$zoneErrors,dnsRead:$dnsReadErrors,dnsEdit:$dnsEditErrors,worker:$workerErrors,r2:$r2Errors,d1:$d1Errors},cloudflareStateChanged:false,note:"DNS edit tested only against an impossible/nonexistent record id; no record can be modified."}' \
             > /tmp/cloudflare-permission-probe-result.json
 
       - name: Persist sanitized result
