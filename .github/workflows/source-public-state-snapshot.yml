@@ -109,12 +109,7 @@ jobs:
           const canonical = JSON.stringify(snapshot);
           snapshot.sha256 = crypto.createHash('sha256').update(canonical).digest('hex');
           fs.writeFileSync('/tmp/source-public-state-result.json', JSON.stringify(snapshot, null, 2) + '\n');
-          console.log(JSON.stringify({
-            capturedAt: snapshot.capturedAt,
-            counts: snapshot.counts,
-            secretPresence,
-            sha256: snapshot.sha256,
-          }));
+          console.log(JSON.stringify({ capturedAt: snapshot.capturedAt, counts: snapshot.counts, secretPresence, sha256: snapshot.sha256 }));
           NODE
 
       - name: Optionally import public snapshot to isolated Cloudflare
@@ -140,6 +135,17 @@ jobs:
             echo "private migration skipped"
           fi
 
+      - name: Optionally configure and verify destination admin login
+        shell: bash
+        run: |
+          set -euo pipefail
+          if jq -e '.configureDestinationAdmin == true' requests/source-public-state.json >/dev/null; then
+            npm install --global --no-audit --no-fund wrangler@4.125.0
+            node scripts/configure-destination-admin.mjs
+          else
+            echo "destination admin bootstrap skipped"
+          fi
+
       - name: Persist sanitized results safely
         if: always()
         shell: bash
@@ -149,16 +155,11 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin main
           git reset --hard origin/main
-          if [ -f /tmp/source-public-state-result.json ]; then
-            cp /tmp/source-public-state-result.json requests/source-public-state-result.json
-          fi
-          if [ -f /tmp/cloudflare-import-public-state-v2-result.json ]; then
-            cp /tmp/cloudflare-import-public-state-v2-result.json requests/cloudflare-import-public-state-v2-result.json
-          fi
-          if [ -f /tmp/source-private-state-migration-result.json ]; then
-            cp /tmp/source-private-state-migration-result.json requests/source-private-state-migration-result.json
-          fi
-          git add requests/source-public-state-result.json requests/cloudflare-import-public-state-v2-result.json requests/source-private-state-migration-result.json 2>/dev/null || true
+          if [ -f /tmp/source-public-state-result.json ]; then cp /tmp/source-public-state-result.json requests/source-public-state-result.json; fi
+          if [ -f /tmp/cloudflare-import-public-state-v2-result.json ]; then cp /tmp/cloudflare-import-public-state-v2-result.json requests/cloudflare-import-public-state-v2-result.json; fi
+          if [ -f /tmp/source-private-state-migration-result.json ]; then cp /tmp/source-private-state-migration-result.json requests/source-private-state-migration-result.json; fi
+          if [ -f /tmp/destination-admin-bootstrap-result.json ]; then cp /tmp/destination-admin-bootstrap-result.json requests/destination-admin-bootstrap-result.json; fi
+          git add requests/source-public-state-result.json requests/cloudflare-import-public-state-v2-result.json requests/source-private-state-migration-result.json requests/destination-admin-bootstrap-result.json 2>/dev/null || true
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "ci: record live snapshot and migration results"
           git push
