@@ -5,16 +5,18 @@
   "workerPreflight": true,
   "build": true,
   "tests": true,
-  "dnsBackupCaptured": false,
-  "conflictingWebRecordsRemoved": false,
-  "deploy": false,
+  "dnsBackupCaptured": true,
+  "conflictingWebRecordsRemoved": true,
+  "deploy": true,
   "rootSmoke": false,
   "wwwSmoke": false,
   "adminSmoke": false,
   "studioSmoke": false,
   "rollbackAttempted": false,
   "rollbackSucceeded": false,
-  "domainTouched": false,
+  "domainTouched": true,
   "worker": "punctum-picture-migration",
-  "zoneStatus": "active"
+  "dnsCredential": "CLOUDFLARE_DNS_API_TOKEN",
+  "zoneStatus": "active",
+  "previousWebRecordCount": 3
 }
