@@ -1,12 +1,13 @@
 {
-  "nonce": 16,
+  "nonce": 17,
   "mode": "snapshot-only",
   "origin": "https://punctumpicture.com",
   "privateMigration": false,
   "configureDestinationAdmin": false,
   "adminParityAudit": false,
   "probePendingMedia": false,
-  "mediaByteParityAudit": true,
+  "mediaByteParityAudit": false,
+  "originalStorageParityAudit": true,
   "domain_touched": false,
   "site_config_activate": false
 }
