@@ -1,0 +1,16 @@
+{
+  "status": "success",
+  "sourceCommit": "5a0f2d2061a7d48e48edafaf1bd76620127ef97a",
+  "branch": "miranda-editorial",
+  "domain": "https://miranda.punctumpicture.com",
+  "worker": "punctum-picture-miranda",
+  "stages": {
+    "build": "success",
+    "d1": "success",
+    "patch": "success",
+    "deploy": "success",
+    "smoke": "success"
+  },
+  "x100MarkerVerified": true,
+  "productionDomainTouched": false
+}
