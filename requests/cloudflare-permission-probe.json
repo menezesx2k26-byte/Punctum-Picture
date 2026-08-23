@@ -1,0 +1,7 @@
+{
+  "nonce": 1,
+  "requested_by": "chat",
+  "mode": "permission-probe",
+  "target": "punctumpicture.com",
+  "cloudflare_state_change_allowed": false
+}
