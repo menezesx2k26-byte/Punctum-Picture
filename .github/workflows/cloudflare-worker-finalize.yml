@@ -5,7 +5,7 @@ on:
   push:
     branches: ["main"]
     paths:
-      - "requests/cloudflare-worker-finalize.json"
+      - "requests/cloudflare-probe.json"
 
 permissions:
   contents: write
@@ -67,7 +67,6 @@ jobs:
             mv /tmp/result.json requests/cloudflare-worker-finalize-result.json
           }
 
-          # Resolve the already-created D1 database using the dedicated D1 token.
           D1_HTTP="$(curl -sS -o /tmp/d1.json -w '%{http_code}' \
             -H "Authorization: Bearer ${CLOUDFLARE_D1_API_TOKEN}" \
             -H 'Content-Type: application/json' \
@@ -79,13 +78,11 @@ jobs:
           jq --arg id "$DB_ID" '.d1_database_id=$id' requests/cloudflare-worker-finalize-result.json > /tmp/result.json
           mv /tmp/result.json requests/cloudflare-worker-finalize-result.json
 
-          # Verify both existing private R2 buckets.
           wrangler r2 bucket info punctum-picture-originals --json >/tmp/r2-originals.json 2>/tmp/r2-originals.err || fail "r2_originals_missing"
           mark r2_originals
           wrangler r2 bucket info punctum-picture-backups --json >/tmp/r2-backups.json 2>/tmp/r2-backups.err || fail "r2_backups_missing"
           mark r2_backups
 
-          # Ephemeral config: workers.dev only; deliberately no custom routes and no cron triggers.
           DB_ID="$DB_ID" node <<'NODE'
           import fs from 'node:fs';
           const databaseId = process.env.DB_ID;
