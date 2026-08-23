@@ -1,0 +1,299 @@
+name: Deploy isolated Miranda site
+
+on:
+  push:
+    branches: ["miranda-editorial"]
+    paths:
+      - "app/**"
+      - "shared/**"
+      - "worker/**"
+      - "migrations/**"
+      - "scripts/**"
+      - "public/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/miranda-deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: punctum-miranda-isolated
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_D1_API_TOKEN: ${{ secrets.CLOUDFLARE_D1_API_TOKEN }}
+      MIRANDA_DB: punctum-picture-miranda
+      MIRANDA_ORIGINALS: punctum-picture-miranda-originals
+      MIRANDA_BACKUPS: punctum-picture-miranda-backups
+      MIRANDA_WORKER: punctum-picture-miranda
+      MIRANDA_ORIGIN: https://miranda.punctumpicture.com
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Install dependencies and trusted Wrangler
+        run: |
+          set -euo pipefail
+          npm ci
+          npm install --global --no-audit --no-fund wrangler@4.125.0
+          mkdir -p .miranda requests
+
+      - name: Provision isolated D1 and R2
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${CLOUDFLARE_ACCOUNT_ID:?missing CLOUDFLARE_ACCOUNT_ID}"
+          : "${CLOUDFLARE_API_TOKEN:?missing CLOUDFLARE_API_TOKEN}"
+          : "${CLOUDFLARE_D1_API_TOKEN:?missing CLOUDFLARE_D1_API_TOKEN}"
+
+          curl -fsS \
+            -H "Authorization: Bearer ${CLOUDFLARE_D1_API_TOKEN}" \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database" \
+            -o /tmp/miranda-d1-list.json
+
+          DB_ID="$(jq -r --arg name "$MIRANDA_DB" '.result[]? | select(.name == $name) | (.uuid // .id // empty)' /tmp/miranda-d1-list.json | head -n1)"
+          if [ -z "$DB_ID" ]; then
+            jq -n --arg name "$MIRANDA_DB" '{name:$name}' >/tmp/miranda-d1-create-body.json
+            curl -fsS -X POST \
+              -H "Authorization: Bearer ${CLOUDFLARE_D1_API_TOKEN}" \
+              -H 'Content-Type: application/json' \
+              --data-binary @/tmp/miranda-d1-create-body.json \
+              "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database" \
+              -o /tmp/miranda-d1-create.json
+            DB_ID="$(jq -r '.result.uuid // .result.id // empty' /tmp/miranda-d1-create.json)"
+          fi
+          test -n "$DB_ID"
+          echo "MIRANDA_DB_ID=$DB_ID" >> "$GITHUB_ENV"
+
+          if ! wrangler r2 bucket info "$MIRANDA_ORIGINALS" --json >/tmp/miranda-r2-originals.json 2>/dev/null; then
+            wrangler r2 bucket create "$MIRANDA_ORIGINALS"
+          fi
+          if ! wrangler r2 bucket info "$MIRANDA_BACKUPS" --json >/tmp/miranda-r2-backups.json 2>/dev/null; then
+            wrangler r2 bucket create "$MIRANDA_BACKUPS"
+          fi
+
+      - name: Apply repository migrations to Miranda only
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > .miranda/wrangler-d1.jsonc <<EOF
+          {
+            "$schema": "../node_modules/wrangler/config-schema.json",
+            "name": "punctum-picture-miranda-migrate",
+            "compatibility_date": "2026-05-22",
+            "d1_databases": [{
+              "binding": "DB",
+              "database_name": "${MIRANDA_DB}",
+              "database_id": "${MIRANDA_DB_ID}",
+              "migrations_dir": "../migrations"
+            }]
+          }
+          EOF
+          CLOUDFLARE_API_TOKEN="$CLOUDFLARE_D1_API_TOKEN" \
+            wrangler d1 migrations apply "$MIRANDA_DB" --remote --config .miranda/wrangler-d1.jsonc
+
+      - name: Import Git public snapshot into isolated storage
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp scripts/import-public-state.mjs .miranda/import-miranda-state.mjs
+          node <<'NODE'
+          import fs from 'node:fs';
+          const file = '.miranda/import-miranda-state.mjs';
+          let source = fs.readFileSync(file, 'utf8');
+          source = source.replace(
+            "const ORIGINALS_BUCKET = 'punctum-picture-originals';",
+            "const ORIGINALS_BUCKET = 'punctum-picture-miranda-originals';",
+          );
+          source = source.replace(
+            "item.name === 'punctum-picture'",
+            "item.name === 'punctum-picture-miranda'",
+          );
+          fs.writeFileSync(file, source);
+          NODE
+          node .miranda/import-miranda-state.mjs
+
+      - name: Activate SiteConfig from Git snapshot in Miranda D1
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          import fs from 'node:fs';
+          const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+          const token = process.env.CLOUDFLARE_D1_API_TOKEN;
+          const dbId = process.env.MIRANDA_DB_ID;
+          const snapshot = JSON.parse(fs.readFileSync('requests/source-public-state-result.json', 'utf8'));
+          const config = snapshot.site?.siteConfig;
+          if (!config || config.schemaVersion !== 4) throw new Error('miranda_site_config_snapshot_missing');
+          const serialized = JSON.stringify(config);
+          const now = new Date().toISOString();
+          const actor = 'miranda-git-snapshot';
+          async function query(sql, params = []) {
+            const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${dbId}/query`, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sql, params }),
+            });
+            const payload = await response.json();
+            if (!response.ok || payload.success === false || (payload.result || []).some((part) => part?.success === false)) {
+              throw new Error(`miranda_d1_query_failed:${JSON.stringify(payload.errors || payload).slice(0, 1200)}`);
+            }
+          }
+          await query('DELETE FROM site_config_pointers');
+          await query('DELETE FROM site_config_versions');
+          await query(
+            `INSERT INTO site_config (id, schema_version, config_json, updated_at, updated_by)
+             VALUES (1, ?, ?, ?, ?)
+             ON CONFLICT(id) DO UPDATE SET schema_version=excluded.schema_version,
+               config_json=excluded.config_json, updated_at=excluded.updated_at, updated_by=excluded.updated_by`,
+            [config.schemaVersion, serialized, now, actor],
+          );
+          await query(
+            `INSERT INTO site_config_versions (
+              id, schema_version, state, revision, config_json, based_on_version_id,
+              restored_from_version_id, created_at, updated_at, published_at,
+              created_by, updated_by, published_by
+            ) VALUES (?, ?, 'published', 1, ?, NULL, NULL, ?, ?, ?, ?, ?, ?)`,
+            ['miranda-published-git', config.schemaVersion, serialized, now, now, now, actor, actor, actor],
+          );
+          await query(
+            `INSERT INTO site_config_versions (
+              id, schema_version, state, revision, config_json, based_on_version_id,
+              restored_from_version_id, created_at, updated_at, published_at,
+              created_by, updated_by, published_by
+            ) VALUES (?, ?, 'draft', 1, ?, ?, NULL, ?, ?, NULL, ?, ?, NULL)`,
+            ['miranda-draft-git', config.schemaVersion, serialized, 'miranda-published-git', now, now, actor, actor],
+          );
+          await query(
+            `INSERT INTO site_config_pointers (id, draft_version_id, published_version_id, updated_at)
+             VALUES (1, ?, ?, ?)`,
+            ['miranda-draft-git', 'miranda-published-git', now],
+          );
+          NODE
+
+      - name: Check and build Miranda branch
+        env:
+          PUBLIC_SITE_URL: https://miranda.punctumpicture.com
+          SITE_ORIGIN: https://miranda.punctumpicture.com
+        run: |
+          set -euo pipefail
+          npm run typecheck
+          npm run lint
+          npm test
+          npm run build
+
+      - name: Deploy isolated Worker before domain cutover
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          import fs from 'node:fs';
+          const dbId = process.env.MIRANDA_DB_ID;
+          const base = {
+            "$schema": "../node_modules/wrangler/config-schema.json",
+            name: "punctum-picture-miranda",
+            main: "../worker/index.ts",
+            compatibility_date: "2026-05-22",
+            compatibility_flags: ["nodejs_compat"],
+            workers_dev: true,
+            assets: {
+              directory: "../dist/client",
+              binding: "ASSETS",
+              not_found_handling: "single-page-application",
+              run_worker_first: ["/api/*", "/admin/*", "/media/*", "/sitemap.xml", "/robots.txt"]
+            },
+            d1_databases: [{ binding: "DB", database_name: "punctum-picture-miranda", database_id: dbId, migrations_dir: "../migrations" }],
+            r2_buckets: [
+              { binding: "ORIGINALS", bucket_name: "punctum-picture-miranda-originals" },
+              { binding: "BACKUPS", bucket_name: "punctum-picture-miranda-backups" }
+            ],
+            images: { binding: "IMAGES" },
+            observability: { enabled: true },
+            vars: {
+              ENVIRONMENT: "miranda",
+              SITE_ORIGIN: "https://miranda.punctumpicture.com",
+              PUBLIC_SITE_URL: "https://miranda.punctumpicture.com",
+              PUBLIC_WHATSAPP_E164: "UNSPECIFIED",
+              PUBLIC_INSTAGRAM_URL: "UNSPECIFIED",
+              MAX_UPLOAD_BYTES: "26214400",
+              ALLOWED_MIME_TYPES: "image/jpeg,image/png,image/webp",
+              PRESIGNED_URL_TTL_SECONDS: "900",
+              CONTACT_RATE_LIMIT_WINDOW_SECONDS: "3600",
+              CONTACT_RATE_LIMIT_MAX: "5",
+              ADMIN_RATE_LIMIT_WINDOW_SECONDS: "60",
+              ADMIN_RATE_LIMIT_MAX: "60",
+              BACKUP_PREFIX: "backups/d1",
+              BACKUP_RETENTION_DAYS: "180",
+              CLEANUP_ORPHAN_UPLOAD_AGE_HOURS: "24"
+            }
+          };
+          fs.writeFileSync('.miranda/wrangler-preview.jsonc', JSON.stringify(base, null, 2) + '\n');
+          fs.writeFileSync('.miranda/wrangler-domain.jsonc', JSON.stringify({
+            ...base,
+            routes: [{ pattern: 'miranda.punctumpicture.com', custom_domain: true }]
+          }, null, 2) + '\n');
+          NODE
+
+          wrangler deploy --config .miranda/wrangler-preview.jsonc 2>&1 | tee /tmp/miranda-preview-deploy.txt
+          WORKER_URL="$(grep -Eo 'https://[^ ]+\.workers\.dev' /tmp/miranda-preview-deploy.txt | tail -n1 || true)"
+          if [ -z "$WORKER_URL" ]; then
+            WORKER_URL="https://punctum-picture-miranda.menezesx2k26.workers.dev"
+          fi
+          echo "MIRANDA_WORKER_URL=$WORKER_URL" >> "$GITHUB_ENV"
+          curl -fsS --retry 6 --retry-all-errors --retry-delay 2 "$WORKER_URL/api/public/stats" >/tmp/miranda-stats.json
+          curl -fsS --retry 6 --retry-all-errors --retry-delay 2 "$WORKER_URL/" >/tmp/miranda-home.html
+          grep -qi 'punctum' /tmp/miranda-home.html
+
+      - name: Attach only miranda.punctumpicture.com
+        shell: bash
+        run: |
+          set -euo pipefail
+          wrangler deploy --config .miranda/wrangler-domain.jsonc 2>&1 | tee /tmp/miranda-domain-deploy.txt
+
+          DOMAIN_HTTP="pending"
+          if curl -fsS --retry 12 --retry-all-errors --retry-delay 5 "$MIRANDA_ORIGIN/" >/tmp/miranda-domain-home.html; then
+            DOMAIN_HTTP="ok"
+          fi
+
+          jq -n \
+            --arg status "success" \
+            --arg branch "miranda-editorial" \
+            --arg worker "$MIRANDA_WORKER" \
+            --arg workerUrl "$MIRANDA_WORKER_URL" \
+            --arg domain "$MIRANDA_ORIGIN" \
+            --arg domainHttp "$DOMAIN_HTTP" \
+            --arg db "$MIRANDA_DB" \
+            --arg dbId "$MIRANDA_DB_ID" \
+            --arg originals "$MIRANDA_ORIGINALS" \
+            --arg backups "$MIRANDA_BACKUPS" \
+            '{status:$status,branch:$branch,worker:$worker,workerUrl:$workerUrl,domain:$domain,domainHttp:$domainHttp,d1:{name:$db,id:$dbId},r2:{originals:$originals,backups:$backups},productionDomainTouched:false,source:"requests/source-public-state-result.json"}' \
+            >/tmp/miranda-deploy-result.json
+
+      - name: Persist sanitized Miranda result on Miranda branch
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f /tmp/miranda-deploy-result.json ]; then
+            jq -n '{status:"failed",branch:"miranda-editorial",productionDomainTouched:false}' >/tmp/miranda-deploy-result.json
+          fi
+          cp /tmp/miranda-deploy-result.json requests/miranda-deploy-result.json
+          git config user.name "github-actions[bot]"
+          git config user.email "4189826+github-actions[bot]@users.noreply.github.com"
+          git add requests/miranda-deploy-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record isolated Miranda deployment"
+          git push origin HEAD:miranda-editorial
