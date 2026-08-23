@@ -29,23 +29,25 @@ jobs:
       - name: Download public source photos byte-for-byte
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
           rm -rf .source-photo-backup
           mkdir -p .source-photo-backup/photos requests
 
-          node <<'NODE'
+          set +e
+          node <<'NODE' > /tmp/source-photo-backup.log 2>&1
           const fs = require('fs');
           const path = require('path');
           const crypto = require('crypto');
 
           const ORIGIN = 'https://punctumpicture.com';
-          const archiveUrl = `${ORIGIN}/api/public/archive?limit=500`;
+          const archiveUrl = `${ORIGIN}/api/public/archive`;
 
           const response = await fetch(archiveUrl, { headers: { accept: 'application/json' } });
           if (!response.ok) throw new Error(`archive_http_${response.status}`);
           const payload = await response.json();
           const images = payload.images ?? payload.photos ?? [];
           if (!Array.isArray(images) || images.length === 0) throw new Error('archive_empty');
+          console.log(`archive_images=${images.length}`);
 
           const extFromType = (type) => {
             const t = (type || '').split(';')[0].trim().toLowerCase();
@@ -61,6 +63,29 @@ jobs:
           let cursor = 0;
           const concurrency = 8;
 
+          async function downloadWithRetry(url, id) {
+            let lastError;
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              try {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 30000);
+                const r = await fetch(url, {
+                  headers: { accept: 'image/jpeg' },
+                  redirect: 'follow',
+                  signal: controller.signal,
+                });
+                clearTimeout(timer);
+                if (!r.ok) throw new Error(`http_${r.status}`);
+                return r;
+              } catch (error) {
+                lastError = error;
+                console.log(`retry id=${id} attempt=${attempt} error=${error instanceof Error ? error.message : String(error)}`);
+                await new Promise(resolve => setTimeout(resolve, attempt * 750));
+              }
+            }
+            throw new Error(`image_download_failed_${id}_${lastError instanceof Error ? lastError.message : String(lastError)}`);
+          }
+
           async function worker() {
             while (true) {
               const i = cursor++;
@@ -69,11 +94,7 @@ jobs:
               const id = image.id;
               if (!id) throw new Error(`image_without_id_at_${i}`);
               const url = `${ORIGIN}/media/${encodeURIComponent(id)}/gallery`;
-              const r = await fetch(url, {
-                headers: { accept: 'image/jpeg' },
-                redirect: 'follow',
-              });
-              if (!r.ok) throw new Error(`image_http_${r.status}_${id}`);
+              const r = await downloadWithRetry(url, id);
               const bytes = Buffer.from(await r.arrayBuffer());
               const contentType = r.headers.get('content-type') || 'application/octet-stream';
               const ext = extFromType(contentType);
@@ -94,7 +115,7 @@ jobs:
                 bytes: bytes.length,
                 sha256: crypto.createHash('sha256').update(bytes).digest('hex'),
               });
-              if ((i + 1) % 20 === 0) console.log(`downloaded ${i + 1}/${images.length}`);
+              if ((manifest.length % 20) === 0) console.log(`downloaded=${manifest.length}/${images.length}`);
             }
           }
 
@@ -117,8 +138,21 @@ jobs:
           fs.writeFileSync('.source-photo-backup/report.json', JSON.stringify(report, null, 2) + '\n');
           console.log(JSON.stringify(report));
           NODE
+          status=$?
+          set -e
 
-          test "$(jq -r '.imageCount' .source-photo-backup/report.json)" = "192"
+          cat /tmp/source-photo-backup.log
+          if [ "$status" -ne 0 ]; then
+            detail="$(tail -n 40 /tmp/source-photo-backup.log | cut -c1-4000)"
+            jq -n --arg detail "$detail" '{status:"failed",error:"source_download_failed",detail:$detail}' > requests/source-photo-backup-result.json
+            exit "$status"
+          fi
+
+          count="$(jq -r '.imageCount' .source-photo-backup/report.json)"
+          if [ "$count" != "192" ]; then
+            jq -n --arg count "$count" '{status:"failed",error:"unexpected_public_image_count",observed:$count,expected:"192"}' > requests/source-photo-backup-result.json
+            exit 1
+          fi
 
       - name: Upload backup artifact
         id: artifact
