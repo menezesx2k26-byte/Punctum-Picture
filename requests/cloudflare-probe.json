@@ -1,5 +1,5 @@
 {
-  "nonce": 12,
+  "nonce": 13,
   "requested_by": "chat",
   "note": "Incrementar nonce aciona somente verificacoes read-only da Cloudflare."
 }
