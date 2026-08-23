@@ -1,5 +1,6 @@
 {
   "status": "failed",
   "branch": "miranda-editorial",
+  "stage": "build",
   "productionDomainTouched": false
 }
