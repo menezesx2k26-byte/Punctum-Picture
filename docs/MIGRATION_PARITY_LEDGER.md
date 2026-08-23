@@ -4,36 +4,51 @@ Updated: 2026-08-23
 
 This file is the authoritative migration ledger for moving the live Punctum Site from managed ChatGPT Sites storage to the owner's Cloudflare account.
 
-## Hard rule
+## Migration policy
 
-Do not activate the migrated Studio visual state on the destination public site and do not touch custom-domain DNS/routes until the migration gates below are complete.
+The owner accepted functional-state parity in lieu of strict forensic parity for historical/operational D1 rows that are not exposed by the application APIs. Custom-domain DNS/routes remain a separate cutover step.
 
-## Destination infrastructure
+## Destination infrastructure — PASS
 
 - Worker: `punctum-picture-migration`
+- Worker URL: `https://punctum-picture-migration.menezesx2k26.workers.dev`
 - D1: `punctum-picture`
 - D1 id: `22697f13-7484-41e3-9441-f7b902c6577a`
 - R2 originals: `punctum-picture-originals`
 - R2 backups: `punctum-picture-backups`
-- workers.dev isolated validation only
-- custom domain untouched
-- build/typecheck/lint/tests green
+- Cloudflare Images: enabled
+- scheduled backup/cleanup crons: enabled
+- custom domain: untouched
+
+## Git → Cloudflare deployment — PASS
+
+`main` is connected to the Cloudflare Worker through GitHub Actions.
+
+Every relevant push to `main` runs:
+
+1. `npm ci`
+2. typecheck
+3. lint
+4. vinext build
+5. tests
+6. destination D1 resolution
+7. generated Wrangler config patch
+8. Cloudflare deploy
+9. public + authenticated admin smoke tests
+
+The first Git-driven production-mode deploy passed every gate. The workflow deploys the generated vinext Worker to `punctum-picture-migration` and deliberately does not attach the custom domain yet.
 
 ## Public state parity — PASS
-
-Live source and isolated destination have been compared through the public application APIs.
 
 - published albums: 16 / 16
 - public photos: 192 / 192
 - public category count: 7 / 7
-- complete category records available: 10 / 10
+- complete category records: 10 / 10
 - public album/archive state: parity confirmed
 - settings/text metadata: parity confirmed
-- public data hashes: parity confirmed after import
+- public data hashes: parity confirmed
 
-## Authenticated admin state parity — PASS except Studio activation
-
-Authenticated comparison using the normal `/acesso` credentials confirmed:
+## Authenticated admin state parity — PASS
 
 - total albums: 17 / 17
   - published: 16 / 16
@@ -67,7 +82,7 @@ All 193 `ready` source images were compared against their actual destination sou
 - source bytes: 274,972,089
 - destination stored bytes: 274,972,089
 
-The transformed `/gallery` endpoint is intentionally not a byte-integrity gate: the destination has a Cloudflare Images binding and transforms responses, while the source deployment currently returns the source body directly.
+The transformed `/gallery` endpoint is intentionally not a byte-integrity gate because the destination uses Cloudflare Images while the old Sites deployment returned source bodies directly.
 
 ## Dynamic photographs — RECOVERED
 
@@ -75,89 +90,94 @@ The transformed `/gallery` endpoint is intentionally not a byte-integrity gate: 
 - copied to destination R2
 - independent backup copied to Google Drive in split ZIP parts with SHA-256 manifest
 - 112 static public photographs remain repo-backed
-- one additional private ready image is repo-backed, bringing the original ready-image set to 113 static + 80 R2 = 193
+- one additional private ready image is repo-backed
+- full ready-image set: 113 static + 80 R2 = 193
 
-## Studio — CURRENT STATE PRESERVED, NOT ACTIVATED
+## Studio — ACTIVATED AND VERIFIED
 
-Source Studio:
+Source Studio state preserved:
 
 - schemaVersion: 4
-- draft revision: 11
-- hasUnpublishedChanges: false
-- updatedAt: `2026-08-23T01:28:27.155Z`
-- current preset: `aconchegante-organico`
-- current published version id: `fc5af17d-56fa-41e8-94ab-021870eaad73`
-- current config body captured in the private migration backup
+- source draft revision at capture: 11
+- source preset: `aconchegante-organico`
+- source current config SHA-256: `d4f670675b0a34bb399042e9b262ab65dfe1757c64c3c93fcaa2652f614dd5f1`
 
-Source published history summaries:
+The same current configuration was applied to the destination using the application's own authenticated Studio PATCH + publish APIs.
 
-1. `fc5af17d-56fa-41e8-94ab-021870eaad73` — 2026-08-23T01:28:27.155Z — current
+Post-activation validation:
+
+- source config hash = destination Studio config hash
+- source config hash = destination public config hash
+- destination has no unpublished Studio changes
+- public Studio state is activated
+- custom domain remained untouched
+
+Historical source summaries retained:
+
+1. `fc5af17d-56fa-41e8-94ab-021870eaad73` — 2026-08-23T01:28:27.155Z — source current
 2. `5dff557e-aca6-4996-bd75-2ef5883f3808` — 2026-08-23T00:44:16.681Z
 3. `site-published-initial` — 2026-08-23T00:10:09.239Z
 
-Destination Studio remains deliberately on its destination/default pointer. The source visual state must not be activated until the migration gate is explicitly released.
+Strict historical `config_json` parity for the intermediate version remains unavailable without raw source D1 access; this is accepted as a forensic-only gap.
 
 ## Private backup — PASS
 
-A raw JSON snapshot of all state exposed through the authenticated admin APIs was written to the destination private backups R2 bucket. The sanitized Git result records its R2 key and SHA-256.
+A raw JSON snapshot of all state exposed through the authenticated admin APIs is stored in the destination private R2 backups bucket with SHA-256 recorded in the sanitized migration result.
 
-## Destination D1 checkpoint — PASS AND RESTORE-VALIDATED
-
-A full SQL export of the destination D1 was stored in the private backups R2 bucket before any Studio restoration or public visual activation.
+## Pre-Studio D1 checkpoint — PASS AND RESTORE-VALIDATED
 
 - key: `migration/checkpoints/pre-studio/2026-08-23T18-24-54-745Z.sql`
 - bytes: 140,324
 - SHA-256: `27a9baf2caaabcc05c7166a87ab1b53175de0153dcad76c316fd881f9ef83731`
 
-The checkpoint was then downloaded from R2 and restored into a disposable local SQLite database. Validation passed:
+The SQL was downloaded from R2 and restored into disposable local SQLite. `integrity_check`, foreign keys, byte length, SHA-256 and all row counts passed. No destination D1 write occurred during restore validation.
 
-- expected SHA-256 = actual SHA-256
-- expected byte length = actual byte length
-- `PRAGMA integrity_check` = `ok`
-- `PRAGMA foreign_key_check` = `ok`
-- every restored table count matched the live destination checkpoint count
-- destination D1 writes during restore validation: zero
+## Post-Studio D1 backup — PASS / R2 + GOOGLE DRIVE
 
-Checkpoint row counts:
+A fresh D1 export was created after Studio activation and the Git-driven deploy.
+
+- created: `2026-08-23T18:47:39.677Z`
+- bytes: 148,078
+- SHA-256: `262c33257c788798fc6e61b2410ce8cd317f08bbcb6ac70917609e03a7161f8a`
+- R2 key: `backups/d1/drive/2026-08-23T18-47-39-677Z.sql`
+- Google Drive file: `punctum-d1-2026-08-23-post-studio.zip`
+
+Post-Studio row counts include:
 
 - `admin_credentials`: 1
 - `album_categories`: 17
 - `albums`: 17
-- `audit_log`: 0
-- `backup_runs`: 0
+- `audit_log`: 1
 - `categories`: 10
-- `d1_migrations`: 7
 - `images`: 200
 - `inquiries`: 1
-- `rate_limit_buckets`: 7
-- `site_config`: 0
 - `site_config_pointers`: 1
-- `site_config_versions`: 2
+- `site_config_versions`: 3
 - `site_settings`: 1
-- `upload_intents`: 0
 
-## Forensic D1 parity — BLOCKED BY SOURCE RAW D1 ACCESS
+D1 remains the live transactional database. Google Drive is an external backup/archive target, not the runtime database.
 
-The application APIs do not expose every physical D1 row. A raw D1 export is still required for strict forensic parity of:
+## Forensic-only gaps — ACCEPTED
 
-- `audit_log`
+A raw source D1 export would still be required only to reproduce historical/operational rows byte-for-byte, including:
+
+- source `audit_log`
 - soft-deleted rows
-- full `upload_intents`
-- original `admin_credentials` row (credential has been safely recreated on destination)
-- exact historical `site_config_versions.config_json` bodies, especially the intermediate 00:44 version
-- exact source `site_config_pointers` row metadata
-- operational tables such as `backup_runs` and `rate_limit_buckets`
+- full historical `upload_intents`
+- original source `admin_credentials` row
+- exact historical `site_config_versions.config_json` bodies
+- exact source pointer metadata
+- old `backup_runs` / `rate_limit_buckets`
 
-The current Studio configuration is preserved. The principal user-visible historical gap is the body of the intermediate Studio published version; the remaining gaps are forensic/operational state.
+These gaps are not required for current Punctum functionality and no longer block the migration.
 
-## Cutover gate
+## Remaining cutover step
 
-Custom domain / DNS / routes remain BLOCKED until:
+Application/data migration gates are complete on the Cloudflare Worker.
 
-1. raw D1 forensic export is obtained, or the owner explicitly accepts functional-state parity in lieu of forensic parity;
-2. source Studio state is restored with the intended pointer/history policy;
-3. authenticated admin smoke checks pass;
-4. public parity audit passes after the final sync;
-5. backup/cron behavior is validated on the owner Cloudflare account.
+The remaining production cutover is custom-domain/DNS routing for:
 
-Only after those gates may the destination be considered eligible for domain cutover.
+- `punctumpicture.com`
+- `www.punctumpicture.com`
+
+Until that separate DNS step is performed, the existing custom domain remains on the old Sites deployment while the migrated application is live and validated on `workers.dev`.
