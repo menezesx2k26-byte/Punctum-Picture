@@ -54,9 +54,31 @@ jobs:
           }
           EOF
 
+          sanitize_log() {
+            file="$1"
+            if [ ! -f "$file" ]; then
+              printf '%s' 'log unavailable'
+              return
+            fi
+            tail -n 100 "$file" \
+              | sed -E 's/[A-Fa-f0-9]{24,}/[redacted-id]/g' \
+              | sed -E 's/(cfat_|cfut_)[A-Za-z0-9_-]+/[redacted-cloudflare-token]/g' \
+              | sed -E 's/[A-Za-z0-9_-]{45,}/[redacted-long-token]/g' \
+              | cut -c1-3000
+          }
+
           fail() {
             message="$1"
             jq --arg message "$message" '.status="failed" | .error=$message' requests/cloudflare-worker-finalize-result.json > /tmp/result.json
+            mv /tmp/result.json requests/cloudflare-worker-finalize-result.json
+            exit 1
+          }
+
+          fail_with_log() {
+            message="$1"
+            file="$2"
+            detail="$(sanitize_log "$file")"
+            jq --arg message "$message" --arg detail "$detail" '.status="failed" | .error=$message | .detail=$detail' requests/cloudflare-worker-finalize-result.json > /tmp/result.json
             mv /tmp/result.json requests/cloudflare-worker-finalize-result.json
             exit 1
           }
@@ -78,9 +100,9 @@ jobs:
           jq --arg id "$DB_ID" '.d1_database_id=$id' requests/cloudflare-worker-finalize-result.json > /tmp/result.json
           mv /tmp/result.json requests/cloudflare-worker-finalize-result.json
 
-          wrangler r2 bucket info punctum-picture-originals --json >/tmp/r2-originals.json 2>/tmp/r2-originals.err || fail "r2_originals_missing"
+          wrangler r2 bucket info punctum-picture-originals --json >/tmp/r2-originals.json 2>/tmp/r2-originals.err || fail_with_log "r2_originals_missing" /tmp/r2-originals.err
           mark r2_originals
-          wrangler r2 bucket info punctum-picture-backups --json >/tmp/r2-backups.json 2>/tmp/r2-backups.err || fail "r2_backups_missing"
+          wrangler r2 bucket info punctum-picture-backups --json >/tmp/r2-backups.json 2>/tmp/r2-backups.err || fail_with_log "r2_backups_missing" /tmp/r2-backups.err
           mark r2_backups
 
           DB_ID="$DB_ID" node <<'NODE'
@@ -132,18 +154,20 @@ jobs:
           fs.writeFileSync('.migration/wrangler.jsonc', JSON.stringify(config, null, 2) + '\n');
           NODE
 
-          npm ci >/tmp/npm-ci.log 2>&1 || fail "npm_ci_failed"
+          npm ci >/tmp/npm-ci.log 2>&1 || fail_with_log "npm_ci_failed" /tmp/npm-ci.log
           mark npm_ci
-          npm run typecheck >/tmp/typecheck.log 2>&1 || fail "typecheck_failed"
+          npm run typecheck >/tmp/typecheck.log 2>&1 || fail_with_log "typecheck_failed" /tmp/typecheck.log
           mark typecheck
-          npm run lint >/tmp/lint.log 2>&1 || fail "lint_failed"
+          npm run lint >/tmp/lint.log 2>&1 || fail_with_log "lint_failed" /tmp/lint.log
           mark lint
-          npm test >/tmp/tests.log 2>&1 || fail "tests_failed"
+          npm test >/tmp/tests.log 2>&1 || fail_with_log "tests_failed" /tmp/tests.log
           mark tests
-          npm run build >/tmp/build.log 2>&1 || fail "build_failed"
+          npm run build >/tmp/build.log 2>&1 || fail_with_log "build_failed" /tmp/build.log
           mark build
 
-          wrangler deploy --config .migration/wrangler.jsonc 2>&1 | tee /tmp/deploy.txt || fail "worker_deploy_failed"
+          if ! wrangler deploy --config .migration/wrangler.jsonc > /tmp/deploy.txt 2>&1; then
+            fail_with_log "worker_deploy_failed" /tmp/deploy.txt
+          fi
           WORKER_URL="$(grep -Eo 'https://[^ ]+\.workers\.dev' /tmp/deploy.txt | tail -n1 || true)"
           jq --arg url "$WORKER_URL" '.status="success" | .worker=true | .worker_url=(if $url == "" then null else $url end) | .domain_touched=false' requests/cloudflare-worker-finalize-result.json > /tmp/result.json
           mv /tmp/result.json requests/cloudflare-worker-finalize-result.json
