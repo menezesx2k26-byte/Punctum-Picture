@@ -1,0 +1,7 @@
+{
+  "nonce": 1,
+  "requested_by": "chat",
+  "production": "https://punctumpicture.com",
+  "destination": "https://punctum-picture-migration.menezesx2k26.workers.dev",
+  "read_only": true
+}
