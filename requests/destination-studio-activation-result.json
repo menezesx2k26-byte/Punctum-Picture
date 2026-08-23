@@ -1,9 +1,9 @@
 {
   "status": "success",
-  "activatedAt": "2026-08-23T18:41:21.125Z",
+  "activatedAt": "2026-08-23T18:41:41.540Z",
   "destination": "https://punctum-picture-migration.menezesx2k26.workers.dev",
-  "changed": true,
-  "beforeRevision": 1,
+  "changed": false,
+  "beforeRevision": 3,
   "afterRevision": 3,
   "hasUnpublishedChanges": false,
   "sourceConfigSha256": "d4f670675b0a34bb399042e9b262ab65dfe1757c64c3c93fcaa2652f614dd5f1",
