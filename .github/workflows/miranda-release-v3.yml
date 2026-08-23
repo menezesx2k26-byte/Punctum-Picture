@@ -1,0 +1,217 @@
+name: Release Miranda v3
+
+on:
+  push:
+    branches: ["miranda-editorial"]
+    paths:
+      - "ops/miranda-release-v3"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: punctum-miranda-release-v3
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_D1_API_TOKEN: ${{ secrets.CLOUDFLARE_D1_API_TOKEN }}
+      MIRANDA_DB: punctum-picture-miranda
+      MIRANDA_ORIGINALS: punctum-picture-miranda-originals
+      MIRANDA_BACKUPS: punctum-picture-miranda-backups
+      MIRANDA_WORKER: punctum-picture-miranda
+      MIRANDA_ORIGIN: https://miranda.punctumpicture.com
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: |
+          set -euo pipefail
+          echo install >/tmp/miranda-v3-stage
+          npm ci
+          npm install --global --no-audit --no-fund wrangler@4.125.0
+          mkdir -p requests
+
+      - name: Resolve and validate isolated D1
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo verify-d1 >/tmp/miranda-v3-stage
+          curl -fsS \
+            -H "Authorization: Bearer ${CLOUDFLARE_D1_API_TOKEN}" \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database" \
+            -o /tmp/miranda-v3-d1-list.json
+          DB_ID="$(jq -r --arg name "$MIRANDA_DB" '.result[]? | select(.name == $name) | (.uuid // .id // empty)' /tmp/miranda-v3-d1-list.json | head -n1)"
+          test -n "$DB_ID"
+          echo "MIRANDA_DB_ID=$DB_ID" >> "$GITHUB_ENV"
+
+          export DB_ID
+          node <<'NODE'
+          import fs from 'node:fs';
+          const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+          const token = process.env.CLOUDFLARE_D1_API_TOKEN;
+          const dbId = process.env.DB_ID;
+          const sql = `SELECT
+            (SELECT COUNT(*) FROM albums WHERE status='published' AND deleted_at IS NULL) AS publishedAlbums,
+            (SELECT COUNT(*) FROM images i INNER JOIN albums a ON a.id=i.album_id
+              WHERE i.status='ready' AND i.deleted_at IS NULL
+                AND a.status='published' AND a.deleted_at IS NULL) AS publicImages,
+            (SELECT COUNT(*) FROM images WHERE id NOT LIKE 'static-%' AND status='ready' AND deleted_at IS NULL) AS dynamicReady,
+            (SELECT COUNT(*) FROM site_config_pointers WHERE id=1) AS pointers,
+            (SELECT schema_version FROM site_config WHERE id=1) AS schemaVersion`;
+          const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${dbId}/query`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sql }),
+          });
+          const payload = await response.json();
+          const row = payload?.result?.[0]?.results?.[0];
+          fs.writeFileSync('/tmp/miranda-v3-d1-validation.json', JSON.stringify({ httpStatus: response.status, row: row ?? null, errors: payload?.errors ?? [] }, null, 2) + '\n');
+          if (!response.ok || payload.success === false || !row) throw new Error('miranda_d1_query_failed');
+          if (Number(row.publishedAlbums) !== 16 || Number(row.publicImages) !== 192 || Number(row.dynamicReady) !== 80 || Number(row.pointers) !== 1 || Number(row.schemaVersion) !== 4) {
+            throw new Error(`miranda_public_snapshot_invalid:${JSON.stringify(row)}`);
+          }
+          NODE
+
+      - name: Verify and build branch
+        env:
+          PUBLIC_SITE_URL: https://miranda.punctumpicture.com
+          SITE_ORIGIN: https://miranda.punctumpicture.com
+        run: |
+          set -euo pipefail
+          echo build >/tmp/miranda-v3-stage
+          npm run typecheck
+          npm run lint
+          npx vitest run tests/unit
+          npm run build
+
+      - name: Patch Vinext generated Wrangler config for Miranda only
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo patch >/tmp/miranda-v3-stage
+          test -f dist/server/wrangler.json
+          node <<'NODE'
+          import fs from 'node:fs';
+          const path = 'dist/server/wrangler.json';
+          const config = JSON.parse(fs.readFileSync(path, 'utf8'));
+          const origin = 'https://miranda.punctumpicture.com';
+
+          config.name = 'punctum-picture-miranda';
+          config.workers_dev = true;
+          config.preview_urls = true;
+          config.routes = [{ pattern: 'miranda.punctumpicture.com', custom_domain: true }];
+          delete config.env;
+          delete config.triggers;
+
+          config.d1_databases = [{
+            binding: 'DB',
+            database_name: 'punctum-picture-miranda',
+            database_id: process.env.MIRANDA_DB_ID,
+          }];
+          config.r2_buckets = [
+            { binding: 'ORIGINALS', bucket_name: 'punctum-picture-miranda-originals' },
+            { binding: 'BACKUPS', bucket_name: 'punctum-picture-miranda-backups' },
+          ];
+          config.images = { binding: 'IMAGES' };
+          config.observability = {
+            enabled: true,
+            logs: { head_sampling_rate: 1 },
+            traces: { enabled: true, head_sampling_rate: 0.1 },
+          };
+          config.vars = {
+            ENVIRONMENT: 'miranda',
+            SITE_ORIGIN: origin,
+            PUBLIC_SITE_URL: origin,
+            PUBLIC_WHATSAPP_E164: 'UNSPECIFIED',
+            PUBLIC_INSTAGRAM_URL: 'UNSPECIFIED',
+            MAX_UPLOAD_BYTES: '26214400',
+            ALLOWED_MIME_TYPES: 'image/jpeg,image/png,image/webp',
+            PRESIGNED_URL_TTL_SECONDS: '900',
+            CONTACT_RATE_LIMIT_WINDOW_SECONDS: '3600',
+            CONTACT_RATE_LIMIT_MAX: '5',
+            ADMIN_RATE_LIMIT_WINDOW_SECONDS: '60',
+            ADMIN_RATE_LIMIT_MAX: '60',
+            BACKUP_PREFIX: 'backups/d1',
+            BACKUP_RETENTION_DAYS: '180',
+            CLEANUP_ORPHAN_UPLOAD_AGE_HOURS: '24',
+            GIT_SHA: process.env.GITHUB_SHA || 'unknown',
+          };
+          fs.writeFileSync(path, JSON.stringify(config, null, 2) + '\n');
+          NODE
+
+      - name: Deploy generated Vinext worker to Miranda only
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo deploy >/tmp/miranda-v3-stage
+          set +e
+          wrangler deploy --config dist/server/wrangler.json > /tmp/miranda-v3-deploy.log 2>&1
+          CODE=$?
+          set -e
+          if [ "$CODE" -ne 0 ]; then
+            tail -n 120 /tmp/miranda-v3-deploy.log
+            exit "$CODE"
+          fi
+          cat /tmp/miranda-v3-deploy.log
+
+      - name: Smoke test Miranda custom domain
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo smoke >/tmp/miranda-v3-stage
+          curl -fsS --retry 20 --retry-all-errors --retry-delay 4 "$MIRANDA_ORIGIN/" -o /tmp/miranda-v3-home.html
+          grep -qi 'punctum' /tmp/miranda-v3-home.html
+          curl -fsS --retry 15 --retry-all-errors --retry-delay 3 "$MIRANDA_ORIGIN/api/public/stats" -o /tmp/miranda-v3-stats.json
+          jq -e '.stats.photoCount == 192 and .stats.albumCount == 16 and .stats.categoryCount == 7' /tmp/miranda-v3-stats.json >/dev/null
+          jq -n \
+            --arg status success \
+            --arg branch miranda-editorial \
+            --arg domain "$MIRANDA_ORIGIN" \
+            --arg worker "$MIRANDA_WORKER" \
+            --arg db "$MIRANDA_DB" \
+            --arg dbId "$MIRANDA_DB_ID" \
+            --arg originals "$MIRANDA_ORIGINALS" \
+            --arg backups "$MIRANDA_BACKUPS" \
+            --slurpfile validation /tmp/miranda-v3-d1-validation.json \
+            --slurpfile stats /tmp/miranda-v3-stats.json \
+            '{status:$status,branch:$branch,domain:$domain,worker:$worker,d1:{name:$db,id:$dbId,validation:$validation[0]},r2:{originals:$originals,backups:$backups},stats:$stats[0],productionDomainTouched:false}' \
+            > /tmp/miranda-v3-result.json
+
+      - name: Persist Miranda v3 result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f /tmp/miranda-v3-result.json ]; then
+            STAGE="$(cat /tmp/miranda-v3-stage 2>/dev/null || echo unknown)"
+            DEPLOY_LOG=''
+            if [ -f /tmp/miranda-v3-deploy.log ]; then DEPLOY_LOG="$(tail -n 120 /tmp/miranda-v3-deploy.log)"; fi
+            if [ -f /tmp/miranda-v3-d1-validation.json ]; then
+              jq -n --arg stage "$STAGE" --arg deployLog "$DEPLOY_LOG" --slurpfile validation /tmp/miranda-v3-d1-validation.json \
+                '{status:"failed",branch:"miranda-editorial",stage:$stage,d1Validation:$validation[0],deployLogTail:$deployLog,productionDomainTouched:false}' \
+                > /tmp/miranda-v3-result.json
+            else
+              jq -n --arg stage "$STAGE" --arg deployLog "$DEPLOY_LOG" \
+                '{status:"failed",branch:"miranda-editorial",stage:$stage,deployLogTail:$deployLog,productionDomainTouched:false}' \
+                > /tmp/miranda-v3-result.json
+            fi
+          fi
+          cp /tmp/miranda-v3-result.json requests/miranda-release-v3-result.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add requests/miranda-release-v3-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record Miranda v3 release"
+          git push origin HEAD:miranda-editorial
