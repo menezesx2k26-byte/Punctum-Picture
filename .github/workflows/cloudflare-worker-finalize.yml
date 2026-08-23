@@ -154,6 +154,8 @@ jobs:
           fs.writeFileSync('.migration/wrangler.jsonc', JSON.stringify(config, null, 2) + '\n');
           NODE
 
+          cp .migration/wrangler.jsonc wrangler.migration.jsonc
+
           npm ci >/tmp/npm-ci.log 2>&1 || fail_with_log "npm_ci_failed" /tmp/npm-ci.log
           mark npm_ci
           npm run typecheck >/tmp/typecheck.log 2>&1 || fail_with_log "typecheck_failed" /tmp/typecheck.log
@@ -165,7 +167,7 @@ jobs:
           npm test >/tmp/tests.log 2>&1 || fail_with_log "tests_failed" /tmp/tests.log
           mark tests
 
-          if ! wrangler deploy --config .migration/wrangler.jsonc > /tmp/deploy.txt 2>&1; then
+          if ! wrangler deploy --config wrangler.migration.jsonc > /tmp/deploy.txt 2>&1; then
             fail_with_log "worker_deploy_failed" /tmp/deploy.txt
           fi
           WORKER_URL="$(grep -Eo 'https://[^ ]+\.workers\.dev' /tmp/deploy.txt | tail -n1 || true)"
@@ -179,6 +181,7 @@ jobs:
             printf '%s\n' '{"status":"failed","error":"workflow_failed_before_result","domain_touched":false}' > requests/cloudflare-worker-finalize-result.json
           fi
           rm -rf .migration
+          rm -f wrangler.migration.jsonc
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add requests/cloudflare-worker-finalize-result.json
