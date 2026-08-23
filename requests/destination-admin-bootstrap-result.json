@@ -1,6 +1,6 @@
 {
   "status": "failed",
-  "error": "destination_/admin/api/albums_http_403",
+  "error": "destination_/admin/api/categories_http_403",
   "domainTouched": false,
   "publicStudioActivated": false
 }
