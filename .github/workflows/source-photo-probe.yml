@@ -1,0 +1,77 @@
+name: Probe live source image fidelity
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "requests/source-photo-probe.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: punctum-source-photo-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Compare public media variants
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p requests .source-photo-probe
+          base="https://punctumpicture.com/media/b842e350-b6a8-4069-9055-fd52e2069a88"
+
+          for preset in card gallery hero; do
+            curl --fail --silent --show-error --location \
+              -H 'Accept: image/jpeg' \
+              "$base/$preset" \
+              -o ".source-photo-probe/$preset.bin"
+          done
+
+          node <<'NODE'
+          const fs = require('fs');
+          const crypto = require('crypto');
+          const { execFileSync } = require('child_process');
+          const out = {};
+          for (const preset of ['card','gallery','hero']) {
+            const path = `.source-photo-probe/${preset}.bin`;
+            const data = fs.readFileSync(path);
+            let fileInfo = '';
+            try { fileInfo = execFileSync('file', ['-b', path], {encoding:'utf8'}).trim(); } catch {}
+            out[preset] = {
+              bytes: data.length,
+              sha256: crypto.createHash('sha256').update(data).digest('hex'),
+              fileInfo,
+            };
+          }
+          const hashes = new Set(Object.values(out).map(v => v.sha256));
+          const result = {
+            checkedAt: new Date().toISOString(),
+            imageId: 'b842e350-b6a8-4069-9055-fd52e2069a88',
+            variants: out,
+            identicalBytesAcrossPresets: hashes.size === 1,
+            interpretation: hashes.size === 1
+              ? 'public_media_is_source_bytes_for_this_image'
+              : 'public_media_is_transformed_for_this_image'
+          };
+          fs.writeFileSync('requests/source-photo-probe-result.json', JSON.stringify(result, null, 2) + '\n');
+          NODE
+
+      - name: Persist sanitized probe result
+        if: always()
+        run: |
+          if [ ! -f requests/source-photo-probe-result.json ]; then
+            printf '%s\n' '{"status":"failed","error":"probe_failed_before_result"}' > requests/source-photo-probe-result.json
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add requests/source-photo-probe-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record source photo fidelity probe"
+          git push
