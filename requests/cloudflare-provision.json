@@ -1,5 +1,5 @@
 {
-  "nonce": 0,
+  "nonce": 1,
   "requested_by": "chat",
   "mode": "isolated-workers-dev",
   "domain_changes": false
