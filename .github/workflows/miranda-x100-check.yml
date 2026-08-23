@@ -1,0 +1,68 @@
+name: Check Miranda X100 experience
+
+on:
+  push:
+    branches: ["miranda-editorial"]
+    paths:
+      - "ops/miranda-x100-check"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: punctum-miranda-x100-check
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        id: install
+        run: npm ci
+      - name: Typecheck
+        id: typecheck
+        run: npm run typecheck
+      - name: Lint
+        id: lint
+        run: npm run lint
+      - name: Unit tests
+        id: unit
+        run: npx vitest run tests/unit
+      - name: Build
+        id: build
+        env:
+          PUBLIC_SITE_URL: https://miranda.punctumpicture.com
+          SITE_ORIGIN: https://miranda.punctumpicture.com
+        run: npm run build
+      - name: Persist result
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p requests
+          cat > requests/miranda-x100-check-result.json <<EOF
+          {
+            "status": "${{ job.status }}",
+            "branch": "miranda-editorial",
+            "sourceCommit": "$GITHUB_SHA",
+            "install": "${{ steps.install.outcome }}",
+            "typecheck": "${{ steps.typecheck.outcome }}",
+            "lint": "${{ steps.lint.outcome }}",
+            "unit": "${{ steps.unit.outcome }}",
+            "build": "${{ steps.build.outcome }}",
+            "productionDomainTouched": false
+          }
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add requests/miranda-x100-check-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record Miranda X100 check"
+          git push origin HEAD:miranda-editorial
