@@ -1,0 +1,11 @@
+{
+  "status": "success",
+  "branch": "miranda-editorial",
+  "sourceCommit": "ee3f12641c037706855778051ba624a6f5ca1ddd",
+  "install": "success",
+  "typecheck": "success",
+  "lint": "success",
+  "unit": "success",
+  "build": "success",
+  "productionDomainTouched": false
+}
