@@ -23,12 +23,15 @@ jobs:
         with:
           node-version: 22
           package-manager-cache: false
+
       - name: Install trusted Wrangler
         run: npm install --global --no-audit --no-fund wrangler@4.125.0
+
       - name: Run read-only probe
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_D1_API_TOKEN: ${{ secrets.CLOUDFLARE_D1_API_TOKEN }}
         run: |
           set +e
           whoami_ok=false
@@ -38,7 +41,7 @@ jobs:
           wrangler whoami >/tmp/whoami.txt 2>&1 && whoami_ok=true
 
           D1_HTTP="$(curl -sS -o /tmp/d1.json -w '%{http_code}' \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Authorization: Bearer ${CLOUDFLARE_D1_API_TOKEN}" \
             -H 'Content-Type: application/json' \
             "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database" || true)"
           if [ "$D1_HTTP" = "200" ] && jq -e '.success == true' /tmp/d1.json >/dev/null 2>&1; then
@@ -77,6 +80,7 @@ jobs:
             --arg r2_error "$r2_error" \
             '{checked_at:$checked_at,source_commit:$source_commit,whoami:$whoami,d1_read:$d1_read,r2_read:$r2_read,overall:$overall,d1_error:(if $d1_error=="" then null else $d1_error end),r2_error:(if $r2_error=="" then null else $r2_error end)}' \
             > requests/cloudflare-probe-result.json
+
       - name: Persist sanitized result
         run: |
           git config user.name "github-actions[bot]"
