@@ -1,0 +1,129 @@
+name: Snapshot live Punctum public state
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "requests/source-public-state.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: punctum-source-public-state
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ADMIN_PASSWORD_HASH: ${{ secrets.ADMIN_PASSWORD_HASH }}
+      ADMIN_SESSION_SECRET: ${{ secrets.ADMIN_SESSION_SECRET }}
+      ADMIN_ALLOWED_EMAILS_SECRET: ${{ secrets.ADMIN_ALLOWED_EMAILS }}
+      SOURCE_ADMIN_EMAIL: ${{ secrets.SOURCE_ADMIN_EMAIL }}
+      SOURCE_ADMIN_PASSWORD: ${{ secrets.SOURCE_ADMIN_PASSWORD }}
+      PUNCTUM_ADMIN_EMAIL: ${{ secrets.PUNCTUM_ADMIN_EMAIL }}
+      PUNCTUM_ADMIN_PASSWORD: ${{ secrets.PUNCTUM_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Capture live public state and safe secret-presence flags
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p requests
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import crypto from 'node:crypto';
+
+          const origin = 'https://punctumpicture.com';
+          async function json(path) {
+            const response = await fetch(`${origin}${path}`, {
+              headers: { accept: 'application/json' },
+              redirect: 'follow',
+            });
+            if (!response.ok) throw new Error(`${path}_http_${response.status}`);
+            return response.json();
+          }
+
+          const [site, categories, stats, archive, albumPage] = await Promise.all([
+            json('/api/public/site'),
+            json('/api/public/categories'),
+            json('/api/public/stats'),
+            json('/api/public/archive'),
+            json('/api/public/albums?limit=100&page=1'),
+          ]);
+
+          const albumList = albumPage.albums ?? albumPage.items ?? [];
+          if (!Array.isArray(albumList)) throw new Error('albums_shape_invalid');
+          const albumDetails = [];
+          for (const album of albumList) {
+            if (!album?.slug) continue;
+            const detail = await json(`/api/public/albums/${encodeURIComponent(album.slug)}`);
+            albumDetails.push(detail.album ?? detail);
+          }
+
+          const images = archive.images ?? archive.photos ?? [];
+          const dynamicImages = Array.isArray(images)
+            ? images.filter((image) => image?.id && !String(image.id).startsWith('static-'))
+            : [];
+
+          const secretPresence = {
+            ADMIN_PASSWORD_HASH: Boolean(process.env.ADMIN_PASSWORD_HASH),
+            ADMIN_SESSION_SECRET: Boolean(process.env.ADMIN_SESSION_SECRET),
+            ADMIN_ALLOWED_EMAILS: Boolean(process.env.ADMIN_ALLOWED_EMAILS_SECRET),
+            SOURCE_ADMIN_EMAIL: Boolean(process.env.SOURCE_ADMIN_EMAIL),
+            SOURCE_ADMIN_PASSWORD: Boolean(process.env.SOURCE_ADMIN_PASSWORD),
+            PUNCTUM_ADMIN_EMAIL: Boolean(process.env.PUNCTUM_ADMIN_EMAIL),
+            PUNCTUM_ADMIN_PASSWORD: Boolean(process.env.PUNCTUM_ADMIN_PASSWORD),
+          };
+
+          const snapshot = {
+            format: 'punctum-live-public-state-v1',
+            capturedAt: new Date().toISOString(),
+            origin,
+            counts: {
+              categories: categories.categories?.length ?? null,
+              albums: albumDetails.length,
+              archiveImages: Array.isArray(images) ? images.length : null,
+              dynamicImages: dynamicImages.length,
+            },
+            secretPresence,
+            site,
+            categories,
+            stats,
+            albums: albumDetails,
+            archive,
+          };
+
+          const canonical = JSON.stringify(snapshot);
+          snapshot.sha256 = crypto.createHash('sha256').update(canonical).digest('hex');
+          fs.writeFileSync('/tmp/source-public-state-result.json', JSON.stringify(snapshot, null, 2) + '\n');
+          console.log(JSON.stringify({
+            capturedAt: snapshot.capturedAt,
+            counts: snapshot.counts,
+            secretPresence,
+            sha256: snapshot.sha256,
+          }));
+          NODE
+
+      - name: Persist snapshot safely
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git reset --hard origin/main
+          cp /tmp/source-public-state-result.json requests/source-public-state-result.json
+          git add requests/source-public-state-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record live public state snapshot"
+          git push
