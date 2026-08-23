@@ -1,0 +1,20 @@
+{
+  "status": "blocked",
+  "zoneFound": false,
+  "zoneActive": false,
+  "workerPreflight": false,
+  "build": false,
+  "tests": false,
+  "dnsBackupCaptured": false,
+  "conflictingWebRecordsRemoved": false,
+  "deploy": false,
+  "rootSmoke": false,
+  "wwwSmoke": false,
+  "adminSmoke": false,
+  "studioSmoke": false,
+  "rollbackAttempted": false,
+  "rollbackSucceeded": false,
+  "domainTouched": false,
+  "worker": "punctum-picture-migration",
+  "error": "domain_zone_not_in_owner_cloudflare_account"
+}
