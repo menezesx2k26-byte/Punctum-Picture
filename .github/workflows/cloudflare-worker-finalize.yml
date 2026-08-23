@@ -5,7 +5,7 @@ on:
   push:
     branches: ["main"]
     paths:
-      - "requests/cloudflare-probe.json"
+      - "requests/cloudflare-worker-finalize.json"
 
 permissions:
   contents: write
