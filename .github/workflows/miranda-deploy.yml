@@ -47,6 +47,7 @@ jobs:
       - name: Install dependencies and trusted Wrangler
         run: |
           set -euo pipefail
+          echo install >/tmp/miranda-stage
           npm ci
           npm install --global --no-audit --no-fund wrangler@4.125.0
           mkdir -p .miranda requests
@@ -55,6 +56,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo provision >/tmp/miranda-stage
           : "${CLOUDFLARE_ACCOUNT_ID:?missing CLOUDFLARE_ACCOUNT_ID}"
           : "${CLOUDFLARE_API_TOKEN:?missing CLOUDFLARE_API_TOKEN}"
           : "${CLOUDFLARE_D1_API_TOKEN:?missing CLOUDFLARE_D1_API_TOKEN}"
@@ -89,9 +91,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo migrations >/tmp/miranda-stage
           cat > .miranda/wrangler-d1.jsonc <<EOF
           {
-            "$schema": "../node_modules/wrangler/config-schema.json",
+            "\$schema": "../node_modules/wrangler/config-schema.json",
             "name": "punctum-picture-miranda-migrate",
             "compatibility_date": "2026-05-22",
             "d1_databases": [{
@@ -109,6 +112,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo import-public-state >/tmp/miranda-stage
           cp scripts/import-public-state.mjs .miranda/import-miranda-state.mjs
           node <<'NODE'
           import fs from 'node:fs';
@@ -130,6 +134,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo activate-site-config >/tmp/miranda-stage
           node <<'NODE'
           import fs from 'node:fs';
           const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
@@ -190,6 +195,7 @@ jobs:
           SITE_ORIGIN: https://miranda.punctumpicture.com
         run: |
           set -euo pipefail
+          echo build >/tmp/miranda-stage
           npm run typecheck
           npm run lint
           npm test
@@ -199,6 +205,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo deploy-worker >/tmp/miranda-stage
           node <<'NODE'
           import fs from 'node:fs';
           const dbId = process.env.MIRANDA_DB_ID;
@@ -261,6 +268,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo attach-domain >/tmp/miranda-stage
           wrangler deploy --config .miranda/wrangler-domain.jsonc 2>&1 | tee /tmp/miranda-domain-deploy.txt
 
           DOMAIN_HTTP="pending"
@@ -288,11 +296,12 @@ jobs:
         run: |
           set -euo pipefail
           if [ ! -f /tmp/miranda-deploy-result.json ]; then
-            jq -n '{status:"failed",branch:"miranda-editorial",productionDomainTouched:false}' >/tmp/miranda-deploy-result.json
+            STAGE="$(cat /tmp/miranda-stage 2>/dev/null || echo unknown)"
+            jq -n --arg stage "$STAGE" '{status:"failed",branch:"miranda-editorial",stage:$stage,productionDomainTouched:false}' >/tmp/miranda-deploy-result.json
           fi
           cp /tmp/miranda-deploy-result.json requests/miranda-deploy-result.json
           git config user.name "github-actions[bot]"
-          git config user.email "4189826+github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add requests/miranda-deploy-result.json
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "ci: record isolated Miranda deployment"
