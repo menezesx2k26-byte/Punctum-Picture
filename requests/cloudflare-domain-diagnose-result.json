@@ -1,0 +1,47 @@
+{
+  "status": "success",
+  "checkedAt": "2026-08-23T19:51:48Z",
+  "zoneStatus": "active",
+  "dns": {
+    "root": [
+      {
+        "type": "AAAA",
+        "name": "punctumpicture.com",
+        "content": "100::",
+        "proxied": true,
+        "ttl": 1
+      }
+    ],
+    "www": [
+      {
+        "type": "AAAA",
+        "name": "www.punctumpicture.com",
+        "content": "100::",
+        "proxied": true,
+        "ttl": 1
+      }
+    ]
+  },
+  "workerDomainsHttp": "200",
+  "workerDomains": [
+    {
+      "id": "8a513d6f32ccc4c736f1a483e619ff4b08be732f",
+      "hostname": "punctumpicture.com",
+      "service": "punctum-picture-migration",
+      "zone_id": "561d9796dd104b8563c9ab77fa4fae1d"
+    },
+    {
+      "id": "3de27c59ffaf76445abf420d9c3cdb991203d9a2",
+      "hostname": "www.punctumpicture.com",
+      "service": "punctum-picture-migration",
+      "zone_id": "561d9796dd104b8563c9ab77fa4fae1d"
+    }
+  ],
+  "http": {
+    "root": "200",
+    "www": "200",
+    "rootMatchesWorker": true,
+    "wwwMatchesWorker": true
+  },
+  "cloudflareStateChanged": false
+}
