@@ -1,0 +1,58 @@
+name: Checkpoint Punctum destination D1
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "requests/source-public-state.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: punctum-destination-d1-checkpoint
+  cancel-in-progress: false
+
+jobs:
+  checkpoint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_D1_API_TOKEN: ${{ secrets.CLOUDFLARE_D1_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Create checkpoint when requested
+        shell: bash
+        run: |
+          set -euo pipefail
+          if jq -e '.destinationD1Checkpoint == true' requests/source-public-state.json >/dev/null; then
+            npm install --global --no-audit --no-fund wrangler@4.125.0
+            node scripts/checkpoint-destination-d1.mjs
+          else
+            echo "destination D1 checkpoint skipped"
+          fi
+
+      - name: Persist sanitized checkpoint result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          [ -f /tmp/destination-d1-checkpoint-result.json ] || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git reset --hard origin/main
+          cp /tmp/destination-d1-checkpoint-result.json requests/destination-d1-checkpoint-result.json
+          git add requests/destination-d1-checkpoint-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record destination D1 checkpoint"
+          git push
