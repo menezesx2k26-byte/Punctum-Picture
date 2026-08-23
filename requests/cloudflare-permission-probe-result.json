@@ -1,0 +1,43 @@
+{
+  "status": "success",
+  "checkedAt": "2026-08-23T19:32:15Z",
+  "tokenValid": false,
+  "zoneStatus": "active",
+  "permissions": {
+    "zoneRead": true,
+    "dnsRead": false,
+    "dnsEdit": false,
+    "workerRead": true,
+    "r2Read": true,
+    "d1ReadViaDedicatedToken": true
+  },
+  "http": {
+    "verify": "401",
+    "zoneRead": "200",
+    "dnsRead": "403",
+    "dnsEditProbe": "403",
+    "workerRead": "200",
+    "r2Read": "200",
+    "d1Read": "200"
+  },
+  "errors": {
+    "zone": [],
+    "dnsRead": [
+      {
+        "code": 10000,
+        "message": "Authentication error"
+      }
+    ],
+    "dnsEdit": [
+      {
+        "code": 10000,
+        "message": "Authentication error"
+      }
+    ],
+    "worker": [],
+    "r2": [],
+    "d1": []
+  },
+  "cloudflareStateChanged": false,
+  "note": "DNS edit tested only against an impossible/nonexistent record id; no record can be modified."
+}
