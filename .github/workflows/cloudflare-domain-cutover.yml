@@ -1,0 +1,258 @@
+name: Cut over Punctum custom domain to Cloudflare Worker
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "requests/cloudflare-domain-cutover.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: punctum-domain-cutover
+  cancel-in-progress: false
+
+jobs:
+  cutover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_D1_API_TOKEN: ${{ secrets.CLOUDFLARE_D1_API_TOKEN }}
+      SOURCE_ADMIN_EMAIL: ${{ secrets.SOURCE_ADMIN_EMAIL }}
+      SOURCE_ADMIN_PASSWORD: ${{ secrets.SOURCE_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Initialize result
+        shell: bash
+        run: |
+          cat > /tmp/domain-cutover-result.json <<'EOF'
+          {
+            "status": "running",
+            "zoneFound": false,
+            "zoneActive": false,
+            "workerPreflight": false,
+            "build": false,
+            "tests": false,
+            "dnsBackupCaptured": false,
+            "conflictingWebRecordsRemoved": false,
+            "deploy": false,
+            "rootSmoke": false,
+            "wwwSmoke": false,
+            "adminSmoke": false,
+            "studioSmoke": false,
+            "rollbackAttempted": false,
+            "rollbackSucceeded": false,
+            "domainTouched": false,
+            "worker": "punctum-picture-migration"
+          }
+          EOF
+
+      - name: Preflight Cloudflare zone and Worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          API='https://api.cloudflare.com/client/v4'
+          AUTH=(-H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" -H 'Content-Type: application/json')
+
+          ZHTTP="$(curl -sS -G -o /tmp/zones.json -w '%{http_code}' "${AUTH[@]}" \
+            --data-urlencode 'name=punctumpicture.com' \
+            --data-urlencode "account.id=${CLOUDFLARE_ACCOUNT_ID}" \
+            "$API/zones" || true)"
+          if [ "$ZHTTP" != "200" ] || ! jq -e '.success == true' /tmp/zones.json >/dev/null 2>&1; then
+            jq --arg h "$ZHTTP" '.status="blocked" | .error="cloudflare_zone_read_failed" | .zoneHttp=$h' /tmp/domain-cutover-result.json > /tmp/x && mv /tmp/x /tmp/domain-cutover-result.json
+            exit 21
+          fi
+          ZONE_ID="$(jq -r '.result[0].id // empty' /tmp/zones.json)"
+          ZONE_STATUS="$(jq -r '.result[0].status // empty' /tmp/zones.json)"
+          if [ -z "$ZONE_ID" ]; then
+            jq '.status="blocked" | .error="domain_zone_not_in_owner_cloudflare_account"' /tmp/domain-cutover-result.json > /tmp/x && mv /tmp/x /tmp/domain-cutover-result.json
+            exit 22
+          fi
+          jq --arg s "$ZONE_STATUS" '.zoneFound=true | .zoneStatus=$s' /tmp/domain-cutover-result.json > /tmp/x && mv /tmp/x /tmp/domain-cutover-result.json
+          if [ "$ZONE_STATUS" != "active" ]; then
+            jq '.status="blocked" | .error="cloudflare_zone_not_active"' /tmp/domain-cutover-result.json > /tmp/x && mv /tmp/x /tmp/domain-cutover-result.json
+            exit 23
+          fi
+          jq '.zoneActive=true' /tmp/domain-cutover-result.json > /tmp/x && mv /tmp/x /tmp/domain-cutover-result.json
+          echo "ZONE_ID=$ZONE_ID" >> "$GITHUB_ENV"
+
+          BASE='https://punctum-picture-migration.menezesx2k26.workers.dev'
+          curl -fsS "$BASE/api/public/stats" >/tmp/preflight-stats.json
+          jq -e '.stats.photoCount == 192 and .stats.albumCount == 16 and .stats.categoryCount == 7' /tmp/preflight-stats.json >/dev/null
+          jq '.workerPreflight=true' /tmp/domain-cutover-result.json > /tmp/x && mv /tmp/x /tmp/domain-cutover-result.json
+
+      - name: Build and validate application
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run typecheck
+          npm run lint
+          npm run build
+          jq '.build=true' /tmp/domain-cutover-result.json > /tmp/x && mv /tmp/x /tmp/domain-cutover-result.json
+          npm test
+          jq '.tests=true' /tmp/domain-cutover-result.json > /tmp/x && mv /tmp/x /tmp/domain-cutover-result.json
+          npm install --global --no-audit --no-fund wrangler@4.125.0
+
+      - name: Resolve D1 and prepare generated production config
+        shell: bash
+        run: |
+          set -euo pipefail
+          D1HTTP="$(curl -sS -o /tmp/d1.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${CLOUDFLARE_D1_API_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database")"
+          [ "$D1HTTP" = "200" ]
+          DB_ID="$(jq -r '.result[]? | select(.name == "punctum-picture") | (.uuid // .id // empty)' /tmp/d1.json | head -n1)"
+          [ -n "$DB_ID" ]
+          DB_ID="$DB_ID" node <<'NODE'
+          import fs from 'node:fs';
+          const p = 'dist/server/wrangler.json';
+          const c = JSON.parse(fs.readFileSync(p, 'utf8'));
+          c.name = 'punctum-picture-migration';
+          c.workers_dev = true;
+          c.preview_urls = true;
+          delete c.env;
+          c.routes = [
+            { pattern: 'punctumpicture.com', custom_domain: true },
+            { pattern: 'www.punctumpicture.com', custom_domain: true },
+          ];
+          c.d1_databases = [{ binding: 'DB', database_name: 'punctum-picture', database_id: process.env.DB_ID }];
+          c.r2_buckets = [
+            { binding: 'ORIGINALS', bucket_name: 'punctum-picture-originals' },
+            { binding: 'BACKUPS', bucket_name: 'punctum-picture-backups' },
+          ];
+          c.images = { binding: 'IMAGES' };
+          c.triggers = { crons: ['0 3 * * *', '0 * * * *'] };
+          c.observability = { enabled: true, logs: { head_sampling_rate: 1 }, traces: { enabled: true, head_sampling_rate: 0.1 } };
+          c.vars = {
+            ENVIRONMENT: 'production',
+            SITE_ORIGIN: 'https://punctumpicture.com',
+            PUBLIC_SITE_URL: 'https://punctumpicture.com',
+            PUBLIC_WHATSAPP_E164: 'UNSPECIFIED',
+            PUBLIC_INSTAGRAM_URL: 'UNSPECIFIED',
+            MAX_UPLOAD_BYTES: '26214400',
+            ALLOWED_MIME_TYPES: 'image/jpeg,image/png,image/webp',
+            PRESIGNED_URL_TTL_SECONDS: '900',
+            CONTACT_RATE_LIMIT_WINDOW_SECONDS: '3600',
+            CONTACT_RATE_LIMIT_MAX: '5',
+            ADMIN_RATE_LIMIT_WINDOW_SECONDS: '60',
+            ADMIN_RATE_LIMIT_MAX: '60',
+            BACKUP_PREFIX: 'backups/d1',
+            BACKUP_RETENTION_DAYS: '180',
+            CLEANUP_ORPHAN_UPLOAD_AGE_HOURS: '24',
+            GIT_SHA: process.env.GITHUB_SHA || 'unknown',
+          };
+          fs.writeFileSync(p, JSON.stringify(c, null, 2) + '\n');
+          NODE
+
+      - name: Backup and remove only conflicting web DNS records
+        shell: bash
+        run: |
+          set -euo pipefail
+          API='https://api.cloudflare.com/client/v4'
+          AUTH=(-H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" -H 'Content-Type: application/json')
+          : > /tmp/dns-backup.jsonl
+          for NAME in punctumpicture.com www.punctumpicture.com; do
+            curl -fsS -G "${AUTH[@]}" --data-urlencode "name=$NAME" "$API/zones/${ZONE_ID}/dns_records?per_page=100" > "/tmp/dns-${NAME}.json"
+            jq -c '.result[] | select(.type == "A" or .type == "AAAA" or .type == "CNAME") | {type,name,content,ttl,proxied,comment,tags}' "/tmp/dns-${NAME}.json" >> /tmp/dns-backup.jsonl
+          done
+          COUNT="$(wc -l < /tmp/dns-backup.jsonl | tr -d ' ')"
+          jq --argjson c "$COUNT" '.dnsBackupCaptured=true | .previousWebRecordCount=$c' /tmp/domain-cutover-result.json > /tmp/x && mv /tmp/x /tmp/domain-cutover-result.json
+
+          for NAME in punctumpicture.com www.punctumpicture.com; do
+            jq -r '.result[] | select(.type == "A" or .type == "AAAA" or .type == "CNAME") | .id' "/tmp/dns-${NAME}.json" | while read -r ID; do
+              [ -n "$ID" ] || continue
+              curl -fsS -X DELETE "${AUTH[@]}" "$API/zones/${ZONE_ID}/dns_records/$ID" >/dev/null
+            done
+          done
+          jq '.conflictingWebRecordsRemoved=true | .domainTouched=true' /tmp/domain-cutover-result.json > /tmp/x && mv /tmp/x /tmp/domain-cutover-result.json
+
+      - name: Deploy Worker custom domains with automatic DNS rollback on failure
+        shell: bash
+        run: |
+          set -uo pipefail
+          API='https://api.cloudflare.com/client/v4'
+          AUTH=(-H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" -H 'Content-Type: application/json')
+
+          restore_dns() {
+            jq '.rollbackAttempted=true' /tmp/domain-cutover-result.json > /tmp/x && mv /tmp/x /tmp/domain-cutover-result.json
+            OK=1
+            while IFS= read -r ROW; do
+              [ -n "$ROW" ] || continue
+              BODY="$(printf '%s' "$ROW" | jq '{type,name,content,ttl,proxied,comment,tags}')"
+              HTTP="$(curl -sS -o /tmp/restore.json -w '%{http_code}' -X POST "${AUTH[@]}" --data "$BODY" "$API/zones/${ZONE_ID}/dns_records" || true)"
+              if [ "$HTTP" != "200" ] || ! jq -e '.success == true' /tmp/restore.json >/dev/null 2>&1; then OK=0; fi
+            done < /tmp/dns-backup.jsonl
+            if [ "$OK" = "1" ]; then
+              jq '.rollbackSucceeded=true' /tmp/domain-cutover-result.json > /tmp/x && mv /tmp/x /tmp/domain-cutover-result.json
+            fi
+          }
+
+          if ! wrangler deploy --config dist/server/wrangler.json > /tmp/cutover-deploy.log 2>&1; then
+            restore_dns
+            jq '.status="failed" | .error="custom_domain_deploy_failed"' /tmp/domain-cutover-result.json > /tmp/x && mv /tmp/x /tmp/domain-cutover-result.json
+            tail -n 80 /tmp/cutover-deploy.log | sed -E 's/(cfat_|cfut_)[A-Za-z0-9_-]+/[redacted-token]/g'
+            exit 31
+          fi
+          jq '.deploy=true' /tmp/domain-cutover-result.json > /tmp/x && mv /tmp/x /tmp/domain-cutover-result.json
+
+      - name: Wait for custom domains and smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT_OK=0
+          WWW_OK=0
+          for attempt in $(seq 1 24); do
+            if curl -fsS --max-time 15 https://punctumpicture.com/api/public/stats >/tmp/root-stats.json 2>/dev/null && \
+               jq -e '.stats.photoCount == 192 and .stats.albumCount == 16' /tmp/root-stats.json >/dev/null 2>&1; then ROOT_OK=1; fi
+            if curl -fsS --max-time 15 https://www.punctumpicture.com/api/public/stats >/tmp/www-stats.json 2>/dev/null && \
+               jq -e '.stats.photoCount == 192 and .stats.albumCount == 16' /tmp/www-stats.json >/dev/null 2>&1; then WWW_OK=1; fi
+            if [ "$ROOT_OK" = "1" ] && [ "$WWW_OK" = "1" ]; then break; fi
+            sleep 10
+          done
+          [ "$ROOT_OK" = "1" ]
+          [ "$WWW_OK" = "1" ]
+          jq '.rootSmoke=true | .wwwSmoke=true' /tmp/domain-cutover-result.json > /tmp/x && mv /tmp/x /tmp/domain-cutover-result.json
+
+          LOGIN_HTTP="$(curl -sS -o /tmp/login.json -D /tmp/login.headers -w '%{http_code}' \
+            -X POST https://punctumpicture.com/admin/api/session \
+            -H 'Origin: https://punctumpicture.com' \
+            -H 'Content-Type: application/json' \
+            --data-binary "$(jq -nc --arg e "$SOURCE_ADMIN_EMAIL" --arg p "$SOURCE_ADMIN_PASSWORD" '{email:$e,password:$p}')")"
+          [ "$LOGIN_HTTP" = "200" ]
+          COOKIE="$(grep -i '^set-cookie:' /tmp/login.headers | head -n1 | sed -E 's/^[Ss]et-[Cc]ookie:[[:space:]]*([^;]+).*/\1/' | tr -d '\r')"
+          [ -n "$COOKIE" ]
+          curl -fsS https://punctumpicture.com/admin/api/me -H "Cookie: $COOKIE" >/tmp/me.json
+          jq '.adminSmoke=true' /tmp/domain-cutover-result.json > /tmp/x && mv /tmp/x /tmp/domain-cutover-result.json
+          curl -fsS https://punctumpicture.com/admin/api/studio -H "Cookie: $COOKIE" >/tmp/studio.json
+          jq -e '.hasUnpublishedChanges == false and .siteConfig.identity.sourcePresetId == "aconchegante-organico"' /tmp/studio.json >/dev/null
+          jq '.studioSmoke=true | .status="success"' /tmp/domain-cutover-result.json > /tmp/x && mv /tmp/x /tmp/domain-cutover-result.json
+
+      - name: Persist sanitized result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f /tmp/domain-cutover-result.json ]; then
+            printf '%s\n' '{"status":"failed","error":"workflow_failed_before_result"}' > /tmp/domain-cutover-result.json
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git reset --hard origin/main
+          cp /tmp/domain-cutover-result.json requests/cloudflare-domain-cutover-result.json
+          git add requests/cloudflare-domain-cutover-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record Punctum custom-domain cutover result"
+          git push
