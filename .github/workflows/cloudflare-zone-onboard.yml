@@ -1,4 +1,4 @@
-name: Onboard punctumpicture.com into owner Cloudflare account
+name: Inspect punctumpicture.com Cloudflare zone
 
 on:
   workflow_dispatch:
@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  onboard:
+  inspect:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -24,10 +24,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Create or inspect zone
+      - name: Inspect zone read-only
         shell: bash
         run: |
-          set -euo pipefail
+          set -u
           API='https://api.cloudflare.com/client/v4'
           AUTH=(-H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" -H 'Content-Type: application/json')
 
@@ -35,49 +35,63 @@ jobs:
             --data-urlencode 'name=punctumpicture.com' \
             --data-urlencode "account.id=${CLOUDFLARE_ACCOUNT_ID}" \
             "$API/zones" || true)"
-          if [ "$ZHTTP" != "200" ] || ! jq -e '.success == true' /tmp/zones.json >/dev/null 2>&1; then
-            jq -n --arg h "$ZHTTP" '{status:"failed",error:"zone_read_failed",http:$h,domainTouched:false}' > /tmp/zone-onboard-result.json
-            exit 21
+
+          ZONE_ID=""
+          LIST_OK=false
+          if [ "$ZHTTP" = "200" ] && jq -e '.success == true' /tmp/zones.json >/dev/null 2>&1; then
+            LIST_OK=true
+            ZONE_ID="$(jq -r '.result[0].id // empty' /tmp/zones.json)"
           fi
 
-          ZONE_ID="$(jq -r '.result[0].id // empty' /tmp/zones.json)"
-          CREATED=false
-          if [ -z "$ZONE_ID" ]; then
-            BODY="$(jq -nc --arg account "$CLOUDFLARE_ACCOUNT_ID" '{name:"punctumpicture.com",account:{id:$account},type:"full",jump_start:true}')"
-            CHTTP="$(curl -sS -o /tmp/create-zone.json -w '%{http_code}' -X POST "${AUTH[@]}" --data "$BODY" "$API/zones" || true)"
-            if [ "$CHTTP" != "200" ] && [ "$CHTTP" != "201" ]; then
-              jq -n --arg h "$CHTTP" --argjson errors "$(jq -c '.errors // []' /tmp/create-zone.json 2>/dev/null || echo '[]')" '{status:"failed",error:"zone_create_failed",http:$h,cloudflareErrors:$errors,domainTouched:false}' > /tmp/zone-onboard-result.json
-              exit 22
+          DETAIL_HTTP="not-run"
+          DNS_HTTP="not-run"
+          STATUS=""
+          NS_JSON='[]'
+          ORIG_NS_JSON='[]'
+          RECORD_COUNT=0
+          HAS_ROOT=false
+          HAS_WWW=false
+          TYPES_JSON='[]'
+          DETAIL_ERRORS='[]'
+          DNS_ERRORS='[]'
+
+          if [ -n "$ZONE_ID" ]; then
+            DETAIL_HTTP="$(curl -sS -o /tmp/zone.json -w '%{http_code}' "${AUTH[@]}" "$API/zones/$ZONE_ID" || true)"
+            if [ "$DETAIL_HTTP" = "200" ] && jq -e '.success == true' /tmp/zone.json >/dev/null 2>&1; then
+              STATUS="$(jq -r '.result.status // empty' /tmp/zone.json)"
+              NS_JSON="$(jq -c '.result.name_servers // []' /tmp/zone.json)"
+              ORIG_NS_JSON="$(jq -c '.result.original_name_servers // []' /tmp/zone.json)"
+            else
+              DETAIL_ERRORS="$(jq -c '.errors // []' /tmp/zone.json 2>/dev/null || echo '[]')"
             fi
-            if ! jq -e '.success == true' /tmp/create-zone.json >/dev/null 2>&1; then
-              jq -n --arg h "$CHTTP" --argjson errors "$(jq -c '.errors // []' /tmp/create-zone.json 2>/dev/null || echo '[]')" '{status:"failed",error:"zone_create_rejected",http:$h,cloudflareErrors:$errors,domainTouched:false}' > /tmp/zone-onboard-result.json
-              exit 23
+
+            DNS_HTTP="$(curl -sS -o /tmp/records.json -w '%{http_code}' "${AUTH[@]}" "$API/zones/$ZONE_ID/dns_records?per_page=100" || true)"
+            if [ "$DNS_HTTP" = "200" ] && jq -e '.success == true' /tmp/records.json >/dev/null 2>&1; then
+              RECORD_COUNT="$(jq '.result | length' /tmp/records.json)"
+              HAS_ROOT="$(jq '[.result[] | select(.name == "punctumpicture.com")] | length > 0' /tmp/records.json)"
+              HAS_WWW="$(jq '[.result[] | select(.name == "www.punctumpicture.com")] | length > 0' /tmp/records.json)"
+              TYPES_JSON="$(jq -c '[.result[].type] | group_by(.) | map({type:.[0],count:length})' /tmp/records.json)"
+            else
+              DNS_ERRORS="$(jq -c '.errors // []' /tmp/records.json 2>/dev/null || echo '[]')"
             fi
-            ZONE_ID="$(jq -r '.result.id // empty' /tmp/create-zone.json)"
-            CREATED=true
           fi
-
-          curl -fsS "${AUTH[@]}" "$API/zones/$ZONE_ID" > /tmp/zone.json
-          curl -fsS "${AUTH[@]}" "$API/zones/$ZONE_ID/dns_records?per_page=100" > /tmp/records.json
-
-          STATUS="$(jq -r '.result.status // empty' /tmp/zone.json)"
-          NS_JSON="$(jq -c '.result.name_servers // []' /tmp/zone.json)"
-          ORIG_NS_JSON="$(jq -c '.result.original_name_servers // []' /tmp/zone.json)"
-          RECORD_COUNT="$(jq '.result | length' /tmp/records.json)"
-          HAS_ROOT="$(jq '[.result[] | select(.name == "punctumpicture.com")] | length > 0' /tmp/records.json)"
-          HAS_WWW="$(jq '[.result[] | select(.name == "www.punctumpicture.com")] | length > 0' /tmp/records.json)"
-          TYPES_JSON="$(jq -c '[.result[].type] | group_by(.) | map({type:.[0],count:length})' /tmp/records.json)"
 
           jq -n \
-            --arg status "$STATUS" \
-            --argjson created "$CREATED" \
+            --argjson listOk "$LIST_OK" \
+            --arg listHttp "$ZHTTP" \
+            --arg zoneId "$ZONE_ID" \
+            --arg detailHttp "$DETAIL_HTTP" \
+            --arg dnsHttp "$DNS_HTTP" \
+            --arg zoneStatus "$STATUS" \
             --argjson nameservers "$NS_JSON" \
             --argjson originalNameservers "$ORIG_NS_JSON" \
             --argjson recordCount "$RECORD_COUNT" \
             --argjson hasRoot "$HAS_ROOT" \
             --argjson hasWww "$HAS_WWW" \
             --argjson recordTypes "$TYPES_JSON" \
-            '{status:"success",zoneCreated:$created,zoneStatus:$status,assignedNameServers:$nameservers,originalNameServers:$originalNameservers,scannedDnsRecordCount:$recordCount,scannedHasRoot:$hasRoot,scannedHasWww:$hasWww,recordTypes:$recordTypes,domainTouched:false,nameserverDelegationChanged:false}' \
+            --argjson detailErrors "$DETAIL_ERRORS" \
+            --argjson dnsErrors "$DNS_ERRORS" \
+            '{status:(if $zoneId != "" then "success" else "failed" end),listOk:$listOk,listHttp:$listHttp,zoneFound:($zoneId != ""),detailHttp:$detailHttp,dnsHttp:$dnsHttp,zoneStatus:$zoneStatus,assignedNameServers:$nameservers,originalNameServers:$originalNameservers,scannedDnsRecordCount:$recordCount,scannedHasRoot:$hasRoot,scannedHasWww:$hasWww,recordTypes:$recordTypes,detailErrors:$detailErrors,dnsErrors:$dnsErrors,domainTouched:false,nameserverDelegationChanged:false}' \
             > /tmp/zone-onboard-result.json
 
       - name: Persist sanitized result
@@ -93,5 +107,5 @@ jobs:
           cp /tmp/zone-onboard-result.json requests/cloudflare-zone-onboard-result.json
           git add requests/cloudflare-zone-onboard-result.json
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "ci: record Punctum Cloudflare zone onboarding result"
+          git commit -m "ci: record Punctum Cloudflare zone inspection"
           git push
