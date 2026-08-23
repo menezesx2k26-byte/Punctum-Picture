@@ -1,5 +1,5 @@
 {
-  "nonce": 2,
+  "nonce": 3,
   "requested_by": "chat",
   "mode": "read-only-public-source-photo-backup",
   "target": "google-drive"
