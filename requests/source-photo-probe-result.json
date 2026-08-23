@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-08-23T03:58:55.771Z",
+  "imageId": "b842e350-b6a8-4069-9055-fd52e2069a88",
+  "variants": {
+    "card": {
+      "bytes": 1066253,
+      "sha256": "da3a302eaade9bd05375897abc88fae018984d05bd1703afca041e5db7c2453a",
+      "fileInfo": "JPEG image data, Exif standard: [TIFF image data, little-endian, direntries=8, manufacturer=Canon, model=Canon EOS R100, xresolution=132, yresolution=140, resolutionunit=2, software=Adobe Lightroom 11.5.1 (iOS), datetime=2026:08:11 11:12:25], baseline, precision 8, 1080x1620, components 3"
+    },
+    "gallery": {
+      "bytes": 1066253,
+      "sha256": "da3a302eaade9bd05375897abc88fae018984d05bd1703afca041e5db7c2453a",
+      "fileInfo": "JPEG image data, Exif standard: [TIFF image data, little-endian, direntries=8, manufacturer=Canon, model=Canon EOS R100, xresolution=132, yresolution=140, resolutionunit=2, software=Adobe Lightroom 11.5.1 (iOS), datetime=2026:08:11 11:12:25], baseline, precision 8, 1080x1620, components 3"
+    },
+    "hero": {
+      "bytes": 1066253,
+      "sha256": "da3a302eaade9bd05375897abc88fae018984d05bd1703afca041e5db7c2453a",
+      "fileInfo": "JPEG image data, Exif standard: [TIFF image data, little-endian, direntries=8, manufacturer=Canon, model=Canon EOS R100, xresolution=132, yresolution=140, resolutionunit=2, software=Adobe Lightroom 11.5.1 (iOS), datetime=2026:08:11 11:12:25], baseline, precision 8, 1080x1620, components 3"
+    }
+  },
+  "identicalBytesAcrossPresets": true,
+  "interpretation": "public_media_is_source_bytes_for_this_image"
+}
