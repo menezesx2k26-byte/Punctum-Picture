@@ -37,11 +37,44 @@ jobs:
           whoami_ok=false
           d1_ok=false
           r2_ok=false
+          d1_token_present=false
+          d1_token_kind="missing"
+          d1_token_verify=false
+          d1_token_status="unknown"
+          d1_verify_http="000"
 
           wrangler whoami >/tmp/whoami.txt 2>&1 && whoami_ok=true
 
+          if [ -n "${CLOUDFLARE_D1_API_TOKEN:-}" ]; then
+            d1_token_present=true
+            case "$CLOUDFLARE_D1_API_TOKEN" in
+              cfat_*) d1_token_kind="account" ;;
+              cfut_*) d1_token_kind="user" ;;
+              *) d1_token_kind="legacy_or_unknown" ;;
+            esac
+
+            if [ "$d1_token_kind" = "account" ]; then
+              d1_verify_http="$(curl -sS -o /tmp/d1-verify.json -w '%{http_code}' \
+                -H "Authorization: Bearer ${CLOUDFLARE_D1_API_TOKEN}" \
+                "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/tokens/verify" || true)"
+            else
+              d1_verify_http="$(curl -sS -o /tmp/d1-verify.json -w '%{http_code}' \
+                -H "Authorization: Bearer ${CLOUDFLARE_D1_API_TOKEN}" \
+                "https://api.cloudflare.com/client/v4/user/tokens/verify" || true)"
+            fi
+
+            if [ "$d1_verify_http" = "200" ] && jq -e '.success == true and .result.status == "active"' /tmp/d1-verify.json >/dev/null 2>&1; then
+              d1_token_verify=true
+              d1_token_status="active"
+            elif [ -f /tmp/d1-verify.json ]; then
+              d1_token_status="$(jq -r '.result.status // "invalid_or_unverified"' /tmp/d1-verify.json 2>/dev/null || echo invalid_or_unverified)"
+            fi
+          else
+            printf '%s\n' '{"success":false,"errors":[{"message":"D1 secret missing"}]}' > /tmp/d1-verify.json
+          fi
+
           D1_HTTP="$(curl -sS -o /tmp/d1.json -w '%{http_code}' \
-            -H "Authorization: Bearer ${CLOUDFLARE_D1_API_TOKEN}" \
+            -H "Authorization: Bearer ${CLOUDFLARE_D1_API_TOKEN:-}" \
             -H 'Content-Type: application/json' \
             "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database" || true)"
           if [ "$D1_HTTP" = "200" ] && jq -e '.success == true' /tmp/d1.json >/dev/null 2>&1; then
@@ -53,15 +86,17 @@ jobs:
           sanitize_file() {
             tail -n 20 "$1" \
               | sed -E 's/[A-Fa-f0-9]{24,}/[redacted-id]/g' \
-              | sed -E 's/[A-Za-z0-9_-]{35,}/[redacted-secret]/g' \
+              | sed -E 's/(cfat_|cfut_)?[A-Za-z0-9_-]{35,}/[redacted-secret]/g' \
               | tr '\n' ' ' \
               | cut -c1-1200
           }
 
           d1_error=""
           r2_error=""
+          verify_error=""
           if [ "$d1_ok" != true ]; then d1_error="http=${D1_HTTP} $(sanitize_file /tmp/d1.json)"; fi
           if [ "$r2_ok" != true ]; then r2_error="$(sanitize_file /tmp/r2.txt)"; fi
+          if [ "$d1_token_verify" != true ]; then verify_error="http=${d1_verify_http} $(sanitize_file /tmp/d1-verify.json)"; fi
 
           overall=false
           if [ "$whoami_ok" = true ] && [ "$d1_ok" = true ] && [ "$r2_ok" = true ]; then
@@ -76,9 +111,15 @@ jobs:
             --argjson d1_read "$d1_ok" \
             --argjson r2_read "$r2_ok" \
             --argjson overall "$overall" \
+            --argjson d1_token_present "$d1_token_present" \
+            --arg d1_token_kind "$d1_token_kind" \
+            --argjson d1_token_verify "$d1_token_verify" \
+            --arg d1_token_status "$d1_token_status" \
+            --arg d1_verify_http "$d1_verify_http" \
             --arg d1_error "$d1_error" \
             --arg r2_error "$r2_error" \
-            '{checked_at:$checked_at,source_commit:$source_commit,whoami:$whoami,d1_read:$d1_read,r2_read:$r2_read,overall:$overall,d1_error:(if $d1_error=="" then null else $d1_error end),r2_error:(if $r2_error=="" then null else $r2_error end)}' \
+            --arg verify_error "$verify_error" \
+            '{checked_at:$checked_at,source_commit:$source_commit,whoami:$whoami,d1_read:$d1_read,r2_read:$r2_read,overall:$overall,d1_token_present:$d1_token_present,d1_token_kind:$d1_token_kind,d1_token_verify:$d1_token_verify,d1_token_status:$d1_token_status,d1_verify_http:$d1_verify_http,d1_error:(if $d1_error=="" then null else $d1_error end),r2_error:(if $r2_error=="" then null else $r2_error end),d1_verify_error:(if $verify_error=="" then null else $verify_error end)}' \
             > requests/cloudflare-probe-result.json
 
       - name: Persist sanitized result
