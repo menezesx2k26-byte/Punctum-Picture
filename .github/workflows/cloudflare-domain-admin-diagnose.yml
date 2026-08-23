@@ -1,0 +1,89 @@
+name: Diagnose Punctum admin on custom domain
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "requests/cloudflare-domain-admin-diagnose.json"
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SOURCE_ADMIN_EMAIL: ${{ secrets.SOURCE_ADMIN_EMAIL }}
+      SOURCE_ADMIN_PASSWORD: ${{ secrets.SOURCE_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Diagnose admin flow without exposing credentials
+        shell: bash
+        run: |
+          set -u
+          ROOT='https://punctumpicture.com'
+
+          PUBLIC_HTTP="$(curl -sS -o /tmp/public.json -w '%{http_code}' "$ROOT/api/public/stats" || true)"
+          ADMIN_PAGE_HTTP="$(curl -sS -L -o /tmp/admin-page -w '%{http_code}' "$ROOT/admin" || true)"
+          STUDIO_PAGE_HTTP="$(curl -sS -L -o /tmp/studio-page -w '%{http_code}' "$ROOT/admin/studio" || true)"
+
+          LOGIN_HTTP="$(curl -sS -o /tmp/login.json -D /tmp/login.headers -w '%{http_code}' \
+            -X POST "$ROOT/admin/api/session" \
+            -H "Origin: $ROOT" \
+            -H 'Content-Type: application/json' \
+            --data-binary "$(jq -nc --arg e "$SOURCE_ADMIN_EMAIL" --arg p "$SOURCE_ADMIN_PASSWORD" '{email:$e,password:$p}')" || true)"
+
+          LOGIN_KEYS="$(jq -c 'if type=="object" then keys else [] end' /tmp/login.json 2>/dev/null || echo '[]')"
+          LOGIN_ERROR="$(jq -r '.error // .message // empty' /tmp/login.json 2>/dev/null | head -c 160 || true)"
+          COOKIE="$(grep -i '^set-cookie:' /tmp/login.headers 2>/dev/null | head -n1 | sed -E 's/^[Ss]et-[Cc]ookie:[[:space:]]*([^;]+).*/\1/' | tr -d '\r' || true)"
+
+          ME_HTTP='000'
+          STUDIO_HTTP='000'
+          STUDIO_PRESET=''
+          HAS_UNPUBLISHED=''
+          if [ -n "$COOKIE" ]; then
+            ME_HTTP="$(curl -sS -o /tmp/me.json -w '%{http_code}' "$ROOT/admin/api/me" -H "Cookie: $COOKIE" || true)"
+            STUDIO_HTTP="$(curl -sS -o /tmp/studio.json -w '%{http_code}' "$ROOT/admin/api/studio" -H "Cookie: $COOKIE" || true)"
+            STUDIO_PRESET="$(jq -r '.siteConfig.identity.sourcePresetId // empty' /tmp/studio.json 2>/dev/null || true)"
+            HAS_UNPUBLISHED="$(jq -r '.hasUnpublishedChanges // empty' /tmp/studio.json 2>/dev/null || true)"
+          fi
+
+          STATUS='failed'
+          if [ "$PUBLIC_HTTP" = '200' ] && [ "$LOGIN_HTTP" = '200' ] && [ "$ME_HTTP" = '200' ] && [ "$STUDIO_HTTP" = '200' ]; then
+            STATUS='success'
+          fi
+
+          jq -n \
+            --arg status "$STATUS" \
+            --arg checkedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg publicHttp "$PUBLIC_HTTP" \
+            --arg adminPageHttp "$ADMIN_PAGE_HTTP" \
+            --arg studioPageHttp "$STUDIO_PAGE_HTTP" \
+            --arg loginHttp "$LOGIN_HTTP" \
+            --arg loginError "$LOGIN_ERROR" \
+            --arg meHttp "$ME_HTTP" \
+            --arg studioHttp "$STUDIO_HTTP" \
+            --arg studioPreset "$STUDIO_PRESET" \
+            --arg hasUnpublished "$HAS_UNPUBLISHED" \
+            --argjson loginKeys "$LOGIN_KEYS" \
+            '{status:$status,checkedAt:$checkedAt,http:{public:$publicHttp,adminPage:$adminPageHttp,studioPage:$studioPageHttp,login:$loginHttp,me:$meHttp,studio:$studioHttp},login:{responseKeys:$loginKeys,error:$loginError,cookieIssued:($meHttp != "000")},studio:{preset:$studioPreset,hasUnpublishedChanges:$hasUnpublished},credentialsExposed:false,dnsTouched:false}' \
+            > /tmp/admin-diagnose-result.json
+
+      - name: Persist sanitized result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          [ -f /tmp/admin-diagnose-result.json ] || printf '%s\n' '{"status":"failed","error":"admin_diagnosis_failed","credentialsExposed":false,"dnsTouched":false}' > /tmp/admin-diagnose-result.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git reset --hard origin/main
+          cp /tmp/admin-diagnose-result.json requests/cloudflare-domain-admin-diagnose-result.json
+          git add requests/cloudflare-domain-admin-diagnose-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record Punctum admin diagnosis"
+          git push
