@@ -29,9 +29,19 @@ Cloudflare própria com:
 - secrets administrativos;
 - domínio somente no cutover final.
 
+## Credenciais de migração
+
+Princípio de menor privilégio:
+
+- `CLOUDFLARE_API_TOKEN`: Worker + R2, usado pelo Wrangler.
+- `CLOUDFLARE_D1_API_TOKEN`: token dedicado ao D1, com apenas `Account -> D1 -> Edit`, usado pela REST API oficial.
+- `CLOUDFLARE_ACCOUNT_ID`: identificador da conta de destino.
+
+Os workflows nunca gravam os valores dos tokens no repositório e os resultados persistidos são sanitizados.
+
 ## Sequência
 
-1. Validar token/API da Cloudflare de destino.
+1. Validar tokens/API da Cloudflare de destino.
 2. Criar recursos de preview na Cloudflare própria.
 3. Aplicar migrations e deploy em `workers.dev`.
 4. Migrar D1 do ChatGPT Sites.
