@@ -51,15 +51,45 @@ jobs:
           if [ "$ROOT_HTTP" = "200" ] && jq -e '.stats.photoCount == 192 and .stats.albumCount == 16' /tmp/root-body >/dev/null 2>&1; then ROOT_OK=true; fi
           if [ "$WWW_HTTP" = "200" ] && jq -e '.stats.photoCount == 192 and .stats.albumCount == 16' /tmp/www-body >/dev/null 2>&1; then WWW_OK=true; fi
 
-          EXPECTED_HERO_SHA='60c907136abbd1aa38699061caca12a8878ce0478716efbc7237ba552e8d4604'
-          HERO_HTTP="$(curl -sS -L --max-time 20 -o /tmp/hero-p001.jpg -w '%{http_code}' 'https://punctumpicture.com/photos/p001.jpg?verify=5716bd0d' || true)"
+          EXPECTED_HERO_SHA="$(sha256sum public/photos/p001.jpg | awk '{print $1}')"
+          EXPECTED_HERO_BYTES="$(wc -c < public/photos/p001.jpg | tr -d ' ')"
+          HERO_HTTP="$(curl -sS -L --max-time 20 -D /tmp/hero-headers -o /tmp/hero-p001.jpg -w '%{http_code}' 'https://punctumpicture.com/photos/p001.jpg?verify=pixel-v1' || true)"
           HERO_SHA=''
           HERO_BYTES=0
           HERO_MATCH=false
+          HERO_VISUAL='{"available":false}'
           if [ "$HERO_HTTP" = "200" ] && [ -s /tmp/hero-p001.jpg ]; then
             HERO_SHA="$(sha256sum /tmp/hero-p001.jpg | awk '{print $1}')"
             HERO_BYTES="$(wc -c < /tmp/hero-p001.jpg | tr -d ' ')"
             if [ "$HERO_SHA" = "$EXPECTED_HERO_SHA" ]; then HERO_MATCH=true; fi
+
+            python -m pip install --disable-pip-version-check --quiet pillow
+            python <<'PY' >/tmp/hero-visual.json
+          from PIL import Image, ImageOps
+          import json, math
+
+          git = ImageOps.exif_transpose(Image.open('public/photos/p001.jpg')).convert('RGB')
+          prod = ImageOps.exif_transpose(Image.open('/tmp/hero-p001.jpg')).convert('RGB')
+          git_size = list(git.size)
+          prod_size = list(prod.size)
+          g = list(git.resize((64, 64), Image.Resampling.LANCZOS).convert('L').getdata())
+          p = list(prod.resize((64, 64), Image.Resampling.LANCZOS).convert('L').getdata())
+          mae = sum(abs(a-b) for a,b in zip(g,p)) / (len(g)*255.0)
+          mg = sum(g)/len(g); mp = sum(p)/len(p)
+          cov = sum((a-mg)*(b-mp) for a,b in zip(g,p))
+          vg = sum((a-mg)**2 for a in g); vp = sum((b-mp)**2 for b in p)
+          corr = cov / math.sqrt(vg*vp) if vg and vp else 0.0
+          same_visual = corr >= 0.985 and mae <= 0.06
+          print(json.dumps({
+              'available': True,
+              'gitDimensions': git_size,
+              'productionDimensions': prod_size,
+              'normalizedMae': round(mae, 6),
+              'correlation': round(corr, 6),
+              'matchesGitVisually': same_visual,
+          }))
+          PY
+            HERO_VISUAL="$(cat /tmp/hero-visual.json)"
           fi
 
           ROOT_RECORDS="$(jq -c '[.result[] | {type,name,content,proxied,ttl}]' /tmp/dns-punctumpicture.com.json)"
@@ -79,13 +109,15 @@ jobs:
             --arg heroSha "$HERO_SHA" \
             --arg expectedHeroSha "$EXPECTED_HERO_SHA" \
             --argjson heroBytes "$HERO_BYTES" \
+            --argjson expectedHeroBytes "$EXPECTED_HERO_BYTES" \
             --argjson heroMatchesGit "$HERO_MATCH" \
+            --argjson heroVisual "$HERO_VISUAL" \
             --argjson rootOk "$ROOT_OK" \
             --argjson wwwOk "$WWW_OK" \
             --argjson rootRecords "$ROOT_RECORDS" \
             --argjson wwwRecords "$WWW_RECORDS" \
             --argjson workerDomains "$WORKER_DOMAINS" \
-            '{status:"success",checkedAt:$checkedAt,zoneStatus:$zoneStatus,dns:{root:$rootRecords,www:$wwwRecords},workerDomainsHttp:$domainsHttp,workerDomains:$workerDomains,http:{root:$rootHttp,www:$wwwHttp,rootMatchesWorker:$rootOk,wwwMatchesWorker:$wwwOk},hero:{http:$heroHttp,sha256:$heroSha,expectedGitSha256:$expectedHeroSha,bytes:$heroBytes,matchesGit:$heroMatchesGit},cloudflareStateChanged:false}' \
+            '{status:"success",checkedAt:$checkedAt,zoneStatus:$zoneStatus,dns:{root:$rootRecords,www:$wwwRecords},workerDomainsHttp:$domainsHttp,workerDomains:$workerDomains,http:{root:$rootHttp,www:$wwwHttp,rootMatchesWorker:$rootOk,wwwMatchesWorker:$wwwOk},hero:{http:$heroHttp,sha256:$heroSha,expectedGitSha256:$expectedHeroSha,bytes:$heroBytes,expectedGitBytes:$expectedHeroBytes,matchesGitBytes:$heroMatchesGit,visual:$heroVisual},cloudflareStateChanged:false}' \
             > /tmp/domain-diagnose-result.json
 
       - name: Persist sanitized result
