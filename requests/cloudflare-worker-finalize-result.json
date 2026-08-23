@@ -1,0 +1,16 @@
+{
+  "status": "failed",
+  "d1": true,
+  "r2_originals": true,
+  "r2_backups": true,
+  "npm_ci": true,
+  "typecheck": true,
+  "lint": true,
+  "tests": false,
+  "build": false,
+  "worker": false,
+  "worker_name": "punctum-picture-migration",
+  "domain_touched": false,
+  "d1_database_id": "22697f13-7484-41e3-9441-f7b902c6577a",
+  "error": "tests_failed"
+}
