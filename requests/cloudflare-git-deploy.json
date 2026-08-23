@@ -1,0 +1,7 @@
+{
+  "nonce": 1,
+  "requested_by": "chat",
+  "branch": "main",
+  "target": "punctum-picture-migration",
+  "domain_changes": false
+}
