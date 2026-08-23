@@ -1,0 +1,9 @@
+{
+  "nonce": 1,
+  "requested_by": "chat",
+  "root": "punctumpicture.com",
+  "www": "www.punctumpicture.com",
+  "target_worker": "punctum-picture-migration",
+  "confirm_cutover": "POINT_CUSTOM_DOMAIN_NOW",
+  "rollback_on_failure": true
+}
