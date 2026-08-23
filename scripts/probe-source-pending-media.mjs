@@ -45,7 +45,10 @@ async function main() {
     return response.json();
   }
 
-  const list = await adminJson('/admin/api/albums');
+  const [list, studio] = await Promise.all([
+    adminJson('/admin/api/albums'),
+    adminJson('/admin/api/studio'),
+  ]);
   const details = [];
   for (const summary of list.albums || []) {
     const body = await adminJson(`/admin/api/albums/${encodeURIComponent(summary.id)}`);
@@ -58,6 +61,7 @@ async function main() {
       .map((image) => ({
         id: image.id,
         albumId: album.id,
+        albumTitle: album.title,
         albumStatus: album.status,
         expectedSize: image.sizeBytes ?? null,
         createdAt: image.createdAt ?? null,
@@ -118,6 +122,7 @@ async function main() {
     byAlbumStatus[probe.albumStatus] = (byAlbumStatus[probe.albumStatus] || 0) + 1;
   }
 
+  const studioConfigJson = JSON.stringify(studio.siteConfig ?? null);
   write({
     status: 'success',
     checkedAt: new Date().toISOString(),
@@ -127,6 +132,13 @@ async function main() {
     galleryHttpStatuses: byStatus,
     pendingByAlbumStatus: byAlbumStatus,
     probes,
+    studio: {
+      revision: studio.revision ?? null,
+      hasUnpublishedChanges: Boolean(studio.hasUnpublishedChanges),
+      updatedAt: studio.updatedAt ?? null,
+      configSha256: crypto.createHash('sha256').update(studioConfigJson).digest('hex'),
+      history: Array.isArray(studio.history) ? studio.history : [],
+    },
     conclusion:
       recovered > 0
         ? 'At least one pending database row still exposed retrievable media; recovered bytes were copied to destination R2.'
