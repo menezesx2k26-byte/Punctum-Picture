@@ -1,0 +1,75 @@
+name: Export Punctum D1 for Drive
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "requests/d1-drive-backup.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: punctum-d1-drive-backup
+  cancel-in-progress: false
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_D1_API_TOKEN: ${{ secrets.CLOUDFLARE_D1_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Install trusted Wrangler
+        run: npm install --global --no-audit --no-fund wrangler@4.125.0
+
+      - name: Export D1 and mirror SQL to R2
+        run: node scripts/export-d1-for-drive.mjs
+
+      - name: Prepare artifact files
+        run: |
+          cp /tmp/punctum-d1-drive-backup.sql punctum-d1-current.sql
+          cp /tmp/punctum-d1-drive-backup-manifest.json punctum-d1-current-manifest.json
+
+      - name: Upload Drive-ready artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: punctum-d1-drive-backup
+          path: |
+            punctum-d1-current.sql
+            punctum-d1-current-manifest.json
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 30
+
+      - name: Persist sanitized result with run id
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f /tmp/punctum-d1-drive-backup-result.json ]; then
+            jq --arg runId "$GITHUB_RUN_ID" --arg runAttempt "$GITHUB_RUN_ATTEMPT" \
+              '.githubRunId=($runId|tonumber) | .githubRunAttempt=($runAttempt|tonumber) | .artifactName="punctum-d1-drive-backup"' \
+              /tmp/punctum-d1-drive-backup-result.json > /tmp/final-result.json
+          else
+            jq -n --arg runId "$GITHUB_RUN_ID" '{status:"failed",error:"workflow_failed_before_result",githubRunId:($runId|tonumber),artifactName:"punctum-d1-drive-backup",domainTouched:false}' > /tmp/final-result.json
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git reset --hard origin/main
+          cp /tmp/final-result.json requests/d1-drive-backup-result.json
+          git add requests/d1-drive-backup-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record D1 Drive backup"
+          git push
