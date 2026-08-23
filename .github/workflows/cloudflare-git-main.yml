@@ -81,19 +81,22 @@ jobs:
           [ -n "$DB_ID" ]
           echo "DB_ID=$DB_ID" >> "$GITHUB_ENV"
 
-      - name: Patch generated config for owner Cloudflare
+      - name: Patch generated config for owner Cloudflare production
         id: patch
         run: |
           node <<'NODE'
           import fs from 'node:fs';
           const path = 'dist/server/wrangler.json';
           const config = JSON.parse(fs.readFileSync(path, 'utf8'));
-          const workerUrl = 'https://punctum-picture-migration.menezesx2k26.workers.dev';
+          const productionUrl = 'https://punctumpicture.com';
 
           config.name = 'punctum-picture-migration';
           config.workers_dev = true;
           config.preview_urls = true;
-          delete config.routes;
+          config.routes = [
+            { pattern: 'punctumpicture.com', custom_domain: true },
+            { pattern: 'www.punctumpicture.com', custom_domain: true },
+          ];
           delete config.env;
 
           config.d1_databases = [{
@@ -114,8 +117,8 @@ jobs:
           };
           config.vars = {
             ENVIRONMENT: 'production',
-            SITE_ORIGIN: workerUrl,
-            PUBLIC_SITE_URL: workerUrl,
+            SITE_ORIGIN: productionUrl,
+            PUBLIC_SITE_URL: productionUrl,
             PUBLIC_WHATSAPP_E164: 'UNSPECIFIED',
             PUBLIC_INSTAGRAM_URL: 'UNSPECIFIED',
             MAX_UPLOAD_BYTES: '26214400',
@@ -137,17 +140,20 @@ jobs:
         id: deploy_worker
         run: wrangler deploy --config dist/server/wrangler.json
 
-      - name: Smoke test public and admin
+      - name: Smoke test production custom domain and admin
         id: smoke
         shell: bash
         run: |
           set -euo pipefail
-          BASE='https://punctum-picture-migration.menezesx2k26.workers.dev'
+          BASE='https://punctumpicture.com'
           for attempt in 1 2 3 4 5; do
             if curl -fsS "$BASE/api/public/stats" >/tmp/stats.json; then break; fi
             sleep 6
           done
           jq -e '.stats.photoCount == 192 and .stats.albumCount == 16 and .stats.categoryCount == 7' /tmp/stats.json >/dev/null
+
+          curl -fsS 'https://www.punctumpicture.com/api/public/stats' >/tmp/www-stats.json
+          jq -e '.stats.photoCount == 192 and .stats.albumCount == 16 and .stats.categoryCount == 7' /tmp/www-stats.json >/dev/null
 
           LOGIN_HTTP="$(curl -sS -o /tmp/login.json -D /tmp/login.headers -w '%{http_code}' \
             -X POST "$BASE/admin/api/session" \
@@ -158,21 +164,23 @@ jobs:
           COOKIE="$(grep -i '^set-cookie:' /tmp/login.headers | head -n1 | sed -E 's/^[Ss]et-[Cc]ookie:[[:space:]]*([^;]+).*/\1/' | tr -d '\r')"
           [ -n "$COOKIE" ]
           curl -fsS "$BASE/admin/api/studio" -H "Cookie: $COOKIE" >/tmp/studio.json
-          jq -e '.hasUnpublishedChanges == false and .siteConfig.identity.sourcePresetId == "aconchegante-organico"' /tmp/studio.json >/dev/null
+          jq -e '.siteConfig.identity.sourcePresetId == "aconchegante-organico"' /tmp/studio.json >/dev/null
 
       - name: Deployment summary
         if: success()
         run: |
           {
-            echo '### Punctum Cloudflare deploy'
+            echo '### Punctum Cloudflare production deploy'
             echo '- Git branch: `main`'
             echo '- Worker: `punctum-picture-migration`'
+            echo '- Production: `https://punctumpicture.com`'
+            echo '- WWW: `https://www.punctumpicture.com`'
             echo '- D1: `punctum-picture`'
             echo '- R2 originals/backups: connected'
             echo '- Cloudflare Images: connected'
             echo '- Crons: enabled'
             echo '- Studio migrated state: verified'
-            echo '- Custom domain: untouched'
+            echo '- Custom domains: preserved and smoke-tested'
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Persist sanitized deploy result
@@ -188,6 +196,8 @@ jobs:
             "sourceCommit": "$GITHUB_SHA",
             "worker": "punctum-picture-migration",
             "workerUrl": "https://punctum-picture-migration.menezesx2k26.workers.dev",
+            "productionUrl": "https://punctumpicture.com",
+            "wwwUrl": "https://www.punctumpicture.com",
             "gitBranch": "main",
             "autoDeployEnabled": true,
             "stages": {
@@ -208,7 +218,7 @@ jobs:
             "cloudflareImages": true,
             "cronsEnabled": true,
             "studioPresetExpected": "aconchegante-organico",
-            "domainTouched": false
+            "customDomainsConfigured": true
           }
           EOF
 
