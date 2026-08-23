@@ -1,6 +1,6 @@
 {
   "status": "success",
-  "validatedAt": "2026-08-23T18:29:05.135Z",
+  "validatedAt": "2026-08-23T18:29:30.510Z",
   "checkpointKey": "migration/checkpoints/pre-studio/2026-08-23T18-24-54-745Z.sql",
   "checkpointSha256Expected": "27a9baf2caaabcc05c7166a87ab1b53175de0153dcad76c316fd881f9ef83731",
   "checkpointSha256Actual": "27a9baf2caaabcc05c7166a87ab1b53175de0153dcad76c316fd881f9ef83731",
