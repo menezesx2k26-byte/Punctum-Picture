@@ -101,13 +101,22 @@ Destination Studio remains deliberately on its destination/default pointer. The 
 
 A raw JSON snapshot of all state exposed through the authenticated admin APIs was written to the destination private backups R2 bucket. The sanitized Git result records its R2 key and SHA-256.
 
-## Destination D1 checkpoint — PASS
+## Destination D1 checkpoint — PASS AND RESTORE-VALIDATED
 
 A full SQL export of the destination D1 was stored in the private backups R2 bucket before any Studio restoration or public visual activation.
 
 - key: `migration/checkpoints/pre-studio/2026-08-23T18-24-54-745Z.sql`
 - bytes: 140,324
 - SHA-256: `27a9baf2caaabcc05c7166a87ab1b53175de0153dcad76c316fd881f9ef83731`
+
+The checkpoint was then downloaded from R2 and restored into a disposable local SQLite database. Validation passed:
+
+- expected SHA-256 = actual SHA-256
+- expected byte length = actual byte length
+- `PRAGMA integrity_check` = `ok`
+- `PRAGMA foreign_key_check` = `ok`
+- every restored table count matched the live destination checkpoint count
+- destination D1 writes during restore validation: zero
 
 Checkpoint row counts:
 
