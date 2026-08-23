@@ -1,0 +1,8 @@
+{
+  "branch": "miranda-editorial",
+  "target": "miranda.punctumpicture.com",
+  "exitCode": 1,
+  "databaseId": "4e959036-a3f0-4faf-bda2-fca9b4c5e984",
+  "logTail": "\n ⛅️ wrangler 4.125.0\n────────────────────\n\nCloudflare collects anonymous telemetry about your usage of Wrangler. Learn more at https://github.com/cloudflare/workers-sdk/tree/main/packages/wrangler/telemetry.md\n\n\u001b[31m✘ \u001b[41;31m[\u001b[41;97mERROR\u001b[41;31m]\u001b[0m \u001b[1mBuild failed with 1 error:\u001b[0m\n\n  \u001b[31m✘ \u001b[41;31m[\u001b[41;97mERROR\u001b[41;31m]\u001b[0m \u001b[1mCould not resolve \"virtual:vinext-rsc-entry\"\u001b[0m\n  \n      ../node_modules/vinext/dist/server/app-router-entry.js:5:23:\n  \u001b[37m      5 │ import rscHandler from \u001b[32m\"virtual:vinext-rsc-entry\"\u001b[37m;\n          ╵                        \u001b[32m~~~~~~~~~~~~~~~~~~~~~~~~~~\u001b[0m\n  \n    To fix this, you can add an entry to \"alias\" in your Wrangler configuration.\n    For more guidance see: \u001b[4m\u001b[4mhttps://developers.cloudflare.com/workers/wrangler/configuration/#bundling-issues\u001b[0m\u001b[0m\n    \n  \n  \n\n\n🪵  Logs were written to \"/home/runner/.config/.wrangler/logs/wrangler-2026-08-23_23-21-37_260.log\"",
+  "productionDomainTouched": false
+}
