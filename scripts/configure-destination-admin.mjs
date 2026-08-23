@@ -65,7 +65,6 @@ async function main() {
   const env = process.env;
   execFileSync('wrangler', ['secret', 'put', 'ADMIN_SESSION_SECRET', '--name', WORKER], { input: sessionSecret, stdio: ['pipe','pipe','pipe'], env });
   execFileSync('wrangler', ['secret', 'put', 'ADMIN_ALLOWED_EMAILS', '--name', WORKER], { input: email.trim().toLowerCase(), stdio: ['pipe','pipe','pipe'], env });
-  execFileSync('wrangler', ['secret', 'put', 'SITE_ORIGIN', '--name', WORKER], { input: DEST, stdio: ['pipe','pipe','pipe'], env });
 
   const login = await fetch(`${DEST}/admin/api/session`, {
     method: 'POST',
