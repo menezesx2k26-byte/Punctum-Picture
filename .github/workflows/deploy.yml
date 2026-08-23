@@ -1,52 +1,61 @@
 name: Deploy
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-  push:
-    branches: ["main"]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Destino do deploy"
+        required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - production
+      confirm_production:
+        description: "Digite DEPLOY_PRODUCTION para liberar production"
+        required: false
+        type: string
 
 concurrency:
-  group: deploy-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
 
 jobs:
-  preview:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+  validate-production:
     runs-on: ubuntu-latest
-    environment: preview
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Guard production deploy
+        if: inputs.environment == 'production'
+        run: |
+          if [ "${{ inputs.confirm_production }}" != "DEPLOY_PRODUCTION" ]; then
+            echo "Production bloqueada: confirmação explícita ausente."
+            exit 1
+          fi
+
+  deploy:
+    needs: validate-production
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: npm
+          package-manager-cache: false
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
       - run: npm run build
-      - run: npx wrangler deploy --env preview
+      - name: Deploy preview
+        if: inputs.environment == 'preview'
+        run: npx wrangler deploy --env preview
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
-  production:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run lint
-      - run: npm test
-      - run: npm run build
-      - run: npx wrangler deploy
+      - name: Deploy production
+        if: inputs.environment == 'production'
+        run: npx wrangler deploy
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
