@@ -1,6 +1,25 @@
 {
-  "status": "failed",
-  "error": "destination_/admin/api/categories_http_403",
+  "status": "success",
+  "verifiedAt": "2026-08-23T16:56:54.896Z",
+  "destination": "https://punctum-picture-migration.menezesx2k26.workers.dev",
+  "adminLoginVerified": true,
+  "authenticatedEmailMatchesSource": true,
+  "attempt": 1,
+  "counts": {
+    "albums": 17,
+    "albumStatuses": {
+      "published": 16,
+      "draft": 1
+    },
+    "categories": 10,
+    "inquiries": 1,
+    "studioHistorySummaries": 1
+  },
+  "studio": {
+    "revision": 1,
+    "hasUnpublishedChanges": false,
+    "source": "draft"
+  },
   "domainTouched": false,
   "publicStudioActivated": false
 }
