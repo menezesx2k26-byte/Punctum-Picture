@@ -1,0 +1,139 @@
+name: Backup live dynamic Punctum photos v2
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "requests/source-dynamic-photo-backup-v2.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: punctum-source-dynamic-photo-backup-v2
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Download 80 dynamic source photos
+        shell: bash
+        run: |
+          set -uo pipefail
+          rm -rf source-dynamic-photo-backup
+          mkdir -p source-dynamic-photo-backup/photos requests
+          set +e
+          node --input-type=module <<'NODE' > /tmp/dynamic-v2.log 2>&1
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import crypto from 'node:crypto';
+
+          const origin = 'https://punctumpicture.com';
+          const archive = await fetch(`${origin}/api/public/archive`, {headers:{accept:'application/json'}});
+          if (!archive.ok) throw new Error(`archive_http_${archive.status}`);
+          const payload = await archive.json();
+          const all = Array.isArray(payload.images) ? payload.images : [];
+          const images = all.filter(x => x?.id && !String(x.id).startsWith('static-'));
+          console.log(`public=${all.length} dynamic=${images.length}`);
+          if (all.length !== 192 || images.length !== 80) throw new Error(`unexpected_counts_public_${all.length}_dynamic_${images.length}`);
+
+          const ext = type => ({'image/jpeg':'jpg','image/png':'png','image/webp':'webp','image/avif':'avif','image/gif':'gif'})[(type||'').split(';')[0].trim().toLowerCase()] || 'bin';
+          const safe = x => String(x || 'sem-album').replace(/[^a-zA-Z0-9._-]+/g,'-');
+          const manifest = [];
+          let next = 0;
+
+          async function download(image) {
+            const id = String(image.id);
+            const url = `${origin}/media/${encodeURIComponent(id)}/gallery`;
+            let last;
+            for (let attempt=1; attempt<=3; attempt++) {
+              try {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 45000);
+                const res = await fetch(url,{headers:{accept:'image/jpeg'},redirect:'follow',signal:controller.signal});
+                clearTimeout(timer);
+                if (!res.ok) throw new Error(`http_${res.status}`);
+                return {url,res,bytes:Buffer.from(await res.arrayBuffer())};
+              } catch (e) {
+                last=e;
+                console.log(`retry ${id} ${attempt} ${e instanceof Error ? e.message : e}`);
+                await new Promise(r=>setTimeout(r,attempt*1000));
+              }
+            }
+            throw new Error(`download_failed_${id}_${last instanceof Error ? last.message : last}`);
+          }
+
+          async function worker(){
+            while(true){
+              const i=next++;
+              if(i>=images.length) return;
+              const image=images[i];
+              const {url,res,bytes}=await download(image);
+              const contentType=res.headers.get('content-type')||'application/octet-stream';
+              const album=safe(image.albumSlug);
+              const dir=path.join('source-dynamic-photo-backup','photos',album);
+              fs.mkdirSync(dir,{recursive:true});
+              const relative=`photos/${album}/${safe(image.id)}.${ext(contentType)}`;
+              fs.writeFileSync(path.join('source-dynamic-photo-backup',relative),bytes);
+              manifest.push({id:image.id,albumSlug:image.albumSlug??null,albumTitle:image.albumTitle??null,altText:image.altText??null,categories:image.categories??[],sourceUrl:url,relativePath:relative,contentType,bytes:bytes.length,sha256:crypto.createHash('sha256').update(bytes).digest('hex')});
+              if(manifest.length%10===0) console.log(`downloaded=${manifest.length}/80`);
+            }
+          }
+          await Promise.all(Array.from({length:12},()=>worker()));
+          manifest.sort((a,b)=>(a.albumSlug||'').localeCompare(b.albumSlug||'')||String(a.id).localeCompare(String(b.id)));
+          const report={format:'punctum-dynamic-source-photo-backup-v1',capturedAt:new Date().toISOString(),origin,publicArchiveCount:all.length,dynamicImageCount:manifest.length,totalBytes:manifest.reduce((s,x)=>s+x.bytes,0),fidelityEvidence:'Preflight proved identical SHA-256/bytes across card, gallery and hero for a dynamic image.'};
+          fs.writeFileSync('source-dynamic-photo-backup/manifest.json',JSON.stringify({...report,images:manifest},null,2)+'\n');
+          fs.writeFileSync('source-dynamic-photo-backup/report.json',JSON.stringify(report,null,2)+'\n');
+          console.log(JSON.stringify(report));
+          NODE
+          status=$?
+          set -e
+          cat /tmp/dynamic-v2.log
+          if [ "$status" -ne 0 ]; then
+            detail="$(tail -n 60 /tmp/dynamic-v2.log | cut -c1-5000)"
+            jq -n --arg detail "$detail" '{status:"failed",error:"dynamic_source_download_failed",detail:$detail}' > requests/source-dynamic-photo-backup-v2-result.json
+            exit "$status"
+          fi
+
+      - name: Upload backup artifact
+        id: artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: punctum-dynamic-source-photos-v2
+          path: source-dynamic-photo-backup/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+      - name: Build result
+        if: success()
+        env:
+          ARTIFACT_ID: ${{ steps.artifact.outputs.artifact-id }}
+          ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
+        run: |
+          jq --arg artifactId "$ARTIFACT_ID" --arg artifactUrl "$ARTIFACT_URL" '. + {status:"success",artifactId:$artifactId,artifactUrl:$artifactUrl}' source-dynamic-photo-backup/report.json > requests/source-dynamic-photo-backup-v2-result.json
+
+      - name: Persist result
+        if: always()
+        run: |
+          if [ ! -f requests/source-dynamic-photo-backup-v2-result.json ]; then
+            printf '%s\n' '{"status":"failed","error":"artifact_upload_failed"}' > requests/source-dynamic-photo-backup-v2-result.json
+          fi
+          cp requests/source-dynamic-photo-backup-v2-result.json /tmp/result.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git reset --hard origin/main
+          cp /tmp/result.json requests/source-dynamic-photo-backup-v2-result.json
+          git add requests/source-dynamic-photo-backup-v2-result.json
+          git commit -m "ci: record dynamic source photo backup v2" || exit 0
+          git push
