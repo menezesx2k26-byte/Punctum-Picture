@@ -1,0 +1,74 @@
+name: Diagnose Miranda build
+
+on:
+  push:
+    branches: ["miranda-editorial"]
+    paths:
+      - "app/**"
+      - "shared/**"
+      - "tests/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/miranda-build-diagnose.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - run: npm ci
+
+      - name: Run all build gates and capture diagnostics
+        shell: bash
+        env:
+          PUBLIC_SITE_URL: https://miranda.punctumpicture.com
+          SITE_ORIGIN: https://miranda.punctumpicture.com
+        run: |
+          set +e
+          npm run typecheck >/tmp/miranda-typecheck.log 2>&1
+          TYPECHECK=$?
+          npm run lint >/tmp/miranda-lint.log 2>&1
+          LINT=$?
+          npm test >/tmp/miranda-test.log 2>&1
+          TEST=$?
+          npm run build >/tmp/miranda-build.log 2>&1
+          BUILD=$?
+          export TYPECHECK LINT TEST BUILD
+          node <<'NODE'
+          import fs from 'node:fs';
+          const tail = (path, max = 12000) => {
+            const value = fs.readFileSync(path, 'utf8');
+            return value.length > max ? value.slice(-max) : value;
+          };
+          const result = {
+            typecheck: { exit: Number(process.env.TYPECHECK), log: tail('/tmp/miranda-typecheck.log') },
+            lint: { exit: Number(process.env.LINT), log: tail('/tmp/miranda-lint.log') },
+            test: { exit: Number(process.env.TEST), log: tail('/tmp/miranda-test.log') },
+            build: { exit: Number(process.env.BUILD), log: tail('/tmp/miranda-build.log') },
+          };
+          result.ok = Object.values(result).filter(v => v && typeof v === 'object' && 'exit' in v).every(v => v.exit === 0);
+          fs.mkdirSync('requests', { recursive: true });
+          fs.writeFileSync('requests/miranda-build-result.json', JSON.stringify(result, null, 2) + '\n');
+          NODE
+
+      - name: Persist diagnostic result on Miranda branch
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f requests/miranda-build-result.json || echo '{"ok":false,"workflow":"diagnostic_failed_before_gates"}' > requests/miranda-build-result.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add requests/miranda-build-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record Miranda build diagnostics"
+          git push origin HEAD:miranda-editorial
