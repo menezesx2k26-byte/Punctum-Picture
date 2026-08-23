@@ -101,9 +101,31 @@ Destination Studio remains deliberately on its destination/default pointer. The 
 
 A raw JSON snapshot of all state exposed through the authenticated admin APIs was written to the destination private backups R2 bucket. The sanitized Git result records its R2 key and SHA-256.
 
-## Destination D1 checkpoint — IN PROGRESS
+## Destination D1 checkpoint — PASS
 
-Before any future Studio restoration/activation, export the current destination D1 to the private backups R2 bucket and record SHA-256 plus per-table row counts. This checkpoint is a rollback boundary for the fully migrated non-Studio state.
+A full SQL export of the destination D1 was stored in the private backups R2 bucket before any Studio restoration or public visual activation.
+
+- key: `migration/checkpoints/pre-studio/2026-08-23T18-24-54-745Z.sql`
+- bytes: 140,324
+- SHA-256: `27a9baf2caaabcc05c7166a87ab1b53175de0153dcad76c316fd881f9ef83731`
+
+Checkpoint row counts:
+
+- `admin_credentials`: 1
+- `album_categories`: 17
+- `albums`: 17
+- `audit_log`: 0
+- `backup_runs`: 0
+- `categories`: 10
+- `d1_migrations`: 7
+- `images`: 200
+- `inquiries`: 1
+- `rate_limit_buckets`: 7
+- `site_config`: 0
+- `site_config_pointers`: 1
+- `site_config_versions`: 2
+- `site_settings`: 1
+- `upload_intents`: 0
 
 ## Forensic D1 parity — BLOCKED BY SOURCE RAW D1 ACCESS
 
@@ -123,11 +145,10 @@ The current Studio configuration is preserved. The principal user-visible histor
 
 Custom domain / DNS / routes remain BLOCKED until:
 
-1. destination D1 checkpoint is stored and verified;
-2. raw D1 forensic export is obtained, or the owner explicitly accepts functional-state parity in lieu of forensic parity;
-3. source Studio state is restored with the intended pointer/history policy;
-4. authenticated admin smoke checks pass;
-5. public parity audit passes after the final sync;
-6. backup/cron behavior is validated on the owner Cloudflare account.
+1. raw D1 forensic export is obtained, or the owner explicitly accepts functional-state parity in lieu of forensic parity;
+2. source Studio state is restored with the intended pointer/history policy;
+3. authenticated admin smoke checks pass;
+4. public parity audit passes after the final sync;
+5. backup/cron behavior is validated on the owner Cloudflare account.
 
 Only after those gates may the destination be considered eligible for domain cutover.
