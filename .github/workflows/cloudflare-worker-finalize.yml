@@ -160,10 +160,10 @@ jobs:
           mark typecheck
           npm run lint >/tmp/lint.log 2>&1 || fail_with_log "lint_failed" /tmp/lint.log
           mark lint
-          npm test >/tmp/tests.log 2>&1 || fail_with_log "tests_failed" /tmp/tests.log
-          mark tests
           npm run build >/tmp/build.log 2>&1 || fail_with_log "build_failed" /tmp/build.log
           mark build
+          npm test >/tmp/tests.log 2>&1 || fail_with_log "tests_failed" /tmp/tests.log
+          mark tests
 
           if ! wrangler deploy --config .migration/wrangler.jsonc > /tmp/deploy.txt 2>&1; then
             fail_with_log "worker_deploy_failed" /tmp/deploy.txt
