@@ -28,14 +28,14 @@ jobs:
       - name: Install trusted Wrangler
         run: npm install --global --no-audit --no-fund wrangler@4.125.0
 
-      - name: Validate existing destination and build
+      - name: Validate existing destination and deploy generated vinext worker
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_D1_API_TOKEN: ${{ secrets.CLOUDFLARE_D1_API_TOKEN }}
         run: |
           set -uo pipefail
-          mkdir -p requests .migration
+          mkdir -p requests
 
           cat > requests/cloudflare-worker-finalize-result.json <<'EOF'
           {
@@ -48,6 +48,7 @@ jobs:
             "lint": false,
             "tests": false,
             "build": false,
+            "generated_config": false,
             "worker": false,
             "worker_name": "punctum-picture-migration",
             "domain_touched": false
@@ -60,11 +61,11 @@ jobs:
               printf '%s' 'log unavailable'
               return
             fi
-            tail -n 100 "$file" \
+            tail -n 120 "$file" \
               | sed -E 's/[A-Fa-f0-9]{24,}/[redacted-id]/g' \
               | sed -E 's/(cfat_|cfut_)[A-Za-z0-9_-]+/[redacted-cloudflare-token]/g' \
               | sed -E 's/[A-Za-z0-9_-]{45,}/[redacted-long-token]/g' \
-              | cut -c1-3000
+              | cut -c1-3500
           }
 
           fail() {
@@ -105,71 +106,71 @@ jobs:
           wrangler r2 bucket info punctum-picture-backups --json >/tmp/r2-backups.json 2>/tmp/r2-backups.err || fail_with_log "r2_backups_missing" /tmp/r2-backups.err
           mark r2_backups
 
-          DB_ID="$DB_ID" node <<'NODE'
-          import fs from 'node:fs';
-          const databaseId = process.env.DB_ID;
-          const config = {
-            "$schema": "./node_modules/wrangler/config-schema.json",
-            "name": "punctum-picture-migration",
-            "main": "worker/index.ts",
-            "compatibility_date": "2026-05-22",
-            "compatibility_flags": ["nodejs_compat"],
-            "workers_dev": true,
-            "assets": {
-              "directory": "./dist/client",
-              "binding": "ASSETS",
-              "not_found_handling": "single-page-application",
-              "run_worker_first": ["/api/*", "/admin/*", "/media/*", "/sitemap.xml", "/robots.txt"]
-            },
-            "d1_databases": [{
-              "binding": "DB",
-              "database_name": "punctum-picture",
-              "database_id": databaseId,
-              "migrations_dir": "migrations"
-            }],
-            "r2_buckets": [
-              { "binding": "ORIGINALS", "bucket_name": "punctum-picture-originals" },
-              { "binding": "BACKUPS", "bucket_name": "punctum-picture-backups" }
-            ],
-            "images": { "binding": "IMAGES" },
-            "observability": { "enabled": true },
-            "vars": {
-              "ENVIRONMENT": "migration",
-              "SITE_ORIGIN": "https://migration.invalid",
-              "PUBLIC_SITE_URL": "https://migration.invalid",
-              "PUBLIC_WHATSAPP_E164": "UNSPECIFIED",
-              "PUBLIC_INSTAGRAM_URL": "UNSPECIFIED",
-              "MAX_UPLOAD_BYTES": "26214400",
-              "ALLOWED_MIME_TYPES": "image/jpeg,image/png,image/webp",
-              "PRESIGNED_URL_TTL_SECONDS": "900",
-              "CONTACT_RATE_LIMIT_WINDOW_SECONDS": "3600",
-              "CONTACT_RATE_LIMIT_MAX": "5",
-              "ADMIN_RATE_LIMIT_WINDOW_SECONDS": "60",
-              "ADMIN_RATE_LIMIT_MAX": "60",
-              "BACKUP_PREFIX": "backups/d1",
-              "BACKUP_RETENTION_DAYS": "180",
-              "CLEANUP_ORPHAN_UPLOAD_AGE_HOURS": "24"
-            }
-          };
-          fs.writeFileSync('.migration/wrangler.jsonc', JSON.stringify(config, null, 2) + '\n');
-          NODE
-
-          cp .migration/wrangler.jsonc wrangler.migration.jsonc
-
           npm ci >/tmp/npm-ci.log 2>&1 || fail_with_log "npm_ci_failed" /tmp/npm-ci.log
           mark npm_ci
           npm run typecheck >/tmp/typecheck.log 2>&1 || fail_with_log "typecheck_failed" /tmp/typecheck.log
           mark typecheck
           npm run lint >/tmp/lint.log 2>&1 || fail_with_log "lint_failed" /tmp/lint.log
           mark lint
+
           npm run build >/tmp/build.log 2>&1 || fail_with_log "build_failed" /tmp/build.log
           mark build
+
+          [ -f dist/server/wrangler.json ] || fail_with_log "generated_wrangler_missing" /tmp/build.log
+
+          DB_ID="$DB_ID" node <<'NODE'
+          import fs from 'node:fs';
+          const path = 'dist/server/wrangler.json';
+          const config = JSON.parse(fs.readFileSync(path, 'utf8'));
+
+          config.name = 'punctum-picture-migration';
+          config.workers_dev = true;
+          config.preview_urls = true;
+
+          delete config.routes;
+          delete config.triggers;
+          delete config.env;
+
+          config.d1_databases = [{
+            binding: 'DB',
+            database_name: 'punctum-picture',
+            database_id: process.env.DB_ID,
+          }];
+          config.r2_buckets = [
+            { binding: 'ORIGINALS', bucket_name: 'punctum-picture-originals' },
+            { binding: 'BACKUPS', bucket_name: 'punctum-picture-backups' },
+          ];
+          config.images = { binding: 'IMAGES' };
+          config.observability = { enabled: true };
+          config.vars = {
+            ENVIRONMENT: 'migration',
+            SITE_ORIGIN: 'https://migration.invalid',
+            PUBLIC_SITE_URL: 'https://migration.invalid',
+            PUBLIC_WHATSAPP_E164: 'UNSPECIFIED',
+            PUBLIC_INSTAGRAM_URL: 'UNSPECIFIED',
+            MAX_UPLOAD_BYTES: '26214400',
+            ALLOWED_MIME_TYPES: 'image/jpeg,image/png,image/webp',
+            PRESIGNED_URL_TTL_SECONDS: '900',
+            CONTACT_RATE_LIMIT_WINDOW_SECONDS: '3600',
+            CONTACT_RATE_LIMIT_MAX: '5',
+            ADMIN_RATE_LIMIT_WINDOW_SECONDS: '60',
+            ADMIN_RATE_LIMIT_MAX: '60',
+            BACKUP_PREFIX: 'backups/d1',
+            BACKUP_RETENTION_DAYS: '180',
+            CLEANUP_ORPHAN_UPLOAD_AGE_HOURS: '24',
+          };
+
+          fs.writeFileSync(path, JSON.stringify(config, null, 2) + '\n');
+          NODE
+          mark generated_config
+
           npm test >/tmp/tests.log 2>&1 || fail_with_log "tests_failed" /tmp/tests.log
           mark tests
 
-          if ! wrangler deploy --config wrangler.migration.jsonc > /tmp/deploy.txt 2>&1; then
+          if ! wrangler deploy --config dist/server/wrangler.json > /tmp/deploy.txt 2>&1; then
             fail_with_log "worker_deploy_failed" /tmp/deploy.txt
           fi
+
           WORKER_URL="$(grep -Eo 'https://[^ ]+\.workers\.dev' /tmp/deploy.txt | tail -n1 || true)"
           jq --arg url "$WORKER_URL" '.status="success" | .worker=true | .worker_url=(if $url == "" then null else $url end) | .domain_touched=false' requests/cloudflare-worker-finalize-result.json > /tmp/result.json
           mv /tmp/result.json requests/cloudflare-worker-finalize-result.json
@@ -180,8 +181,6 @@ jobs:
           if [ ! -f requests/cloudflare-worker-finalize-result.json ]; then
             printf '%s\n' '{"status":"failed","error":"workflow_failed_before_result","domain_touched":false}' > requests/cloudflare-worker-finalize-result.json
           fi
-          rm -rf .migration
-          rm -f wrangler.migration.jsonc
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add requests/cloudflare-worker-finalize-result.json
