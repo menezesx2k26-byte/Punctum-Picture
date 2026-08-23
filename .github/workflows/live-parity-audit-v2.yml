@@ -1,0 +1,48 @@
+name: Audit live Punctum parity v2
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "requests/live-parity-audit-v2.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: punctum-live-parity-audit-v2
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Run parity audit
+        env:
+          PROD_ORIGIN: https://punctumpicture.com
+          DEST_ORIGIN: https://punctum-picture-migration.menezesx2k26.workers.dev
+          AUDIT_OUT: requests/live-parity-audit-result.json
+        run: node scripts/live-parity-audit.mjs
+
+      - name: Persist parity report
+        if: always()
+        run: |
+          if [ ! -f requests/live-parity-audit-result.json ]; then
+            printf '%s\n' '{"status":"audit_failed","error":"result_not_created"}' > requests/live-parity-audit-result.json
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add requests/live-parity-audit-result.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "ci: record live Punctum parity audit"
+          git push
