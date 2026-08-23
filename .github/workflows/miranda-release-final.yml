@@ -60,31 +60,52 @@ jobs:
           test -n "$DB_ID"
           echo "MIRANDA_DB_ID=$DB_ID" >> "$GITHUB_ENV"
 
-      - name: Verify isolated database snapshot
+      - name: Verify isolated public snapshot
         shell: bash
         run: |
           set -euo pipefail
           echo verify-d1 >/tmp/miranda-final-stage
           node <<'NODE'
+          import fs from 'node:fs';
           const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
           const token = process.env.CLOUDFLARE_D1_API_TOKEN;
           const dbId = process.env.MIRANDA_DB_ID;
           if (!dbId) throw new Error('miranda_db_id_missing');
+          const sql = `SELECT
+            (SELECT COUNT(*) FROM albums WHERE status='published' AND deleted_at IS NULL) AS publishedAlbums,
+            (SELECT COUNT(*) FROM images i INNER JOIN albums a ON a.id=i.album_id
+              WHERE i.status='ready' AND i.deleted_at IS NULL
+                AND a.status='published' AND a.deleted_at IS NULL) AS publicImages,
+            (SELECT COUNT(*) FROM images WHERE id NOT LIKE 'static-%' AND status='ready' AND deleted_at IS NULL) AS dynamicReady,
+            (SELECT COUNT(*) FROM site_config_pointers WHERE id=1) AS pointers,
+            (SELECT schema_version FROM site_config WHERE id=1) AS schemaVersion`;
           const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${dbId}/query`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sql: `SELECT
-              (SELECT COUNT(*) FROM albums WHERE status='published' AND deleted_at IS NULL) AS albums,
-              (SELECT COUNT(*) FROM images WHERE status='ready' AND deleted_at IS NULL) AS images,
-              (SELECT COUNT(*) FROM site_config_pointers WHERE id=1) AS pointers` }),
+            body: JSON.stringify({ sql }),
           });
           const payload = await response.json();
           const row = payload?.result?.[0]?.results?.[0];
-          if (!response.ok || payload.success === false || !row) throw new Error(`miranda_d1_verify_failed:${JSON.stringify(payload?.errors || payload).slice(0,500)}`);
-          if (Number(row.albums) !== 16 || Number(row.images) !== 192 || Number(row.pointers) !== 1) {
-            throw new Error(`miranda_seed_counts_invalid:${JSON.stringify(row)}`);
+          const validation = {
+            httpStatus: response.status,
+            success: payload?.success !== false,
+            row: row ?? null,
+            errors: payload?.errors ?? [],
+          };
+          fs.writeFileSync('/tmp/miranda-d1-validation.json', JSON.stringify(validation, null, 2) + '\n');
+          if (!response.ok || payload.success === false || !row) {
+            throw new Error(`miranda_d1_verify_failed:${JSON.stringify(validation).slice(0,1000)}`);
           }
-          console.log(`Miranda snapshot OK: ${JSON.stringify(row)}`);
+          if (
+            Number(row.publishedAlbums) !== 16 ||
+            Number(row.publicImages) !== 192 ||
+            Number(row.dynamicReady) !== 80 ||
+            Number(row.pointers) !== 1 ||
+            Number(row.schemaVersion) !== 4
+          ) {
+            throw new Error(`miranda_public_snapshot_invalid:${JSON.stringify(row)}`);
+          }
+          console.log(`Miranda public snapshot OK: ${JSON.stringify(row)}`);
           NODE
 
       - name: Verify frontend
@@ -171,7 +192,8 @@ jobs:
             --arg dbId "$MIRANDA_DB_ID" \
             --arg originals "$MIRANDA_ORIGINALS" \
             --arg backups "$MIRANDA_BACKUPS" \
-            '{status:$status,branch:$branch,domain:$domain,worker:$worker,d1:{name:$db,id:$dbId},r2:{originals:$originals,backups:$backups},source:"requests/source-public-state-result.json",productionDomainTouched:false}' \
+            --slurpfile validation /tmp/miranda-d1-validation.json \
+            '{status:$status,branch:$branch,domain:$domain,worker:$worker,d1:{name:$db,id:$dbId,validation:$validation[0]},r2:{originals:$originals,backups:$backups},source:"requests/source-public-state-result.json",productionDomainTouched:false}' \
             >/tmp/miranda-final-result.json
 
       - name: Persist sanitized result
@@ -181,7 +203,13 @@ jobs:
           set -euo pipefail
           if [ ! -f /tmp/miranda-final-result.json ]; then
             STAGE="$(cat /tmp/miranda-final-stage 2>/dev/null || echo unknown)"
-            jq -n --arg stage "$STAGE" '{status:"failed",branch:"miranda-editorial",stage:$stage,productionDomainTouched:false}' >/tmp/miranda-final-result.json
+            if [ -f /tmp/miranda-d1-validation.json ]; then
+              jq -n --arg stage "$STAGE" --slurpfile validation /tmp/miranda-d1-validation.json \
+                '{status:"failed",branch:"miranda-editorial",stage:$stage,d1Validation:$validation[0],productionDomainTouched:false}' \
+                >/tmp/miranda-final-result.json
+            else
+              jq -n --arg stage "$STAGE" '{status:"failed",branch:"miranda-editorial",stage:$stage,productionDomainTouched:false}' >/tmp/miranda-final-result.json
+            fi
           fi
           cp /tmp/miranda-final-result.json requests/miranda-final-result.json
           git config user.name "github-actions[bot]"
