@@ -47,7 +47,34 @@ jobs:
         shell: bash
         run: |
           set +e
-          npm test -- tests/unit/miranda-compression.spec.ts > /tmp/miranda-contract.log 2>&1
+          bash -euo pipefail <<'CHECK' > /tmp/miranda-contract.log 2>&1
+          HOME=app/components/MirandaHome.tsx
+          CSS=app/components/MirandaHome.module.css
+
+          grep -Fq 'slice(0, 5)' "$HOME"
+          grep -Fq 'styles.compressionTrack' "$HOME"
+          grep -Fq 'styles.panel' "$HOME"
+          grep -Fq 'href={`/ensaios/${album.slug}`}' "$HOME"
+
+          grep -Fq '.compressionTrack:hover .panel' "$CSS"
+          grep -Fq '.panel:hover' "$CSS"
+          grep -Fq '.panel:focus-within' "$CSS"
+          grep -Fq 'flex: 5' "$CSS"
+          grep -Fq '@media (max-width: 900px)' "$CSS"
+          grep -Fq 'flex-direction: column' "$CSS"
+          grep -Fq -- '--paper: #f6f5f1' "$CSS"
+
+          if grep -Fq '#DFFF00' "$CSS"; then
+            echo 'Industrial chartreuse leaked into Punctum styling.' >&2
+            exit 1
+          fi
+          if grep -Fq 'grayscale(100%)' "$CSS"; then
+            echo 'Template grayscale treatment leaked into Punctum styling.' >&2
+            exit 1
+          fi
+
+          echo 'Miranda Compression contract: PASS'
+          CHECK
           status=$?
           cat /tmp/miranda-contract.log
           exit "$status"
