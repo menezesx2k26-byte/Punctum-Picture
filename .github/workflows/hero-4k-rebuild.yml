@@ -1,0 +1,108 @@
+name: One-shot rebuild hero to 4K
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/hero-4k-rebuild.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: punctum-hero-4k-rebuild
+  cancel-in-progress: false
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Inspect source hero
+        shell: bash
+        run: |
+          set -euo pipefail
+          HERO='public/images/hero-maria.webp'
+          [ -f "$HERO" ]
+          [ "$(head -c 4 "$HERO")" = 'RIFF' ]
+          [ "$(dd if="$HERO" bs=1 skip=8 count=4 status=none)" = 'WEBP' ]
+          file "$HERO" | grep -q 'Web/P image'
+          identify "$HERO"
+          sha256sum "$HERO"
+          wc -c "$HERO"
+
+      - name: Rebuild hero as high-quality 4K WebP
+        shell: bash
+        run: |
+          set -euo pipefail
+          HERO='public/images/hero-maria.webp'
+          TMP='/tmp/hero-maria-4k.webp'
+          convert "$HERO" \
+            -filter Lanczos \
+            -resize '3840x2160!' \
+            -unsharp '0x0.75+0.75+0.008' \
+            -quality 92 \
+            -define webp:method=6 \
+            "$TMP"
+          mv "$TMP" "$HERO"
+          [ "$(identify -format '%wx%h' "$HERO")" = '3840x2160' ]
+          [ "$(head -c 4 "$HERO")" = 'RIFF' ]
+          [ "$(dd if="$HERO" bs=1 skip=8 count=4 status=none)" = 'WEBP' ]
+          file "$HERO" | grep -q 'Web/P image'
+          identify "$HERO"
+          sha256sum "$HERO"
+          wc -c "$HERO"
+
+      - name: Update public hero metadata to 4K
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/lib/public-visuals.ts')
+          s = p.read_text()
+          old = '''    width: 1536,\n    height: 864,'''
+          new = '''    width: 3840,\n    height: 2160,'''
+          if old not in s:
+              raise SystemExit('expected 1536x864 hero metadata not found')
+          p.write_text(s.replace(old, new, 1))
+          PY
+
+      - name: TDD green - focused hero regression
+        run: npm test -- tests/unit/public-visuals.spec.ts
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Full tests
+        run: npm test
+
+      - name: Commit verified 4K hero
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/images/hero-maria.webp app/lib/public-visuals.ts tests/unit/public-visuals.spec.ts
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m 'feat: ship high-quality 4k hero asset'
+          git push origin HEAD:main
