@@ -6,10 +6,10 @@ const PUBLIC_VISUAL_ASSETS = {
     height: 1254,
   },
   hero: {
-    src: "/photos/hero-stadium-2026-08-24.webp",
-    alt: "Fotógrafa fotografando das arquibancadas de um estádio",
-    width: 600,
-    height: 750,
+    src: "/photos/hero-maria-helena-2026-08-24.webp",
+    alt: "Maria Helena fotografando nas arquibancadas de um estádio",
+    width: 1536,
+    height: 1024,
   },
 } as const;
 
