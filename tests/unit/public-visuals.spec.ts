@@ -21,10 +21,10 @@ describe("identidade visual pública", () => {
 
   it("usa a fotografia editorial atual no hero", () => {
     expect(getPublicVisualAsset("hero")).toEqual({
-      src: "/photos/hero-maria-focus-4k.webp",
+      src: "/images/hero-maria.webp",
       alt: "Fotógrafa em primeiro plano nas arquibancadas de um estádio",
-      width: 3840,
-      height: 2160,
+      width: 1536,
+      height: 864,
     });
   });
 });
