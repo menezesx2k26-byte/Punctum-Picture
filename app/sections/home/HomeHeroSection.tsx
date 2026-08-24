@@ -21,7 +21,17 @@ export function HomeHeroSection({
       aria-labelledby="hero-title"
       {...homeSectionAttributes(section)}
     >
-      <div className="hero-image">
+      <div className="hero-image hero-image-blur" aria-hidden="true">
+        <Image
+          src={hero.src}
+          alt=""
+          fill
+          priority
+          unoptimized
+          sizes="100vw"
+        />
+      </div>
+      <div className="hero-image hero-image-focus">
         <Image
           src={hero.src}
           alt={hero.alt}
@@ -29,7 +39,6 @@ export function HomeHeroSection({
           priority
           unoptimized
           sizes="100vw"
-          style={{ filter: "none" }}
         />
       </div>
       <div className="hero-copy">
