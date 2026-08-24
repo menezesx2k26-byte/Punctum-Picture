@@ -22,19 +22,29 @@ export default async function ContactPage() {
     <SiteThemeRoot className="contact-page" config={config}>
       <SiteHeader site={site} editorial={config.editorial} />
       <main>
-        <header className="contact-page-hero">
+        <header className="contact-page-hero" style={{ minHeight: "100svh" }}>
           <div className="contact-page-image">
             <Image
               src="/photos/p033.jpg"
               alt="Paisagem ao entardecer fotografada por Maria Helena"
               fill
               priority
+              quality={100}
               sizes="100vw"
+              style={{ filter: "none" }}
             />
           </div>
           <div className="contact-page-copy">
             <p className="eyebrow">{copy.hero.eyebrow}</p>
-            <h1><EditorialText text={copy.hero.title} /></h1>
+            <h1
+              style={{
+                maxWidth: "11ch",
+                fontSize: "clamp(3.5rem, 6.6vw, 7.2rem)",
+                lineHeight: 0.84,
+              }}
+            >
+              <EditorialText text={copy.hero.title} />
+            </h1>
             <p>{copy.hero.body}</p>
           </div>
           <span className="contact-photo-note">{copy.hero.imageNote}</span>
