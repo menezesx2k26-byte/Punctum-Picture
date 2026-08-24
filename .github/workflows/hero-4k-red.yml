@@ -1,0 +1,25 @@
+name: Hero 4K TDD red
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "tests/unit/public-visuals.spec.ts"
+      - ".github/workflows/hero-4k-red.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  red:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - run: npm ci
+      - name: Run focused regression test (expected to fail until 4K metadata lands)
+        run: npm test -- tests/unit/public-visuals.spec.ts
