@@ -25,7 +25,7 @@ export function LiveAlbum({
     .join(" · ");
 
   return (
-    <main className={styles.root} data-miranda-layout="album-photobook">
+    <div className={styles.root} data-miranda-layout="album-photobook">
       <div className={styles.topline}>
         <Link href="/portfolio">← Coleções</Link>
         <span>{brandName}</span>
@@ -52,6 +52,6 @@ export function LiveAlbum({
           {editorial.archiveCta || "Voltar às coleções"} <span aria-hidden="true">→</span>
         </Link>
       </footer>
-    </main>
+    </div>
   );
 }
