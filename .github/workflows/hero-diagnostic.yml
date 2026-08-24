@@ -16,6 +16,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
 
       - uses: actions/setup-node@v7
         with:
@@ -42,13 +44,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          src='public/photos/hero-stadium-focus-2026-08-24.svg'
-          [ -f "$src" ]
+          commit='bf0be7a17f7acbf81774478b1e85b3c1263e68e3'
+          path='public/photos/hero-stadium-focus-2026-08-24.svg'
+          git fetch --no-tags --depth=1 origin "$commit"
+          git show "$commit:$path" > /tmp/hero-backup.svg
           python <<'PY'
           from pathlib import Path
           import base64, re, struct
 
-          svg = Path('public/photos/hero-stadium-focus-2026-08-24.svg').read_text()
+          svg = Path('/tmp/hero-backup.svg').read_text()
           m = re.search(r'data:image/webp;base64,([^"\']+)', svg)
           if not m:
               raise SystemExit('embedded WebP data URI not found')
