@@ -52,8 +52,6 @@ export function MirandaHome({
             (image) => image.albumSlug === album.slug,
           );
           const imageSrc = album.coverUrl ?? fallback?.src ?? "/photos/p001.jpg";
-          const imageAlt =
-            fallback?.alt || `Fotografia de abertura do ensaio ${album.title}`;
           const titleId = `miranda-panel-${index + 1}`;
 
           return (
