@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import type { EditorialConfig, HomeSectionConfig } from "../../../shared/config";
 import { PublicStatsText } from "../../components/PublicStats";
+import { getPublicVisualAsset } from "../../lib/public-visuals";
 import { homeSectionAttributes } from "./section-attributes";
 
 export function HomeHeroSection({
@@ -12,6 +13,8 @@ export function HomeHeroSection({
   copy: EditorialConfig["home"]["hero"];
   section: HomeSectionConfig;
 }) {
+  const hero = getPublicVisualAsset("hero");
+
   return (
     <section
       className="hero"
@@ -20,8 +23,8 @@ export function HomeHeroSection({
     >
       <div className="hero-image">
         <Image
-          src="/photos/p001-hero.avif"
-          alt="Maria Helena fotografando com uma câmera"
+          src={hero.src}
+          alt={hero.alt}
           fill
           priority
           unoptimized

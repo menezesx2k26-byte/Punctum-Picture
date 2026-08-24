@@ -8,6 +8,10 @@ import {
   PUNCTUM_DEFAULT_EDITORIAL_CONFIG,
   type EditorialConfig,
 } from "../../shared/config";
+import {
+  getPublicVisualAsset,
+  getSiteHeaderClassName,
+} from "../lib/public-visuals";
 import { WhatsAppLink } from "./WhatsAppLink";
 
 export function SiteHeader({
@@ -19,20 +23,19 @@ export function SiteHeader({
   site?: PublicSiteSettings;
   editorial?: EditorialConfig;
 }) {
+  const logo = getPublicVisualAsset("logo");
+
   return (
-    <header className={`site-header${dark ? " dark" : ""}`}>
+    <header className={getSiteHeaderClassName(dark)}>
       <Link href="/" className="wordmark" aria-label={`${site.brandName} — início`}>
         <span className="wordmark-art" aria-hidden="true">
           <Image
-            src="/logo-punctum.png"
-            alt=""
-            width={720}
-            height={799}
+            src={logo.src}
+            alt={logo.alt}
+            width={logo.width}
+            height={logo.height}
             priority
           />
-        </span>
-        <span className="wordmark-subtitle" aria-hidden="true">
-          {editorial.chrome.brandSubtitle}
         </span>
       </Link>
       <nav className="site-nav" aria-label="Navegação principal">
