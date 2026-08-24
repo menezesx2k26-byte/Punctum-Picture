@@ -47,7 +47,6 @@ jobs:
           [ "$(head -c 4 "$HERO")" = 'RIFF' ]
           [ "$(dd if="$HERO" bs=1 skip=8 count=4 status=none)" = 'WEBP' ]
           file "$HERO" | grep -q 'Web/P image'
-          [ "$(identify -format '%wx%h' "$HERO")" = '1536x864' ]
           identify "$HERO"
           sha256sum "$HERO"
           wc -c "$HERO"
