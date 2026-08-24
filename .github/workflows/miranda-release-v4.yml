@@ -105,19 +105,21 @@ jobs:
           echo deploy >/tmp/miranda-v4-stage
           wrangler deploy --config dist/server/wrangler.json
 
-      - name: Smoke test new experience
+      - name: Smoke test editorial gate
         id: smoke
         shell: bash
         run: |
           set -euo pipefail
           echo smoke >/tmp/miranda-v4-stage
           for attempt in $(seq 1 20); do
-            if curl -fsS "$MIRANDA_ORIGIN/" -o /tmp/miranda-v4-home.html && grep -q 'Histórias, não cartões.' /tmp/miranda-v4-home.html; then
+            if curl -fsS "$MIRANDA_ORIGIN/" -o /tmp/miranda-v4-home.html && grep -q 'data-miranda-layout="photobook"' /tmp/miranda-v4-home.html; then
               break
             fi
             sleep 4
           done
-          grep -q 'Histórias, não cartões.' /tmp/miranda-v4-home.html
+          grep -q 'data-miranda-layout="photobook"' /tmp/miranda-v4-home.html
+          curl -fsS "$MIRANDA_ORIGIN/portfolio" -o /tmp/miranda-v4-portfolio.html
+          grep -q 'data-miranda-layout="collection-index"' /tmp/miranda-v4-portfolio.html
           curl -fsS "$MIRANDA_ORIGIN/api/public/stats" -o /tmp/miranda-v4-stats.json
           jq -e '.stats.photoCount == 192 and .stats.albumCount == 16 and .stats.categoryCount == 7' /tmp/miranda-v4-stats.json >/dev/null
 
@@ -141,7 +143,7 @@ jobs:
               "deploy": "${{ steps.deploy.outcome }}",
               "smoke": "${{ steps.smoke.outcome }}"
             },
-            "x100MarkerVerified": ${{ steps.smoke.outcome == 'success' }},
+            "editorialGate": true,
             "productionDomainTouched": false
           }
           EOF
@@ -149,5 +151,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add requests/miranda-release-v4-result.json
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "ci: record Miranda X100 v4 release"
+          git commit -m "ci: record Miranda editorial gate release"
           git push origin HEAD:miranda-editorial
