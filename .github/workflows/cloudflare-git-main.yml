@@ -55,6 +55,17 @@ jobs:
         id: lint
         run: npm run lint
 
+      - name: Verify hero is a real WebP binary
+        id: hero_binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          HERO='public/images/hero-maria.webp'
+          [ -f "$HERO" ]
+          [ "$(head -c 4 "$HERO")" = 'RIFF' ]
+          [ "$(dd if="$HERO" bs=1 skip=8 count=4 status=none)" = 'WEBP' ]
+          file "$HERO" | grep -q 'Web/P image'
+
       - name: Build vinext worker
         id: build
         run: npm run build
@@ -141,7 +152,7 @@ jobs:
         id: deploy_worker
         run: wrangler deploy --config dist/server/wrangler.json
 
-      - name: Smoke test production root and admin
+      - name: Smoke test production root, hero and admin
         id: smoke
         shell: bash
         run: |
@@ -158,6 +169,20 @@ jobs:
             sleep 6
           done
           [ "$ROOT_OK" = "true" ]
+
+          HERO_OK=false
+          for attempt in 1 2 3 4 5; do
+            if curl -fsS -H 'Cache-Control: no-cache' "$BASE/images/hero-maria.webp?deploy=${GITHUB_SHA}" -o /tmp/production-hero.webp; then
+              if [ "$(head -c 4 /tmp/production-hero.webp)" = 'RIFF' ] && \
+                 [ "$(dd if=/tmp/production-hero.webp bs=1 skip=8 count=4 status=none)" = 'WEBP' ]; then
+                HERO_OK=true
+                break
+              fi
+            fi
+            sleep 6
+          done
+          [ "$HERO_OK" = "true" ]
+          file /tmp/production-hero.webp | grep -q 'Web/P image'
 
           # WWW is intentionally non-blocking here. The apex domain is production-critical;
           # www may still be waiting on DNS/custom-hostname propagation and must not turn a
@@ -194,6 +219,7 @@ jobs:
             echo '- Git branch: `main`'
             echo '- Worker: `punctum-picture-migration`'
             echo '- Production apex: healthy'
+            echo '- Production hero: valid WebP binary'
             echo "- WWW smoke: \`${WWW_SMOKE_STATUS:-unknown}\` (non-blocking)"
             echo '- D1: `punctum-picture`'
             echo '- R2 originals/backups: connected'
@@ -223,6 +249,7 @@ jobs:
               "npmCi": "${{ steps.deps.outcome }}",
               "typecheck": "${{ steps.typecheck.outcome }}",
               "lint": "${{ steps.lint.outcome }}",
+              "heroBinary": "${{ steps.hero_binary.outcome }}",
               "build": "${{ steps.build.outcome }}",
               "tests": "${{ steps.tests.outcome }}",
               "wrangler": "${{ steps.wrangler.outcome }}",
