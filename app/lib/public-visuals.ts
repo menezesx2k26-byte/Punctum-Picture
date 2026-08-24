@@ -1,5 +1,6 @@
 // Public-facing visual assets. Keep hero metadata aligned with its regression test.
 // This file is part of the production deploy path; hero changes must ship with matching tests.
+// Hero master is stored as a verified 3840x2160 WebP before production deployment.
 const PUBLIC_VISUAL_ASSETS = {
   logo: {
     src: "/logo-punctum-transparent.png",
