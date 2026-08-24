@@ -38,11 +38,7 @@ export default async function AlbumPage({ params }: PageProps) {
     <SiteThemeRoot config={experience.config}>
       <SiteHeader site={experience.site} editorial={experience.config.editorial} />
       <main>
-        <LiveAlbum
-          album={album}
-          editorial={experience.config.editorial.album}
-          brandName={experience.site.brandName}
-        />
+        <LiveAlbum album={album} brandName={experience.site.brandName} />
       </main>
       <SiteFooter site={experience.site} editorial={experience.config.editorial} />
     </SiteThemeRoot>
