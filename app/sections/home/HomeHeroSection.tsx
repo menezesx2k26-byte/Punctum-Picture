@@ -31,7 +31,7 @@ export function HomeHeroSection({
           sizes="100vw"
           style={{
             objectFit: "cover",
-            objectPosition: "center center",
+            objectPosition: "57% center",
           }}
         />
       </div>
