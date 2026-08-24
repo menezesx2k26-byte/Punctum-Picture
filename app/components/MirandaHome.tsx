@@ -26,8 +26,13 @@ export function MirandaHome({
 }) {
   const featured = featuredAlbums.slice(0, 5);
   const leadAlbum = featured[0];
-  const leadImage = carouselImages[0]?.src ?? leadAlbum?.coverUrl ?? "/photos/p001.jpg";
-  const leadAlt = carouselImages[0]?.alt || (leadAlbum ? `Fotografia do ensaio ${leadAlbum.title}` : "");
+  const leadCarousel =
+    carouselImages.find((image) => image.albumSlug === leadAlbum?.slug) ??
+    carouselImages[0];
+  const leadImage = leadCarousel?.src ?? leadAlbum?.coverUrl ?? "/photos/p001.jpg";
+  const leadAlt =
+    leadCarousel?.alt ||
+    (leadAlbum ? `Fotografia do ensaio ${leadAlbum.title}` : "");
   const portfolioLabel = config.editorial.chrome.navigation.portfolio;
 
   return (
@@ -60,7 +65,7 @@ export function MirandaHome({
         </header>
 
         <div className={styles.collectionList}>
-          {featured.map((album, index) => (
+          {featured.map((album) => (
             <Link
               className={styles.collection}
               href={`/ensaios/${album.slug}`}
