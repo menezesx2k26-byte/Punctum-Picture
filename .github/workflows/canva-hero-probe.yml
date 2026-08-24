@@ -1,0 +1,26 @@
+name: Probe Canva 4K hero source
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/canva-hero-probe.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch 4K WebP derivative
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://media.canva.com/v2/image-resize/format:WEBP/height:2160/quality:95/uri:ifs%3A%2F%2FM%2Faec5eb3d-a2bc-47e4-b4e6-211973d4ec5f/watermark:F/width:3840?csig=AAAAAAAAAAAAAAAAAAAAAGWF51hrcMMPD5o1Z9q6rU9obok1fFMuqQszHODz4KqB&exp=1787632584&osig=AAAAAAAAAAAAAAAAAAAAADjeg6MTUiSsN8iOFT1UQBp7Ovzqcc_kmFRZy_GQx0bK&signer=media-rpc&x-canva-quality=thumbnail'
+          curl -fL --retry 2 "$URL" -o /tmp/hero.webp
+          wc -c /tmp/hero.webp
+          file /tmp/hero.webp
+          head -c 12 /tmp/hero.webp | xxd
+          identify /tmp/hero.webp || true
