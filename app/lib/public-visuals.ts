@@ -7,7 +7,7 @@ const PUBLIC_VISUAL_ASSETS = {
   },
   hero: {
     src: "/photos/hero-stadium-2026-08-24.webp",
-    alt: "Fotógrafa registrando uma cena no estádio",
+    alt: "Fotógrafa fotografando das arquibancadas de um estádio",
     width: 600,
     height: 750,
   },
