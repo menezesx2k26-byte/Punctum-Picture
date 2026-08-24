@@ -20,11 +20,11 @@ export function HomeHeroSection({
     >
       <div className="hero-image">
         <Image
-          src="/photos/p001.jpg"
+          src="/photos/p001-hero.avif"
           alt="Maria Helena fotografando com uma câmera"
           fill
           priority
-          quality={100}
+          unoptimized
           sizes="100vw"
           style={{ filter: "none" }}
         />
