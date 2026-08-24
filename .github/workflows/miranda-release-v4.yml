@@ -30,18 +30,21 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Install and verify Compression contract
-        id: verify
-        env:
-          PUBLIC_SITE_URL: https://miranda.punctumpicture.com
-          SITE_ORIGIN: https://miranda.punctumpicture.com
-        run: |
-          set -euo pipefail
-          echo verify >/tmp/miranda-v4-stage
-          npm ci
-          npm run typecheck
-          npm run lint
-          npm test -- tests/unit/miranda-compression.spec.ts
+      - name: Install dependencies
+        id: install
+        run: npm ci
+
+      - name: Typecheck
+        id: typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        id: lint
+        run: npm run lint
+
+      - name: Verify Compression contract
+        id: contract
+        run: npm test -- tests/unit/miranda-compression.spec.ts
 
       - name: Build verified branch
         id: build
@@ -152,7 +155,6 @@ jobs:
           echo "home_marker=$home_marker" >> "$GITHUB_OUTPUT"
           echo "portfolio_marker=$portfolio_marker" >> "$GITHUB_OUTPUT"
           echo "stats_ok=$stats_ok" >> "$GITHUB_OUTPUT"
-          echo "home_marker=$home_marker portfolio_marker=$portfolio_marker stats_ok=$stats_ok"
 
           test "$home_marker" = true
           test "$portfolio_marker" = true
@@ -172,7 +174,10 @@ jobs:
             "domain": "https://miranda.punctumpicture.com",
             "worker": "punctum-picture-miranda",
             "stages": {
-              "verify": "${{ steps.verify.outcome }}",
+              "install": "${{ steps.install.outcome }}",
+              "typecheck": "${{ steps.typecheck.outcome }}",
+              "lint": "${{ steps.lint.outcome }}",
+              "contract": "${{ steps.contract.outcome }}",
               "build": "${{ steps.build.outcome }}",
               "d1": "${{ steps.d1.outcome }}",
               "patch": "${{ steps.patch.outcome }}",
