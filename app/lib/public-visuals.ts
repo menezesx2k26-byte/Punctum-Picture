@@ -1,6 +1,6 @@
 const PUBLIC_VISUAL_ASSETS = {
   logo: {
-    src: "/logo-punctum.png",
+    src: "/logo-punctum-transparent.png",
     alt: "",
     width: 1254,
     height: 1254,

@@ -65,6 +65,9 @@ describe("settings e metadata públicas", () => {
       template: "%s — Marca da Maria",
     });
     expect(metadata.openGraph).toMatchObject({ siteName: "Marca da Maria" });
+    expect(metadata.icons).toEqual({
+      icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    });
   });
 
   it("prefere SEO do álbum e usa a capa dinâmica", () => {

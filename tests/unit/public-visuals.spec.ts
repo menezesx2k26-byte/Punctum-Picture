@@ -12,7 +12,7 @@ describe("identidade visual pública", () => {
       "site-header dark site-header-transparent",
     );
     expect(logo).toEqual({
-      src: "/logo-punctum.png",
+      src: "/logo-punctum-transparent.png",
       alt: "",
       width: 1254,
       height: 1254,

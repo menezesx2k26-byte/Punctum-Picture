@@ -18,6 +18,14 @@ Cloudflare Access como fallback validado pelo Worker.
   honeypot, CSP, auditoria e respostas admin `no-store`.
 - Snapshot lógico agendado no R2 e limpeza horária de uploads órfãos.
 
+## Identidade visual pública
+
+- `public/logo-punctum.png` preserva a arte original recebida.
+- `public/logo-punctum-transparent.png` é a versão com alfa usada no cabeçalho.
+- `public/favicon.svg` reduz a câmera e a espiral da marca para leitura em abas e atalhos.
+- As referências públicas ficam centralizadas em `app/lib/public-visuals.ts` e
+  `app/lib/metadata.ts`.
+
 ## Requisitos
 
 - Node.js 22.13 ou superior.
@@ -42,11 +50,11 @@ npm run build
 npm run preview
 ```
 
-## Configuração Cloudflare
+## Configuração e deploy Cloudflare
 
 1. Crie os bancos `punctum-picture` e `punctum-picture-preview`.
 2. Crie os buckets privados de originais e backups para produção e preview.
-3. Substitua os IDs marcados no `wrangler.jsonc`.
+3. Confirme o `account_id` e os IDs D1 do ambiente em `wrangler.jsonc`.
 4. Aplique `config/r2-cors.json` ao bucket de originais.
 5. Cadastre os segredos listados em `.env.example` com `wrangler secret put`.
 6. Aplique as migrations remotas.
@@ -54,10 +62,23 @@ npm run preview
    `punctumpicture.com/admin/*` e uma regra Allow para o e-mail da Maria Helena.
 8. Preencha `CLOUDFLARE_TEAM_DOMAIN` e `CLOUDFLARE_ACCESS_AUD`.
 
+Quando um commit com alterações da aplicação chega à `main`, o workflow
+`.github/workflows/cloudflare-git-main.yml` executa instalação, typecheck, lint,
+build, testes, resolução do D1, deploy e smoke test de produção. O resultado
+sanitizado é registrado em `requests/cloudflare-git-deploy-result.json`.
+
+Para publicar manualmente a mesma configuração de produção:
+
 ```bash
-npm run db:migrate:remote
+npx wrangler whoami
+npm run typecheck
+npm run lint
+npm test
 npm run deploy
 ```
+
+Execute `npm run db:migrate:remote` separadamente apenas quando houver migrations
+novas revisadas. O deploy padrão preserva os segredos cadastrados no Worker.
 
 O domínio permanece registrado na Hostinger, mas usa a Cloudflare como DNS
 autoritativo. O procedimento seguro está em
@@ -83,7 +104,7 @@ build.
 | `npm run dev` | ambiente local com HMR |
 | `npm run build` | build Worker + assets |
 | `npm run preview` | servidor do build |
-| `npm run deploy` | build e deploy padrão |
+| `npm run deploy` | build e deploy manual de produção |
 | `npm test` / `npm run test:watch` | testes |
 | `npm run typecheck` / `npm run lint` | validação estática |
 | `npm run db:migrate:local` | migrations locais |

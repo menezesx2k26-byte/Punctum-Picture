@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Punctum Picture</title>
+  <style>
+    .camera { stroke: #32113e; }
+    @media (prefers-color-scheme: dark) {
+      .camera { stroke: #ffffff; }
+    }
+  </style>
+  <path
+    class="camera"
+    d="M18 53H10a6 6 0 0 1-6-6V24a6 6 0 0 1 6-6h10l4-6h16l4 6h10a6 6 0 0 1 6 6v23a6 6 0 0 1-6 6h-6"
+    fill="none"
+    stroke-width="4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M31 28c5-5 13-1 13 5 0 8-10 11-15 4-6-8 2-20 14-18 16 3 21 22 10 34"
+    fill="none"
+    stroke="#f6b700"
+    stroke-width="4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

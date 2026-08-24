@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "punctum-picture",
+  "name": "punctum-picture-migration",
   "account_id": "257bca437616da74ece1ce4bbaf0bd89",
   "main": "worker/index.ts",
   "compatibility_date": "2026-05-22",
@@ -121,7 +121,7 @@
       },
     },
     "production": {
-      "name": "punctum-picture",
+      "name": "punctum-picture-migration",
       "vars": {
         "ENVIRONMENT": "production",
         "SITE_ORIGIN": "https://punctumpicture.com",

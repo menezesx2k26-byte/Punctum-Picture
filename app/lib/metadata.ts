@@ -16,6 +16,9 @@ export function buildSiteMetadata(
     },
     description: site.seoDescription,
     applicationName: site.brandName,
+    icons: {
+      icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    },
     alternates: { canonical: "/" },
     robots: { index: true, follow: true },
     openGraph: {
