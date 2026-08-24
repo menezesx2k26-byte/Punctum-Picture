@@ -1,6 +1,6 @@
 {
-  "status": "failure",
-  "sourceCommit": "d409fcc1af26a8eeed556920cea786e618cc0418",
+  "status": "success",
+  "sourceCommit": "45dc464ab293a969576b9506ac8b34e67d555e53",
   "branch": "miranda-editorial",
   "domain": "https://miranda.punctumpicture.com",
   "worker": "punctum-picture-miranda",
@@ -8,17 +8,17 @@
     "install": "success",
     "typecheck": "success",
     "lint": "success",
-    "contract": "failure",
-    "build": "skipped",
-    "d1": "skipped",
-    "patch": "skipped",
-    "deploy": "skipped",
-    "smoke": "skipped"
+    "contract": "success",
+    "build": "success",
+    "d1": "success",
+    "patch": "success",
+    "deploy": "success",
+    "smoke": "success"
   },
   "checks": {
-    "homeMarker": "",
-    "portfolioMarker": "",
-    "stats": ""
+    "homeMarker": "true",
+    "portfolioMarker": "true",
+    "stats": "true"
   },
   "compressionContract": true,
   "productionDomainTouched": false
