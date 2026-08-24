@@ -30,7 +30,20 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Install and build verified branch
+      - name: Install and verify Compression contract
+        id: verify
+        env:
+          PUBLIC_SITE_URL: https://miranda.punctumpicture.com
+          SITE_ORIGIN: https://miranda.punctumpicture.com
+        run: |
+          set -euo pipefail
+          echo verify >/tmp/miranda-v4-stage
+          npm ci
+          npm run typecheck
+          npm run lint
+          npm test -- tests/unit/miranda-compression.spec.ts
+
+      - name: Build verified branch
         id: build
         env:
           PUBLIC_SITE_URL: https://miranda.punctumpicture.com
@@ -38,7 +51,6 @@ jobs:
         run: |
           set -euo pipefail
           echo build >/tmp/miranda-v4-stage
-          npm ci
           npm run build
           npm install --global --no-audit --no-fund wrangler@4.125.0
 
@@ -105,7 +117,7 @@ jobs:
           echo deploy >/tmp/miranda-v4-stage
           wrangler deploy --config dist/server/wrangler.json
 
-      - name: Smoke test editorial gate
+      - name: Smoke test Compression experience
         id: smoke
         shell: bash
         run: |
@@ -117,7 +129,7 @@ jobs:
 
           for attempt in $(seq 1 20); do
             if curl -fsS "$MIRANDA_ORIGIN/" -o /tmp/miranda-v4-home.html; then
-              if grep -q 'data-miranda-layout="photobook"' /tmp/miranda-v4-home.html; then
+              if grep -q 'data-miranda-layout="compression"' /tmp/miranda-v4-home.html; then
                 home_marker=true
                 break
               fi
@@ -160,6 +172,7 @@ jobs:
             "domain": "https://miranda.punctumpicture.com",
             "worker": "punctum-picture-miranda",
             "stages": {
+              "verify": "${{ steps.verify.outcome }}",
               "build": "${{ steps.build.outcome }}",
               "d1": "${{ steps.d1.outcome }}",
               "patch": "${{ steps.patch.outcome }}",
@@ -171,7 +184,7 @@ jobs:
               "portfolioMarker": "${{ steps.smoke.outputs.portfolio_marker }}",
               "stats": "${{ steps.smoke.outputs.stats_ok }}"
             },
-            "editorialGate": true,
+            "compressionContract": true,
             "productionDomainTouched": false
           }
           EOF
@@ -179,5 +192,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add requests/miranda-release-v4-result.json
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "ci: record Miranda editorial gate release"
+          git commit -m "ci: record Miranda Compression release"
           git push origin HEAD:miranda-editorial
