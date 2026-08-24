@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { PublicAlbum } from "../../shared/public-content";
-import type { EditorialConfig } from "../../shared/config";
 import { MirandaGallery } from "./MirandaGallery";
 import styles from "./MirandaAlbum.module.css";
 
@@ -11,11 +10,9 @@ function albumYear(album: PublicAlbum): string {
 
 export function LiveAlbum({
   album,
-  editorial,
   brandName,
 }: {
   album: PublicAlbum;
-  editorial: EditorialConfig["album"];
   brandName: string;
 }) {
   const category =
@@ -49,7 +46,7 @@ export function LiveAlbum({
           {Math.min(album.images.length, 12).toString().padStart(2, "0")} / {album.images.length.toString().padStart(2, "0")} fotografias no gate Miranda
         </p>
         <Link href="/portfolio">
-          {editorial.archiveCta || "Voltar às coleções"} <span aria-hidden="true">→</span>
+          Voltar às coleções <span aria-hidden="true">→</span>
         </Link>
       </footer>
     </div>
