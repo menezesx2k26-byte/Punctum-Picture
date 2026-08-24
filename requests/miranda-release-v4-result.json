@@ -1,21 +1,22 @@
 {
-  "status": "success",
-  "sourceCommit": "0d4c7d8722c74524b2a256f2d73ef7489a54df67",
+  "status": "failure",
+  "sourceCommit": "5336c61618b6a3f270ff5d7de566fd410a5b1c83",
   "branch": "miranda-editorial",
   "domain": "https://miranda.punctumpicture.com",
   "worker": "punctum-picture-miranda",
   "stages": {
-    "build": "success",
-    "d1": "success",
-    "patch": "success",
-    "deploy": "success",
-    "smoke": "success"
+    "verify": "failure",
+    "build": "skipped",
+    "d1": "skipped",
+    "patch": "skipped",
+    "deploy": "skipped",
+    "smoke": "skipped"
   },
   "checks": {
-    "homeMarker": "true",
-    "portfolioMarker": "true",
-    "stats": "true"
+    "homeMarker": "",
+    "portfolioMarker": "",
+    "stats": ""
   },
-  "editorialGate": true,
+  "compressionContract": true,
   "productionDomainTouched": false
 }
