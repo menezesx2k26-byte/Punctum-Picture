@@ -19,12 +19,12 @@ describe("identidade visual pública", () => {
     });
   });
 
-  it("usa a fotografia editorial atual no hero", () => {
+  it("usa a fotografia editorial atual no hero em resolução 4K", () => {
     expect(getPublicVisualAsset("hero")).toEqual({
       src: "/images/hero-maria.webp",
       alt: "Fotógrafa em primeiro plano nas arquibancadas de um estádio",
-      width: 1536,
-      height: 864,
+      width: 3840,
+      height: 2160,
     });
   });
 });
