@@ -8,9 +8,13 @@ import type {
 import type { CarouselImage } from "../lib/portfolio";
 import styles from "./MirandaHome.module.css";
 
-function albumYear(album: PublicAlbumSummary | undefined): string {
-  const value = album?.shootDate ?? album?.publishedAt;
-  return value?.slice(0, 4) ?? "";
+function albumYear(album: PublicAlbumSummary): string {
+  const value = album.shootDate ?? album.publishedAt;
+  return value?.slice(0, 4) ?? "—";
+}
+
+function albumCategory(album: PublicAlbumSummary): string {
+  return album.categories[0]?.name ?? "Ensaio";
 }
 
 export function MirandaHome({
@@ -25,88 +29,94 @@ export function MirandaHome({
   carouselImages: CarouselImage[];
 }) {
   const featured = featuredAlbums.slice(0, 5);
-  const leadAlbum = featured[0];
-  const leadCarousel =
-    carouselImages.find((image) => image.albumSlug === leadAlbum?.slug) ??
-    carouselImages[0];
-  const leadImage = leadCarousel?.src ?? leadAlbum?.coverUrl ?? "/photos/p001.jpg";
-  const leadAlt =
-    leadCarousel?.alt ||
-    (leadAlbum ? `Fotografia do ensaio ${leadAlbum.title}` : "");
   const portfolioLabel = config.editorial.chrome.navigation.portfolio;
 
+  if (!featured.length) {
+    return (
+      <div className={styles.emptyState} data-miranda-layout="compression">
+        <p>{site.brandName}</p>
+        <h1>{site.tagline}</h1>
+        <Link href="/portfolio">{portfolioLabel}</Link>
+      </div>
+    );
+  }
+
   return (
-    <div className={styles.root} data-miranda-layout="photobook">
-      <section className={styles.hero} aria-label="Abertura fotográfica">
-        <div className={styles.heroFrame}>
-          <Image
-            className={styles.heroImage}
-            src={leadImage}
-            alt={leadAlt}
-            fill
-            priority
-            unoptimized
-            sizes="100vw"
-          />
-          <div className={styles.heroShade} aria-hidden="true" />
-          <div className={styles.heroMeta}>
-            <span>{leadAlbum?.title ?? site.brandName}</span>
-            <span>
-              {[leadAlbum?.location, albumYear(leadAlbum)].filter(Boolean).join(" · ")}
-            </span>
-          </div>
-        </div>
-      </section>
+    <div className={styles.root} data-miranda-layout="compression">
+      <section
+        className={styles.compressionTrack}
+        aria-label="Coleções fotográficas em destaque"
+      >
+        {featured.map((album, index) => {
+          const fallback = carouselImages.find(
+            (image) => image.albumSlug === album.slug,
+          );
+          const imageSrc = album.coverUrl ?? fallback?.src ?? "/photos/p001.jpg";
+          const imageAlt =
+            fallback?.alt || `Fotografia de abertura do ensaio ${album.title}`;
+          const titleId = `miranda-panel-${index + 1}`;
 
-      <section className={styles.collections} id="colecoes" aria-labelledby="colecoes-title">
-        <header className={styles.sectionHead}>
-          <p>Selecionados</p>
-          <h1 id="colecoes-title">Coleções</h1>
-        </header>
-
-        <div className={styles.collectionList}>
-          {featured.map((album) => (
-            <Link
-              className={styles.collection}
-              href={`/ensaios/${album.slug}`}
-              key={album.id}
-            >
-              <div className={styles.collectionImage}>
-                {album.coverUrl ? (
+          return (
+            <article className={styles.panel} key={album.id}>
+              <Link
+                className={styles.panelLink}
+                href={`/ensaios/${album.slug}`}
+                aria-labelledby={titleId}
+              >
+                <div className={styles.panelBackground} aria-hidden="true">
                   <Image
-                    src={album.coverUrl}
-                    alt={`Capa do ensaio ${album.title}`}
+                    src={imageSrc}
+                    alt=""
                     fill
+                    priority={index === 0}
                     unoptimized
-                    sizes="(max-width: 599px) 100vw, (max-width: 899px) 50vw, 48vw"
+                    sizes="(max-width: 900px) 100vw, 72vw"
                   />
-                ) : null}
-              </div>
-              <div className={styles.collectionCaption}>
-                <div>
-                  <h2>{album.title}</h2>
-                  <p>
-                    {[album.location, album.categories[0]?.name]
-                      .filter(Boolean)
-                      .join(" · ") || "Ensaio"}
-                  </p>
                 </div>
-                <span>{albumYear(album)}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
+
+                <span className={styles.panelIndex}>
+                  {(index + 1).toString().padStart(2, "0")} / {featured.length
+                    .toString()
+                    .padStart(2, "0")}
+                </span>
+
+                <h2 className={styles.spine} id={titleId}>
+                  {album.title}
+                </h2>
+
+                <div className={styles.details}>
+                  <p className={styles.category}>{albumCategory(album)}</p>
+                  <h3>{album.title}</h3>
+
+                  <dl className={styles.meta}>
+                    <div>
+                      <dt>Lugar</dt>
+                      <dd>{album.location ?? "—"}</dd>
+                    </div>
+                    <div>
+                      <dt>Ano</dt>
+                      <dd>{albumYear(album)}</dd>
+                    </div>
+                  </dl>
+
+                  <p className={styles.description}>
+                    {album.description ?? album.subtitle ?? site.tagline}
+                  </p>
+
+                  <span className={styles.panelCta}>
+                    Abrir ensaio <span aria-hidden="true">→</span>
+                  </span>
+                </div>
+              </Link>
+            </article>
+          );
+        })}
       </section>
 
-      <section className={styles.manifesto} aria-label="Sobre o trabalho">
-        <p>{site.tagline}</p>
-      </section>
-
-      <section className={styles.more}>
-        <Link href="/portfolio" aria-label={`${portfolioLabel}: ver todas as coleções`}>
-          Ver todas as coleções <span aria-hidden="true">→</span>
-        </Link>
-      </section>
+      <div className={styles.bottomStrip} aria-hidden="true">
+        <span>{site.brandName}</span>
+        <span>Fotografia autoral</span>
+      </div>
     </div>
   );
 }
