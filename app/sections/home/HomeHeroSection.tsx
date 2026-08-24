@@ -21,35 +21,7 @@ export function HomeHeroSection({
       aria-labelledby="hero-title"
       {...homeSectionAttributes(section)}
     >
-      <div
-        className="hero-image"
-        aria-hidden="true"
-        style={{ zIndex: -3, inset: "-1.5%", overflow: "hidden" }}
-      >
-        <Image
-          src={hero.src}
-          alt=""
-          fill
-          priority
-          unoptimized
-          sizes="100vw"
-          style={{
-            objectFit: "cover",
-            objectPosition: "center 45%",
-            filter: "blur(10px) saturate(0.82) brightness(0.78)",
-            transform: "scale(1.04)",
-          }}
-        />
-      </div>
-      <div
-        className="hero-image"
-        style={{
-          zIndex: -2,
-          overflow: "hidden",
-          clipPath:
-            "polygon(22% 12%, 68% 8%, 73% 96%, 33% 100%, 18% 53%)",
-        }}
-      >
+      <div className="hero-image">
         <Image
           src={hero.src}
           alt={hero.alt}
@@ -59,8 +31,7 @@ export function HomeHeroSection({
           sizes="100vw"
           style={{
             objectFit: "cover",
-            objectPosition: "center 45%",
-            filter: "saturate(1.04) contrast(1.03)",
+            objectPosition: "center center",
           }}
         />
       </div>
