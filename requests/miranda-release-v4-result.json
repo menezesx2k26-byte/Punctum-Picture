@@ -1,11 +1,14 @@
 {
   "status": "failure",
-  "sourceCommit": "5336c61618b6a3f270ff5d7de566fd410a5b1c83",
+  "sourceCommit": "2f67c6acf387c038095bc786e4379536b3d79487",
   "branch": "miranda-editorial",
   "domain": "https://miranda.punctumpicture.com",
   "worker": "punctum-picture-miranda",
   "stages": {
-    "verify": "failure",
+    "install": "success",
+    "typecheck": "success",
+    "lint": "success",
+    "contract": "failure",
     "build": "skipped",
     "d1": "skipped",
     "patch": "skipped",
