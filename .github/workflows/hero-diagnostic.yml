@@ -1,0 +1,64 @@
+name: Hero asset diagnostic
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/hero-diagnostic.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production artifact
+        run: npm run build
+
+      - name: Inspect hero through build boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== repository asset ==='
+          ls -l public/images/hero-maria.webp || true
+          file public/images/hero-maria.webp || true
+          xxd -l 16 public/images/hero-maria.webp || true
+          sha256sum public/images/hero-maria.webp || true
+
+          echo '=== built asset candidates ==='
+          find dist/client -type f \( -name '*hero*maria*' -o -path '*/images/hero-maria.webp' \) -print -exec ls -l {} \; -exec file {} \; -exec xxd -l 16 {} \; -exec sha256sum {} \; || true
+
+          echo '=== exact built path ==='
+          if [ -f dist/client/images/hero-maria.webp ]; then
+            echo 'BUILT_HERO=present'
+          else
+            echo 'BUILT_HERO=missing'
+          fi
+
+      - name: Probe production hero URL
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://punctumpicture.com/images/hero-maria.webp'
+          HTTP="$(curl -sS -o /tmp/hero-body -D /tmp/hero-headers -w '%{http_code}' "$URL" || true)"
+          echo "HTTP=$HTTP"
+          echo '=== headers ==='
+          cat /tmp/hero-headers || true
+          echo '=== body ==='
+          wc -c /tmp/hero-body || true
+          file /tmp/hero-body || true
+          xxd -l 32 /tmp/hero-body || true
+          sha256sum /tmp/hero-body || true
