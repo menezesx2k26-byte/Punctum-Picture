@@ -1,6 +1,6 @@
 {
   "status": "failure",
-  "sourceCommit": "2f67c6acf387c038095bc786e4379536b3d79487",
+  "sourceCommit": "d409fcc1af26a8eeed556920cea786e618cc0418",
   "branch": "miranda-editorial",
   "domain": "https://miranda.punctumpicture.com",
   "worker": "punctum-picture-miranda",
