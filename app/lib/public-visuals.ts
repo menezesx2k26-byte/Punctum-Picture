@@ -1,4 +1,5 @@
 // Public-facing visual assets. Keep hero metadata aligned with its regression test.
+// This file is part of the production deploy path; hero changes must ship with matching tests.
 const PUBLIC_VISUAL_ASSETS = {
   logo: {
     src: "/logo-punctum-transparent.png",
