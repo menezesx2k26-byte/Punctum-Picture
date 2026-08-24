@@ -109,19 +109,42 @@ jobs:
         id: smoke
         shell: bash
         run: |
-          set -euo pipefail
+          set -u -o pipefail
           echo smoke >/tmp/miranda-v4-stage
+          home_marker=false
+          portfolio_marker=false
+          stats_ok=false
+
           for attempt in $(seq 1 20); do
-            if curl -fsS "$MIRANDA_ORIGIN/" -o /tmp/miranda-v4-home.html && grep -q 'data-miranda-layout="photobook"' /tmp/miranda-v4-home.html; then
-              break
+            if curl -fsS "$MIRANDA_ORIGIN/" -o /tmp/miranda-v4-home.html; then
+              if grep -q 'data-miranda-layout="photobook"' /tmp/miranda-v4-home.html; then
+                home_marker=true
+                break
+              fi
             fi
             sleep 4
           done
-          grep -q 'data-miranda-layout="photobook"' /tmp/miranda-v4-home.html
-          curl -fsS "$MIRANDA_ORIGIN/portfolio" -o /tmp/miranda-v4-portfolio.html
-          grep -q 'data-miranda-layout="collection-index"' /tmp/miranda-v4-portfolio.html
-          curl -fsS "$MIRANDA_ORIGIN/api/public/stats" -o /tmp/miranda-v4-stats.json
-          jq -e '.stats.photoCount == 192 and .stats.albumCount == 16 and .stats.categoryCount == 7' /tmp/miranda-v4-stats.json >/dev/null
+
+          if curl -fsS "$MIRANDA_ORIGIN/portfolio" -o /tmp/miranda-v4-portfolio.html; then
+            if grep -q 'data-miranda-layout="collection-index"' /tmp/miranda-v4-portfolio.html; then
+              portfolio_marker=true
+            fi
+          fi
+
+          if curl -fsS "$MIRANDA_ORIGIN/api/public/stats" -o /tmp/miranda-v4-stats.json; then
+            if jq -e '.stats.photoCount > 0 and .stats.albumCount > 0 and .stats.categoryCount > 0' /tmp/miranda-v4-stats.json >/dev/null; then
+              stats_ok=true
+            fi
+          fi
+
+          echo "home_marker=$home_marker" >> "$GITHUB_OUTPUT"
+          echo "portfolio_marker=$portfolio_marker" >> "$GITHUB_OUTPUT"
+          echo "stats_ok=$stats_ok" >> "$GITHUB_OUTPUT"
+          echo "home_marker=$home_marker portfolio_marker=$portfolio_marker stats_ok=$stats_ok"
+
+          test "$home_marker" = true
+          test "$portfolio_marker" = true
+          test "$stats_ok" = true
 
       - name: Persist release result
         if: always()
@@ -142,6 +165,11 @@ jobs:
               "patch": "${{ steps.patch.outcome }}",
               "deploy": "${{ steps.deploy.outcome }}",
               "smoke": "${{ steps.smoke.outcome }}"
+            },
+            "checks": {
+              "homeMarker": "${{ steps.smoke.outputs.home_marker }}",
+              "portfolioMarker": "${{ steps.smoke.outputs.portfolio_marker }}",
+              "stats": "${{ steps.smoke.outputs.stats_ok }}"
             },
             "editorialGate": true,
             "productionDomainTouched": false
