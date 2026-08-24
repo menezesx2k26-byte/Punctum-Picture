@@ -28,52 +28,46 @@ jobs:
       - name: Build production artifact
         run: npm run build
 
-      - name: Inspect hero through build boundary
+      - name: Inspect broken current hero
         shell: bash
         run: |
           set -euo pipefail
           src='public/images/hero-maria.webp'
-          echo '=== repository asset ==='
-          ls -l "$src" || true
-          file "$src" || true
-          xxd -l 32 "$src" || true
-          sha256sum "$src" || true
+          file "$src"
+          xxd -l 32 "$src"
+          sha256sum "$src"
           echo "bytes=$(wc -c < "$src")"
 
-          echo '=== malformed base64 evidence ==='
+      - name: Validate historical focused hero backup
+        shell: bash
+        run: |
+          set -euo pipefail
+          src='public/photos/hero-stadium-focus-2026-08-24.svg'
+          [ -f "$src" ]
           python <<'PY'
           from pathlib import Path
-          import base64
-          p = Path('public/images/hero-maria.webp')
-          data = p.read_bytes()
-          allowed = set(b'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=\r\n\t ')
-          bad = [(i,b) for i,b in enumerate(data) if b not in allowed]
-          print('invalid_count=', len(bad))
-          print('first_invalid=', bad[:20])
-          print('tail_repr=', repr(data[-120:]))
-          compact = b''.join(data.split())
-          print('compact_len=', len(compact), 'mod4=', len(compact)%4)
-          try:
-              decoded = base64.b64decode(compact, validate=True)
-              print('strict_decode=ok', 'decoded_len=', len(decoded), 'head=', decoded[:16], 'riff=', decoded[:4], 'webp=', decoded[8:12])
-          except Exception as e:
-              print('strict_decode=failed', type(e).__name__, str(e))
-          try:
-              decoded = base64.b64decode(compact, validate=False)
-              print('lenient_decode=ok', 'decoded_len=', len(decoded), 'head=', decoded[:16], 'riff=', decoded[:4], 'webp=', decoded[8:12])
-          except Exception as e:
-              print('lenient_decode=failed', type(e).__name__, str(e))
+          import base64, re, struct
+
+          svg = Path('public/photos/hero-stadium-focus-2026-08-24.svg').read_text()
+          m = re.search(r'data:image/webp;base64,([^"\']+)', svg)
+          if not m:
+              raise SystemExit('embedded WebP data URI not found')
+          payload = ''.join(m.group(1).split())
+          raw = base64.b64decode(payload, validate=True)
+          print('decoded_len=', len(raw))
+          print('head=', raw[:16])
+          print('riff=', raw[:4], 'webp=', raw[8:12])
+          if raw[:4] != b'RIFF' or raw[8:12] != b'WEBP':
+              raise SystemExit('backup is not a valid WebP container')
+          declared = struct.unpack('<I', raw[4:8])[0] + 8
+          print('riff_declared_total=', declared, 'actual=', len(raw))
+          if declared != len(raw):
+              raise SystemExit('backup WebP is truncated or has trailing corruption')
+          Path('/tmp/hero-backup.webp').write_bytes(raw)
           PY
-
-          echo '=== built asset candidates ==='
-          find dist/client -type f \( -name '*hero*maria*' -o -path '*/images/hero-maria.webp' \) -print -exec ls -l {} \; -exec file {} \; -exec xxd -l 16 {} \; -exec sha256sum {} \; || true
-
-          echo '=== exact built path ==='
-          if [ -f dist/client/images/hero-maria.webp ]; then
-            echo 'BUILT_HERO=present'
-          else
-            echo 'BUILT_HERO=missing'
-          fi
+          file /tmp/hero-backup.webp
+          xxd -l 16 /tmp/hero-backup.webp
+          sha256sum /tmp/hero-backup.webp
 
       - name: Probe production hero URL
         shell: bash
@@ -82,10 +76,7 @@ jobs:
           URL='https://punctumpicture.com/images/hero-maria.webp'
           HTTP="$(curl -sS -o /tmp/hero-body -D /tmp/hero-headers -w '%{http_code}' "$URL" || true)"
           echo "HTTP=$HTTP"
-          echo '=== headers ==='
-          cat /tmp/hero-headers || true
-          echo '=== body ==='
-          wc -c /tmp/hero-body || true
+          grep -iE '^(content-type|content-length|cf-cache-status|etag):' /tmp/hero-headers || true
           file /tmp/hero-body || true
           xxd -l 32 /tmp/hero-body || true
           sha256sum /tmp/hero-body || true
