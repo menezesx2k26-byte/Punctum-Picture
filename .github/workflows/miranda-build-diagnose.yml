@@ -15,6 +15,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: punctum-miranda-build-diagnose
+  cancel-in-progress: true
+
 jobs:
   diagnose:
     runs-on: ubuntu-latest
