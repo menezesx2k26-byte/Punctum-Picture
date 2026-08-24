@@ -22,7 +22,10 @@ export default async function ContactPage() {
     <SiteThemeRoot className="contact-page" config={config}>
       <SiteHeader site={site} editorial={config.editorial} />
       <main>
-        <header className="contact-page-hero" style={{ minHeight: "100svh" }}>
+        <header
+          className="contact-page-hero"
+          style={{ minHeight: "100svh", alignItems: "center" }}
+        >
           <div className="contact-page-image">
             <Image
               src="/photos/p033.jpg"
@@ -34,13 +37,19 @@ export default async function ContactPage() {
               style={{ filter: "none" }}
             />
           </div>
-          <div className="contact-page-copy">
+          <div
+            className="contact-page-copy"
+            style={{
+              paddingTop: "clamp(9rem, 16vh, 12rem)",
+              paddingBottom: "clamp(3rem, 6vh, 5rem)",
+            }}
+          >
             <p className="eyebrow">{copy.hero.eyebrow}</p>
             <h1
               style={{
-                maxWidth: "11ch",
-                fontSize: "clamp(3.5rem, 6.6vw, 7.2rem)",
-                lineHeight: 0.84,
+                maxWidth: "9ch",
+                fontSize: "clamp(3.1rem, 5.6vw, 6.2rem)",
+                lineHeight: 0.86,
               }}
             >
               <EditorialText text={copy.hero.title} />
