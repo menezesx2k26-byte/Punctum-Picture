@@ -24,7 +24,9 @@ export function HomeHeroSection({
           alt="Maria Helena fotografando com uma câmera"
           fill
           priority
+          quality={100}
           sizes="100vw"
+          style={{ filter: "none" }}
         />
       </div>
       <div className="hero-copy">
