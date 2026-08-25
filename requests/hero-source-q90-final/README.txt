@@ -1,0 +1,1 @@
+Exact hero transfer staging branch. Base64 chunks reconstruct /mnt/data source with SHA-256 448b8888b073e0690093097d0feda82b5424ff1c72dd1238c1e8f0b8d28026e0 and size 371054 bytes.
