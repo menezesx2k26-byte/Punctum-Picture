@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PUNCTUM_DEFAULT_SITE_CONFIG, siteConfigSchema } from "../../shared/config";
 
 function configWithHeroMedia(heroMedia: unknown) {
-  const config = structuredClone(PUNCTUM_DEFAULT_SITE_CONFIG) as typeof PUNCTUM_DEFAULT_SITE_CONFIG & {
+  const config = structuredClone(PUNCTUM_DEFAULT_SITE_CONFIG) as unknown as {
     pages: {
       home: {
         sections: Array<Record<string, unknown>>;
