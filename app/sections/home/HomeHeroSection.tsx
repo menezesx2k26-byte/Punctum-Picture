@@ -3,7 +3,10 @@ import Link from "next/link";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import type { EditorialConfig, HomeSectionConfig } from "../../../shared/config";
 import { PublicStatsText } from "../../components/PublicStats";
-import { getPublicVisualAsset } from "../../lib/public-visuals";
+import {
+  getHeroObjectPosition,
+  getPublicVisualAsset,
+} from "../../lib/public-visuals";
 import { homeSectionAttributes } from "./section-attributes";
 
 export function HomeHeroSection({
@@ -31,7 +34,7 @@ export function HomeHeroSection({
           sizes="100vw"
           style={{
             objectFit: "cover",
-            objectPosition: "57% center",
+            objectPosition: getHeroObjectPosition(),
           }}
         />
       </div>
