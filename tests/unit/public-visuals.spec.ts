@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getHeroObjectPosition,
-  getHeroMobileAspectRatio,
+  getHeroMobileMinHeight,
   getPublicVisualAsset,
   getSiteHeaderClassName,
 } from "../../app/lib/public-visuals";
@@ -35,7 +35,7 @@ describe("identidade visual pública", () => {
     expect(getHeroObjectPosition("mobile")).toBe("50% 50%");
   });
 
-  it("repete no hero mobile a composição vertical do card Autorretrato", () => {
-    expect(getHeroMobileAspectRatio()).toBe("2 / 3");
+  it("mantém o hero mobile full-bleed por pelo menos uma viewport", () => {
+    expect(getHeroMobileMinHeight()).toBe("100svh");
   });
 });
