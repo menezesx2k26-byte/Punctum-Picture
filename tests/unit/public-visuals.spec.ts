@@ -4,21 +4,14 @@ import {
   getHeroMobileMinHeight,
   getPublicVisualAsset,
   getSiteHeaderClassName,
+  resolveHeroVisual,
 } from "../../app/lib/public-visuals";
 
 describe("identidade visual pública", () => {
   it("renderiza o cabeçalho interno como sobreposição transparente com a marca quadrada", () => {
     const logo = getPublicVisualAsset("logo");
-
-    expect(getSiteHeaderClassName(true)).toBe(
-      "site-header dark site-header-transparent",
-    );
-    expect(logo).toEqual({
-      src: "/logo-punctum-transparent.png",
-      alt: "",
-      width: 1254,
-      height: 1254,
-    });
+    expect(getSiteHeaderClassName(true)).toBe("site-header dark site-header-transparent");
+    expect(logo).toEqual({ src: "/logo-punctum-transparent.png", alt: "", width: 1254, height: 1254 });
   });
 
   it("usa a fotografia editorial atual no hero em resolução 4K", () => {
@@ -28,6 +21,17 @@ describe("identidade visual pública", () => {
       width: 3840,
       height: 2160,
     });
+  });
+
+  it("prefere a fotografia escolhida no Studio e mantém o 4K como fallback", () => {
+    const fallback = getPublicVisualAsset("hero");
+    expect(resolveHeroVisual("photo-123", [{ id: "photo-123", src: "/media/photo-123/display", alt: "Novo hero" }])).toEqual({
+      src: "/media/photo-123/display",
+      alt: "Novo hero",
+      width: 3840,
+      height: 2160,
+    });
+    expect(resolveHeroVisual(null, [])).toEqual(fallback);
   });
 
   it("usa enquadramentos distintos no desktop e no mobile", () => {
