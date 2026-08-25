@@ -5,13 +5,13 @@ import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import type { EditorialConfig, HomeSectionConfig } from "../../../shared/config";
 import { PublicStatsText } from "../../components/PublicStats";
 import {
-  getHeroMobileStageHeight,
+  getHeroMobileAspectRatio,
   getHeroObjectPosition,
   getPublicVisualAsset,
 } from "../../lib/public-visuals";
 import { homeSectionAttributes } from "./section-attributes";
 
-// Keep the horizontal 4K photograph in a bounded mobile stage; copy lives below it.
+// On mobile, mirror the Autorretrato card: a true portrait crop of the same photo.
 const HERO_RESPONSIVE_CSS = `
 .hero-image img {
   object-position: var(--hero-object-position, 45% 42%) !important;
@@ -21,28 +21,28 @@ const HERO_RESPONSIVE_CSS = `
   .hero {
     display: block;
     min-height: auto;
-    padding-top: var(--hero-mobile-stage-height, 50svh);
+    padding-top: 0;
     overflow: hidden;
     background: #0d1010;
   }
 
   .hero-image {
-    position: absolute;
-    inset: 0 0 auto;
-    height: var(--hero-mobile-stage-height, 50svh);
-    z-index: -2;
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    aspect-ratio: var(--hero-mobile-aspect-ratio, 2 / 3);
+    z-index: 0;
+    overflow: hidden;
   }
 
   .hero-image img {
-    object-position: var(--hero-mobile-object-position, 60% 38%) !important;
+    object-fit: cover !important;
+    object-position: var(--hero-mobile-object-position, 50% 50%) !important;
   }
 
   .hero::after {
-    inset: 0 0 auto;
-    height: var(--hero-mobile-stage-height, 50svh);
-    background:
-      linear-gradient(180deg, rgba(10, 12, 10, 0.3), transparent 36%),
-      linear-gradient(0deg, rgba(13, 16, 16, 0.94), transparent 50%);
+    display: none;
   }
 
   .hero-copy {
@@ -50,7 +50,7 @@ const HERO_RESPONSIVE_CSS = `
     z-index: 1;
     width: 100%;
     margin: 0;
-    padding: 1.35rem 1rem 2.75rem;
+    padding: 1.75rem 1rem 2.75rem;
     background: #0d1010;
   }
 
@@ -94,7 +94,7 @@ export function HomeHeroSection({
   const heroStyle = {
     "--hero-object-position": getHeroObjectPosition("desktop"),
     "--hero-mobile-object-position": getHeroObjectPosition("mobile"),
-    "--hero-mobile-stage-height": getHeroMobileStageHeight(),
+    "--hero-mobile-aspect-ratio": getHeroMobileAspectRatio(),
   } as CSSProperties;
 
   return (
