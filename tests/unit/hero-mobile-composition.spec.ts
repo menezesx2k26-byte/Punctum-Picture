@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 describe("hero mobile composition", () => {
   it("keeps the horizontal photo in a bounded stage instead of stretching it across the full mobile hero", () => {
-    const css = fs.readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
+    const css = fs.readFileSync(path.join(process.cwd(), "app/hero-mobile.css"), "utf8");
     const hero = fs.readFileSync(
       path.join(process.cwd(), "app/sections/home/HomeHeroSection.tsx"),
       "utf8",
