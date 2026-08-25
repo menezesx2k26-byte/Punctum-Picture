@@ -142,7 +142,7 @@ const defaultAppearance = {
 export const PUNCTUM_DEFAULT_COMPOSITION_CONFIG = compositionConfigSchema.parse({
   home: {
     sections: [
-      { id: "home-hero", type: "hero", enabled: true, variant: "cinematic", appearance: defaultAppearance, heroMedia: null },
+      { id: "home-hero", type: "hero", enabled: true, variant: "cinematic", appearance: defaultAppearance },
       { id: "home-statement", type: "statement", enabled: true, variant: "manifesto", appearance: defaultAppearance },
       { id: "home-photo-reel", type: "photo-reel", enabled: true, variant: "horizontal", appearance: defaultAppearance, photoIds: [] },
       { id: "home-featured-work", type: "featured-work", enabled: true, variant: "editorial-grid", appearance: defaultAppearance, itemCount: 6 },
