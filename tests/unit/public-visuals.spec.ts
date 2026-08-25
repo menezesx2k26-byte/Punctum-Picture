@@ -6,6 +6,7 @@ import {
   getSiteHeaderClassName,
   resolveHeroVisual,
 } from "../../app/lib/public-visuals";
+import { PUNCTUM_DEFAULT_SITE_CONFIG, siteConfigSchema } from "../../shared/config";
 
 describe("identidade visual pública", () => {
   it("renderiza o cabeçalho interno como sobreposição transparente com a marca quadrada", () => {
@@ -32,6 +33,14 @@ describe("identidade visual pública", () => {
       height: 2160,
     });
     expect(resolveHeroVisual(null, [])).toEqual(fallback);
+  });
+
+  it("aceita uma referência tipada de mídia própria no hero", () => {
+    const config = structuredClone(PUNCTUM_DEFAULT_SITE_CONFIG);
+    const hero = config.pages.home.sections.find((section) => section.type === "hero");
+    if (!hero || hero.type !== "hero") throw new Error("Hero default ausente");
+    Object.assign(hero, { heroMedia: { kind: "site-media", id: "hero-123" } });
+    expect(siteConfigSchema.safeParse(config).success).toBe(true);
   });
 
   it("usa enquadramentos distintos no desktop e no mobile", () => {
