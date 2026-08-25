@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { heroMediaRefSchema } from "./hero-media-reference";
 import { internalImageIdSchema } from "./image-reference";
 import {
   SECTION_ALIGNMENT_IDS,
@@ -43,6 +44,7 @@ const heroSectionSchema = z.object({
   enabled: z.boolean(),
   variant: z.enum(["cinematic", "editorial", "fullscreen", "split"]),
   appearance: appearanceSchema(["default", "dark", "photo"]),
+  heroMedia: heroMediaRefSchema.nullable().optional(),
 }).strict();
 
 const statementSectionSchema = z.object({
