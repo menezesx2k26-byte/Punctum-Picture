@@ -18,10 +18,10 @@ const PUBLIC_VISUAL_ASSETS = {
 
 const HERO_OBJECT_POSITIONS = {
   desktop: "45% 42%",
-  mobile: "60% 38%",
+  mobile: "50% 50%",
 } as const;
 
-const HERO_MOBILE_STAGE_HEIGHT = "50svh" as const;
+const HERO_MOBILE_ASPECT_RATIO = "2 / 3" as const;
 
 export type PublicVisualAssetRole = keyof typeof PUBLIC_VISUAL_ASSETS;
 export type HeroViewport = keyof typeof HERO_OBJECT_POSITIONS;
@@ -38,8 +38,8 @@ export function getHeroObjectPosition<Viewport extends HeroViewport>(
   return HERO_OBJECT_POSITIONS[viewport];
 }
 
-export function getHeroMobileStageHeight(): typeof HERO_MOBILE_STAGE_HEIGHT {
-  return HERO_MOBILE_STAGE_HEIGHT;
+export function getHeroMobileAspectRatio(): typeof HERO_MOBILE_ASPECT_RATIO {
+  return HERO_MOBILE_ASPECT_RATIO;
 }
 
 export function getSiteHeaderClassName(dark: boolean): string {
