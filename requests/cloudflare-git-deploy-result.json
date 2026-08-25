@@ -1,7 +1,7 @@
 {
   "status": "success",
-  "checkedAt": "2026-08-25T13:26:10Z",
-  "sourceCommit": "efc7cfa629ad05e5b09d2282b8c96a34cb3a9361",
+  "checkedAt": "2026-08-25T16:31:49Z",
+  "sourceCommit": "48baf08f6cae5a369fbc13a4441c2a865697edc4",
   "worker": "punctum-picture-migration",
   "workerUrl": "https://punctum-picture-migration.menezesx2k26.workers.dev",
   "productionUrl": "https://punctumpicture.com",
@@ -17,6 +17,7 @@
     "tests": "success",
     "wrangler": "success",
     "d1": "success",
+    "d1Migrations": "success",
     "generatedConfig": "success",
     "deploy": "success",
     "smoke": "success"
