@@ -11,6 +11,7 @@ import {
 } from "../../lib/public-visuals";
 import { homeSectionAttributes } from "./section-attributes";
 
+// Keep the horizontal 4K photograph in a bounded mobile stage; copy lives below it.
 const HERO_RESPONSIVE_CSS = `
 .hero-image img {
   object-position: var(--hero-object-position, 45% 42%) !important;
