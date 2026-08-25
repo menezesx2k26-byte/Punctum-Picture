@@ -1,4 +1,4 @@
-name: Publish 4K hero candidate
+name: Audit hero candidates
 
 on:
   push:
@@ -7,79 +7,38 @@ on:
       - ".github/workflows/hero-from-drive-exact.yml"
 
 permissions:
-  contents: write
-
-concurrency:
-  group: punctum-hero-publish
-  cancel-in-progress: false
+  contents: read
 
 jobs:
-  replace:
+  audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          package-manager-cache: false
-
-      - name: Fetch verified 4K hero candidate already stored in Git
-        shell: bash
+      - name: Install ImageMagick
         run: |
-          set -euo pipefail
-          git fetch origin fix/hero-native-exact:refs/remotes/origin/fix/hero-native-exact
-          git show origin/fix/hero-native-exact:public/images/hero-maria.webp > /tmp/hero-maria.webp
-          file /tmp/hero-maria.webp
-          wc -c /tmp/hero-maria.webp
-          sha256sum /tmp/hero-maria.webp
-          [ "$(head -c 4 /tmp/hero-maria.webp)" = 'RIFF' ]
-          [ "$(dd if=/tmp/hero-maria.webp bs=1 skip=8 count=4 status=none)" = 'WEBP' ]
-
-      - name: Verify decode and 4K dimensions
-        shell: bash
-        run: |
-          set -euo pipefail
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends imagemagick
-          identify /tmp/hero-maria.webp
-          [ "$(identify -format '%wx%h' /tmp/hero-maria.webp)" = '3840x2160' ]
-
-      - name: Replace production hero
-        run: cp /tmp/hero-maria.webp public/images/hero-maria.webp
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Focused hero regression
-        run: npm test -- tests/unit/public-visuals.spec.ts
-
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Build
-        run: npm run build
-
-      - name: Full tests
-        run: npm test
-
-      - name: Commit verified 4K hero
+      - name: Audit every branch hero
         shell: bash
         run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add public/images/hero-maria.webp
-          git diff --cached --check
-          if git diff --cached --quiet; then
-            echo '4K hero already present.'
-            exit 0
-          fi
-          git commit -m 'fix: publish verified 4k hero'
-          git push origin HEAD:main
+          set -u
+          git fetch --all --prune
+          echo '=== HERO CANDIDATES ==='
+          while read -r ref; do
+            branch="${ref#refs/remotes/origin/}"
+            [ "$branch" = "HEAD" ] && continue
+            if git cat-file -e "$ref:public/images/hero-maria.webp" 2>/dev/null; then
+              out="/tmp/hero-${branch//\//_}.webp"
+              git show "$ref:public/images/hero-maria.webp" > "$out"
+              bytes=$(wc -c < "$out")
+              sha=$(sha256sum "$out" | awk '{print $1}')
+              if dims=$(identify -format '%wx%h' "$out" 2>/dev/null); then
+                echo "VALID branch=$branch bytes=$bytes dims=$dims sha256=$sha"
+              else
+                echo "INVALID branch=$branch bytes=$bytes sha256=$sha"
+              fi
+            fi
+          done < <(git for-each-ref --format='%(refname)' refs/remotes/origin | sort)
