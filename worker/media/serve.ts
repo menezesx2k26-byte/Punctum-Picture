@@ -30,7 +30,7 @@ export async function serveMedia(
   }
 
   const db = requireDb(env);
-  const image = await db
+  let image = await db
     .prepare(
       `SELECT
         image.id,
@@ -47,6 +47,31 @@ export async function serveMedia(
     )
     .bind(imageId)
     .first<ImageRow>();
+
+  if (!image) {
+    const siteMedia = await db
+      .prepare(
+        `SELECT id, storage_key AS originalKey, status
+         FROM site_media
+         WHERE id = ? AND role = 'hero'`,
+      )
+      .bind(imageId)
+      .first<{
+        id: string;
+        originalKey: string;
+        status: "pending" | "ready" | "failed";
+      }>();
+    if (siteMedia) {
+      image = {
+        ...siteMedia,
+        focalX: null,
+        focalY: null,
+        deletedAt: null,
+        albumStatus: "published",
+        albumDeletedAt: null,
+      };
+    }
+  }
 
   const publicRequest = options.audience !== "admin";
   if (
