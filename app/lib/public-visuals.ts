@@ -16,12 +16,18 @@ const PUBLIC_VISUAL_ASSETS = {
   },
 } as const;
 
+const HERO_OBJECT_POSITION = "45% 42%" as const;
+
 export type PublicVisualAssetRole = keyof typeof PUBLIC_VISUAL_ASSETS;
 
 export function getPublicVisualAsset<Role extends PublicVisualAssetRole>(
   role: Role,
 ): (typeof PUBLIC_VISUAL_ASSETS)[Role] {
   return PUBLIC_VISUAL_ASSETS[role];
+}
+
+export function getHeroObjectPosition(): typeof HERO_OBJECT_POSITION {
+  return HERO_OBJECT_POSITION;
 }
 
 export function getSiteHeaderClassName(dark: boolean): string {
