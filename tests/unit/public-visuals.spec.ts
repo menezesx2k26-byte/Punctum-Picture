@@ -4,6 +4,7 @@ import {
   getHeroMobileMinHeight,
   getPublicVisualAsset,
   getSiteHeaderClassName,
+  resolveConfiguredHeroVisual,
   resolveHeroVisual,
 } from "../../app/lib/public-visuals";
 import { PUNCTUM_DEFAULT_SITE_CONFIG, siteConfigSchema } from "../../shared/config";
@@ -41,6 +42,23 @@ describe("identidade visual pública", () => {
     if (!hero || hero.type !== "hero") throw new Error("Hero default ausente");
     Object.assign(hero, { heroMedia: { kind: "site-media", id: "hero-123" } });
     expect(siteConfigSchema.safeParse(config).success).toBe(true);
+  });
+
+  it("resolve mídia própria do Studio antes do acervo e mantém compatibilidade com o Hero antigo", () => {
+    const images = [{ id: "photo-123", src: "/media/photo-123/display", alt: "Hero do acervo" }];
+    expect(resolveConfiguredHeroVisual({ kind: "site-media", id: "hero-phone" }, "photo-123", images)).toEqual({
+      src: "/media/hero-phone/display",
+      alt: "Fotografia principal da Punctum Picture",
+      width: 3840,
+      height: 2160,
+    });
+    expect(resolveConfiguredHeroVisual({ kind: "portfolio-image", id: "photo-123" }, null, images)).toEqual({
+      src: "/media/photo-123/display",
+      alt: "Hero do acervo",
+      width: 3840,
+      height: 2160,
+    });
+    expect(resolveConfiguredHeroVisual(null, "photo-123", images)).toEqual(resolveHeroVisual("photo-123", images));
   });
 
   it("usa enquadramentos distintos no desktop e no mobile", () => {
