@@ -21,7 +21,7 @@ const HERO_OBJECT_POSITIONS = {
   mobile: "50% 50%",
 } as const;
 
-const HERO_MOBILE_ASPECT_RATIO = "2 / 3" as const;
+const HERO_MOBILE_MIN_HEIGHT = "100svh" as const;
 
 export type PublicVisualAssetRole = keyof typeof PUBLIC_VISUAL_ASSETS;
 export type HeroViewport = keyof typeof HERO_OBJECT_POSITIONS;
@@ -38,8 +38,8 @@ export function getHeroObjectPosition<Viewport extends HeroViewport>(
   return HERO_OBJECT_POSITIONS[viewport];
 }
 
-export function getHeroMobileAspectRatio(): typeof HERO_MOBILE_ASPECT_RATIO {
-  return HERO_MOBILE_ASPECT_RATIO;
+export function getHeroMobileMinHeight(): typeof HERO_MOBILE_MIN_HEIGHT {
+  return HERO_MOBILE_MIN_HEIGHT;
 }
 
 export function getSiteHeaderClassName(dark: boolean): string {
