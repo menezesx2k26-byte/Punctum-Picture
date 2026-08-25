@@ -31,8 +31,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          URL='https://drive.usercontent.google.com/download?id=1E3ETCZPEwUMYmpUW7tT7KycMhEUCOqFk&export=download&confirm=t'
-          curl --fail --location --retry 3 --retry-all-errors --connect-timeout 20 --max-time 120 "$URL" -o /tmp/hero-maria-q90.webp
+          python -m pip install --quiet 'gdown==5.2.0'
+          gdown --id '1E3ETCZPEwUMYmpUW7tT7KycMhEUCOqFk' --output /tmp/hero-maria-q90.webp
           file /tmp/hero-maria-q90.webp
           wc -c /tmp/hero-maria-q90.webp
           sha256sum /tmp/hero-maria-q90.webp
