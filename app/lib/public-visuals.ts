@@ -21,7 +21,7 @@ const HERO_OBJECT_POSITIONS = {
   mobile: "60% 38%",
 } as const;
 
-const HERO_MOBILE_STAGE_HEIGHT = "62svh" as const;
+const HERO_MOBILE_STAGE_HEIGHT = "50svh" as const;
 
 export type PublicVisualAssetRole = keyof typeof PUBLIC_VISUAL_ASSETS;
 export type HeroViewport = keyof typeof HERO_OBJECT_POSITIONS;
