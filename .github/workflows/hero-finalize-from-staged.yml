@@ -1,0 +1,99 @@
+name: Finalize verified hero from staged source
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/hero-finalize-from-staged.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: punctum-finalize-hero
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install ImageMagick
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends imagemagick
+
+      - name: Reconstruct staged source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat requests/hero-source-q85/part-*.b64 | tr -d '\n\r ' | base64 -d > /tmp/hero-source.webp
+          file /tmp/hero-source.webp
+          identify /tmp/hero-source.webp
+          sha256sum /tmp/hero-source.webp
+          wc -c /tmp/hero-source.webp
+          [ "$(head -c 4 /tmp/hero-source.webp)" = 'RIFF' ]
+          [ "$(dd if=/tmp/hero-source.webp bs=1 skip=8 count=4 status=none)" = 'WEBP' ]
+          dims="$(identify -format '%wx%h' /tmp/hero-source.webp)"
+          [ "$dims" = '3840x2160' ]
+          bytes="$(wc -c < /tmp/hero-source.webp)"
+          [ "$bytes" -ge 200000 ]
+
+      - name: Replace production hero with verified 4K source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/hero-source.webp public/images/hero-maria.webp
+          identify public/images/hero-maria.webp
+          sha256sum public/images/hero-maria.webp
+          wc -c public/images/hero-maria.webp
+
+      - name: Verify metadata and focused regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'width: 3840' app/lib/public-visuals.ts
+          grep -q 'height: 2160' app/lib/public-visuals.ts
+          npm test -- tests/unit/public-visuals.spec.ts
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Full tests
+        run: npm test
+
+      - name: Commit verified source hero
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/images/hero-maria.webp
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'Hero already matches verified staged source.'
+            exit 0
+          fi
+          git diff --cached --stat
+          git commit -m 'fix: replace hero with verified native 4k source'
+          git push origin HEAD:main
