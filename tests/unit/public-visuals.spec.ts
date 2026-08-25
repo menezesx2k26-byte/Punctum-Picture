@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getHeroObjectPosition,
-  getHeroMobileStageHeight,
+  getHeroMobileAspectRatio,
   getPublicVisualAsset,
   getSiteHeaderClassName,
 } from "../../app/lib/public-visuals";
@@ -32,10 +32,10 @@ describe("identidade visual pública", () => {
 
   it("usa enquadramentos distintos no desktop e no mobile", () => {
     expect(getHeroObjectPosition("desktop")).toBe("45% 42%");
-    expect(getHeroObjectPosition("mobile")).toBe("60% 38%");
+    expect(getHeroObjectPosition("mobile")).toBe("50% 50%");
   });
 
-  it("limita a fotografia no mobile para evitar zoom de uma imagem 16:9 em uma tela vertical", () => {
-    expect(getHeroMobileStageHeight()).toBe("50svh");
+  it("repete no hero mobile a composição vertical do card Autorretrato", () => {
+    expect(getHeroMobileAspectRatio()).toBe("2 / 3");
   });
 });
