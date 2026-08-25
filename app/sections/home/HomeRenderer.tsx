@@ -10,41 +10,16 @@ import { HomePhotoReelSection } from "./HomePhotoReelSection";
 import { HomeStatementSection } from "./HomeStatementSection";
 import { buildHomeSectionRenderPlan, type HomeSectionRenderPlanEntry } from "./render-plan";
 
-export type HomeRendererProps = {
-  config: SiteConfig;
-  site: PublicSiteSettings;
-  featuredAlbums: PublicAlbumSummary[];
-  carouselImages: CarouselImage[];
-};
-
+export type HomeRendererProps = { config: SiteConfig; site: PublicSiteSettings; featuredAlbums: PublicAlbumSummary[]; carouselImages: CarouselImage[] };
 type HomeSectionRenderer = (context: HomeRendererProps, section: HomeSectionConfig) => ReactNode;
-type HomeSectionRendererRegistry = {
-  [Type in SectionType]: Record<SectionVariantByType[Type], HomeSectionRenderer>;
-};
+type HomeSectionRendererRegistry = { [Type in SectionType]: Record<SectionVariantByType[Type], HomeSectionRenderer> };
 
-const heroRenderer: HomeSectionRenderer = (context, section) => (
-  <HomeHeroSection copy={context.config.editorial.home.hero} section={section} />
-);
-const statementRenderer: HomeSectionRenderer = (context, section) => (
-  <HomeStatementSection copy={context.config.editorial.home.statement} section={section} />
-);
-const reelRenderer: HomeSectionRenderer = (context, section) => (
-  <HomePhotoReelSection copy={context.config.editorial.home.carousel} images={context.carouselImages} section={section} />
-);
-const featuredRenderer: HomeSectionRenderer = (context, section) => (
-  <HomeFeaturedWorkSection albums={context.featuredAlbums} copy={context.config.editorial.home.featured} section={section} />
-);
-const aboutRenderer: HomeSectionRenderer = (context, section) => (
-  <HomeAboutSection copy={context.config.editorial.home.about} section={section} />
-);
-const contactRenderer: HomeSectionRenderer = (context, section) => (
-  <HomeContactSection
-    copy={context.config.editorial.home.contact}
-    section={section}
-    site={context.site}
-    whatsappLabel={context.config.editorial.chrome.whatsappCta}
-  />
-);
+const heroRenderer: HomeSectionRenderer = (context, section) => <HomeHeroSection copy={context.config.editorial.home.hero} section={section} images={context.carouselImages} />;
+const statementRenderer: HomeSectionRenderer = (context, section) => <HomeStatementSection copy={context.config.editorial.home.statement} section={section} />;
+const reelRenderer: HomeSectionRenderer = (context, section) => <HomePhotoReelSection copy={context.config.editorial.home.carousel} images={context.carouselImages} section={section} />;
+const featuredRenderer: HomeSectionRenderer = (context, section) => <HomeFeaturedWorkSection albums={context.featuredAlbums} copy={context.config.editorial.home.featured} section={section} />;
+const aboutRenderer: HomeSectionRenderer = (context, section) => <HomeAboutSection copy={context.config.editorial.home.about} section={section} />;
+const contactRenderer: HomeSectionRenderer = (context, section) => <HomeContactSection copy={context.config.editorial.home.contact} section={section} site={context.site} whatsappLabel={context.config.editorial.chrome.whatsappCta} />;
 
 export const HOME_SECTION_RENDERERS = {
   hero: { cinematic: heroRenderer, editorial: heroRenderer, fullscreen: heroRenderer, split: heroRenderer },
@@ -68,7 +43,5 @@ function renderHomeSection(entry: HomeSectionRenderPlanEntry, context: HomeRende
 }
 
 export function HomeRenderer(props: HomeRendererProps) {
-  return buildHomeSectionRenderPlan(props.config.pages.home).map((entry) => (
-    <Fragment key={entry.section.id}>{renderHomeSection(entry, props)}</Fragment>
-  ));
+  return buildHomeSectionRenderPlan(props.config.pages.home).map((entry) => <Fragment key={entry.section.id}>{renderHomeSection(entry, props)}</Fragment>);
 }
