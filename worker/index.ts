@@ -10,6 +10,7 @@ import { handlePublicApi } from "./api/public";
 import { serveMedia } from "./media/serve";
 import { handleScheduled } from "./scheduled";
 import { robots, sitemap } from "./seo";
+import { handleSiteMediaApi } from "./site-media";
 import { requireAdmin } from "./utils/auth";
 import { AppError } from "./utils/errors";
 import { apiError, withSecurityHeaders } from "./utils/response";
@@ -81,6 +82,11 @@ async function routeRequest(
   const adminAuthResponse = await handleAdminAuth(request, url, env);
   if (adminAuthResponse) {
     return adminAuthResponse;
+  }
+
+  const siteMediaResponse = await handleSiteMediaApi(request, url, env);
+  if (siteMediaResponse) {
+    return siteMediaResponse;
   }
 
   const adminResponse = await handleAdminApi(request, url, env);

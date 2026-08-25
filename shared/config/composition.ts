@@ -15,6 +15,12 @@ export const sectionInstanceIdSchema = z
   .max(80)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "O identificador da seção precisa ser estável e seguro.");
 
+export const heroMediaRefSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("site-media"), id: internalImageIdSchema }).strict(),
+  z.object({ kind: z.literal("portfolio-image"), id: internalImageIdSchema }).strict(),
+]);
+export type HeroMediaRef = z.infer<typeof heroMediaRefSchema>;
+
 const densitySchema = z.enum(SECTION_DENSITY_IDS);
 const alignmentSchema = z.enum(SECTION_ALIGNMENT_IDS);
 
@@ -43,6 +49,7 @@ const heroSectionSchema = z.object({
   enabled: z.boolean(),
   variant: z.enum(["cinematic", "editorial", "fullscreen", "split"]),
   appearance: appearanceSchema(["default", "dark", "photo"]),
+  heroMedia: heroMediaRefSchema.nullable().optional(),
 }).strict();
 
 const statementSectionSchema = z.object({

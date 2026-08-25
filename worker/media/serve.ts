@@ -18,6 +18,28 @@ type ImageRow = {
   albumDeletedAt: string | null;
 };
 
+type SiteMediaRow = {
+  id: string;
+  originalKey: string;
+  status: "pending" | "ready" | "failed";
+};
+
+async function readSiteMediaFallback(db: D1Database, imageId: string): Promise<SiteMediaRow | null> {
+  try {
+    return await db
+      .prepare(
+        `SELECT id, storage_key AS originalKey, status
+         FROM site_media
+         WHERE id = ? AND role = 'hero'`,
+      )
+      .bind(imageId)
+      .first<SiteMediaRow>();
+  } catch (error) {
+    if (String(error).includes("no such table: site_media")) return null;
+    throw error;
+  }
+}
+
 export async function serveMedia(
   request: Request,
   env: Env,
@@ -30,7 +52,7 @@ export async function serveMedia(
   }
 
   const db = requireDb(env);
-  const image = await db
+  let image = await db
     .prepare(
       `SELECT
         image.id,
@@ -47,6 +69,20 @@ export async function serveMedia(
     )
     .bind(imageId)
     .first<ImageRow>();
+
+  if (!image) {
+    const siteMedia = await readSiteMediaFallback(db, imageId);
+    if (siteMedia) {
+      image = {
+        ...siteMedia,
+        focalX: null,
+        focalY: null,
+        deletedAt: null,
+        albumStatus: "published",
+        albumDeletedAt: null,
+      };
+    }
+  }
 
   const publicRequest = options.audience !== "admin";
   if (

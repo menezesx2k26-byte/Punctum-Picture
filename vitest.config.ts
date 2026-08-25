@@ -7,6 +7,10 @@ export default defineConfig({
       main: "./worker/test-entry.ts",
       wrangler: { configPath: "./wrangler.jsonc" },
       miniflare: {
+        assets: {
+          directory: "./public",
+          binding: "ASSETS",
+        },
         bindings: {
           ENVIRONMENT: "local",
           SITE_ORIGIN: "http://localhost:8787",

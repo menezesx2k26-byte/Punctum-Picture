@@ -154,6 +154,24 @@ export const images = sqliteTable(
   (table) => [index("idx_images_album_position").on(table.albumId, table.position)],
 );
 
+export const siteMedia = sqliteTable(
+  "site_media",
+  {
+    id: text("id").primaryKey(),
+    role: text("role", { enum: ["hero"] }).notNull(),
+    storageKey: text("storage_key").notNull().unique(),
+    originalFilename: text("original_filename").notNull(),
+    mimeType: text("mime_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    status: text("status", { enum: ["pending", "ready", "failed"] }).notNull(),
+    width: integer("width"),
+    height: integer("height"),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [index("idx_site_media_role_status_created").on(table.role, table.status, table.createdAt)],
+);
+
 export const uploadIntents = sqliteTable(
   "upload_intents",
   {
