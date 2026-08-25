@@ -1,0 +1,31 @@
+name: Hero integrity check
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/hero-integrity-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install ImageMagick
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends imagemagick
+      - name: Verify exact hero integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          HERO='public/images/hero-maria.webp'
+          file "$HERO"
+          identify "$HERO"
+          wc -c "$HERO"
+          sha256sum "$HERO"
+          [ "$(identify -format '%wx%h' "$HERO")" = '3840x2160' ]
+          [ "$(wc -c < "$HERO")" = '371054' ]
+          echo '448b8888b073e0690093097d0feda82b5424ff1c72dd1238c1e8f0b8d28026e0  public/images/hero-maria.webp' | sha256sum -c -
