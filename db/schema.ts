@@ -70,6 +70,30 @@ export const siteConfigPointers = sqliteTable("site_config_pointers", {
   updatedAt: text("updated_at").notNull(),
 });
 
+export const siteMedia = sqliteTable(
+  "site_media",
+  {
+    id: text("id").primaryKey(),
+    role: text("role", { enum: ["hero"] }).notNull(),
+    storageKey: text("storage_key").notNull().unique(),
+    originalFilename: text("original_filename").notNull(),
+    mimeType: text("mime_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    status: text("status", { enum: ["pending", "ready", "failed"] }).notNull(),
+    width: integer("width"),
+    height: integer("height"),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    index("idx_site_media_role_status_created").on(
+      table.role,
+      table.status,
+      table.createdAt,
+    ),
+  ],
+);
+
 export const categories = sqliteTable(
   "categories",
   {
