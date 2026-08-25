@@ -1,0 +1,37 @@
+name: Probe Canva native hero asset
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/canva-native-hero-probe.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Probe signed Canva derivative variants
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='https://media.canva.com/v2/image-resize'
+          TAIL='uri:ifs%3A%2F%2FM%2F88e97a8e-f72f-4287-9f5d-20fcbf0adbf3/watermark:F'
+          QUERY='csig=AAAAAAAAAAAAAAAAAAAAADaWz5tOgBa15MkY8MiOKh-f5SZTFJsWKwOQ96N1ubrM&exp=1787631873&osig=AAAAAAAAAAAAAAAAAAAAAALzIBFgOinHPo0xbHUWRJdjwDhNHHx4PfpDuysnvNAC&signer=media-rpc&x-canva-quality=thumbnail'
+          urls=(
+            "$BASE/format:JPG/height:2160/quality:95/$TAIL/width:3840?$QUERY"
+            "$BASE/format:WEBP/height:2160/quality:95/$TAIL/width:3840?$QUERY"
+            "$BASE/format:JPG/height:112/quality:75/$TAIL/width:200?$QUERY"
+          )
+          i=0
+          for url in "${urls[@]}"; do
+            out="/tmp/probe-$i.bin"
+            code="$(curl -sSL -o "$out" -w '%{http_code}' "$url" || true)"
+            echo "variant=$i http=$code bytes=$(wc -c < "$out" 2>/dev/null || echo 0)"
+            file "$out" || true
+            identify "$out" || true
+            i=$((i+1))
+          done
