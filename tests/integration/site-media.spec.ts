@@ -1,5 +1,12 @@
 import { env, exports } from "cloudflare:workers";
 import { beforeAll, describe, expect, it } from "vitest";
+import initMigration from "../../migrations/0001_init.sql?raw";
+import settingsSeed from "../../migrations/0002_seed_settings.sql?raw";
+import operationsMigration from "../../migrations/0003_operations.sql?raw";
+import whatsappMigration from "../../migrations/0004_whatsapp_contact.sql?raw";
+import foundationMigration from "../../migrations/0005_foundation_reconcile.sql?raw";
+import editorialMigration from "../../migrations/0006_editorial_personality.sql?raw";
+import versionedConfigMigration from "../../migrations/0007_site_config_versions.sql?raw";
 import siteMediaMigration from "../../migrations/0008_site_media.sql?raw";
 
 async function applySql(sql: string) {
@@ -18,7 +25,16 @@ function jsonRequest(path: string, method: string, body?: unknown) {
 }
 
 describe("mídia independente do Hero", () => {
-  beforeAll(async () => applySql(siteMediaMigration));
+  beforeAll(async () => {
+    await applySql(initMigration);
+    await applySql(settingsSeed);
+    await applySql(operationsMigration);
+    await applySql(whatsappMigration);
+    await applySql(foundationMigration);
+    await applySql(editorialMigration);
+    await applySql(versionedConfigMigration);
+    await applySql(siteMediaMigration);
+  });
 
   it("cria um envio de Hero sem albumId e lista a mídia no Studio", async () => {
     const response = await exports.default.fetch(jsonRequest("/admin/api/site-media/intents", "POST", {
