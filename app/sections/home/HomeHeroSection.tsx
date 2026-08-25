@@ -1,9 +1,11 @@
+import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import type { EditorialConfig, HomeSectionConfig } from "../../../shared/config";
 import { PublicStatsText } from "../../components/PublicStats";
 import {
+  getHeroMobileStageHeight,
   getHeroObjectPosition,
   getPublicVisualAsset,
 } from "../../lib/public-visuals";
@@ -17,11 +19,17 @@ export function HomeHeroSection({
   section: HomeSectionConfig;
 }) {
   const hero = getPublicVisualAsset("hero");
+  const heroStyle = {
+    "--hero-object-position": getHeroObjectPosition("desktop"),
+    "--hero-mobile-object-position": getHeroObjectPosition("mobile"),
+    "--hero-mobile-stage-height": getHeroMobileStageHeight(),
+  } as CSSProperties;
 
   return (
     <section
       className="hero"
       aria-labelledby="hero-title"
+      style={heroStyle}
       {...homeSectionAttributes(section)}
     >
       <div className="hero-image">
@@ -32,10 +40,7 @@ export function HomeHeroSection({
           priority
           unoptimized
           sizes="100vw"
-          style={{
-            objectFit: "cover",
-            objectPosition: getHeroObjectPosition(),
-          }}
+          style={{ objectFit: "cover" }}
         />
       </div>
       <div className="hero-copy">
