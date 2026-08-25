@@ -144,10 +144,10 @@ async function directUpload(
   return new Response(null, { status: 200, headers: { ETag: `"${id}"` } });
 }
 
-function isSuitableHero(width: number, height: number): boolean {
+export function isSuitableHeroSource(width: number, height: number): boolean {
   return width >= height
-    ? width >= 1920 && height >= 1080
-    : width >= 1080 && height >= 1920;
+    ? width >= 1280 && height >= 720
+    : width >= 720 && height >= 1280;
 }
 
 async function completeUpload(
@@ -192,14 +192,14 @@ async function completeUpload(
     throw new AppError(400, "INVALID_IMAGE", "Não foi possível ler esta foto.");
   }
 
-  if (!isSuitableHero(width, height)) {
+  if (!isSuitableHeroSource(width, height)) {
     await db.prepare(
       "UPDATE site_media SET status = 'failed', width = ?, height = ?, updated_at = ? WHERE id = ?",
     ).bind(width, height, new Date().toISOString(), id).run();
     throw new AppError(
       400,
       "HERO_IMAGE_TOO_SMALL",
-      "Escolha uma foto maior: no mínimo 1920×1080, ou 1080×1920 em pé.",
+      "Esta foto é pequena demais para o Hero. Use pelo menos 1280×720, ou 720×1280 em pé.",
     );
   }
 
