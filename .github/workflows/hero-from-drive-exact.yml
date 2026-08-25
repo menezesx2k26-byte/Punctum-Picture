@@ -1,4 +1,4 @@
-name: Replace hero from exact Drive source
+name: Replace hero from exact transfer source
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: punctum-hero-from-drive-exact
+  group: punctum-hero-from-transfer-exact
   cancel-in-progress: false
 
 jobs:
@@ -27,12 +27,18 @@ jobs:
           node-version: 22
           package-manager-cache: false
 
-      - name: Download exact 4K hero from Drive
+      - name: Reconstruct exact 4K hero from Git transfer branch
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install --quiet 'gdown==5.2.0'
-          gdown --id '1E3ETCZPEwUMYmpUW7tT7KycMhEUCOqFk' --output /tmp/hero-maria-q90.webp
+          git fetch origin fix/hero-q90-exact-transfer:refs/remotes/origin/fix/hero-q90-exact-transfer
+          mapfile -t parts < <(git ls-tree -r --name-only origin/fix/hero-q90-exact-transfer requests/hero-source-q90-exact | grep -E '/part-[0-9]+\.b64$' | sort)
+          [ "${#parts[@]}" -gt 0 ]
+          : > /tmp/hero-maria-q90.b64
+          for part in "${parts[@]}"; do
+            git show "origin/fix/hero-q90-exact-transfer:${part}" >> /tmp/hero-maria-q90.b64
+          done
+          tr -d '\r\n\t ' < /tmp/hero-maria-q90.b64 | base64 --decode > /tmp/hero-maria-q90.webp
           file /tmp/hero-maria-q90.webp
           wc -c /tmp/hero-maria-q90.webp
           sha256sum /tmp/hero-maria-q90.webp
