@@ -5,6 +5,7 @@ export * from "./defaults";
 export * from "./editorial";
 export * from "./font-pairs";
 export * from "./font-registry";
+export * from "./hero-media-reference";
 export * from "./image-reference";
 export * from "./palette-registry";
 export * from "./preset-ids";
