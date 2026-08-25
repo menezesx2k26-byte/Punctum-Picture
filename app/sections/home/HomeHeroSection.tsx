@@ -5,7 +5,7 @@ import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import type { EditorialConfig, HomeSectionConfig } from "../../../shared/config";
 import type { CarouselImage } from "../../lib/portfolio";
 import { PublicStatsText } from "../../components/PublicStats";
-import { getHeroMobileMinHeight, getHeroObjectPosition, resolveHeroVisual } from "../../lib/public-visuals";
+import { getHeroMobileMinHeight, getHeroObjectPosition, resolveConfiguredHeroVisual } from "../../lib/public-visuals";
 import { homeSectionAttributes } from "./section-attributes";
 
 const HERO_RESPONSIVE_CSS = `
@@ -33,7 +33,8 @@ export function HomeHeroSection({ copy, section, images = [] }: {
   images?: readonly CarouselImage[];
 }) {
   const imageId = section.type === "hero" ? section.appearance.backgroundImageId : null;
-  const hero = resolveHeroVisual(imageId, images);
+  const heroMedia = section.type === "hero" ? section.heroMedia : null;
+  const hero = resolveConfiguredHeroVisual(heroMedia, imageId, images);
   const heroStyle = {
     "--hero-object-position": getHeroObjectPosition("desktop"),
     "--hero-mobile-object-position": getHeroObjectPosition("mobile"),
