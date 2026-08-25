@@ -8,6 +8,8 @@ on:
       - "app/**"
       - "worker/**"
       - "shared/**"
+      - "db/**"
+      - "migrations/**"
       - "public/**"
       - "scripts/**"
       - "package.json"
@@ -92,6 +94,12 @@ jobs:
           DB_ID="$(jq -r '.result[]? | select(.name == "punctum-picture") | (.uuid // .id // empty)' /tmp/d1.json | head -n1)"
           [ -n "$DB_ID" ]
           echo "DB_ID=$DB_ID" >> "$GITHUB_ENV"
+
+      - name: Apply production D1 migrations
+        id: d1_migrations
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_D1_API_TOKEN }}
+        run: wrangler d1 migrations apply punctum-picture --remote --config wrangler.jsonc
 
       - name: Patch generated config for owner Cloudflare production
         id: patch
@@ -184,9 +192,6 @@ jobs:
           [ "$HERO_OK" = "true" ]
           file /tmp/production-hero.webp | grep -q 'Web/P image'
 
-          # WWW is intentionally non-blocking here. The apex domain is production-critical;
-          # www may still be waiting on DNS/custom-hostname propagation and must not turn a
-          # successful Worker deploy into a false failure.
           WWW_STATUS='unavailable'
           if curl -fsS --connect-timeout 8 --max-time 15 'https://www.punctumpicture.com/api/public/stats' >/tmp/www-stats.json; then
             if jq -e "$EXPECTED_STATS" /tmp/www-stats.json >/dev/null; then
@@ -207,8 +212,6 @@ jobs:
           [ -n "$COOKIE" ]
           curl -fsS "$BASE/admin/api/studio" -H "Cookie: $COOKIE" >/tmp/studio.json
 
-          # Validate the authenticated Studio contract, not one particular visual preset.
-          # Editors are allowed to change presets without breaking deployment health.
           jq -e '.siteConfig != null and .siteConfig.identity != null and .siteConfig.editorial != null' /tmp/studio.json >/dev/null
 
       - name: Deployment summary
@@ -221,6 +224,7 @@ jobs:
             echo '- Production apex: healthy'
             echo '- Production hero: valid WebP binary'
             echo "- WWW smoke: \`${WWW_SMOKE_STATUS:-unknown}\` (non-blocking)"
+            echo '- D1 migrations: applied before Worker deploy'
             echo '- D1: `punctum-picture`'
             echo '- R2 originals/backups: connected'
             echo '- Cloudflare Images: connected'
@@ -254,6 +258,7 @@ jobs:
               "tests": "${{ steps.tests.outcome }}",
               "wrangler": "${{ steps.wrangler.outcome }}",
               "d1": "${{ steps.d1.outcome }}",
+              "d1Migrations": "${{ steps.d1_migrations.outcome }}",
               "generatedConfig": "${{ steps.patch.outcome }}",
               "deploy": "${{ steps.deploy_worker.outcome }}",
               "smoke": "${{ steps.smoke.outcome }}"
