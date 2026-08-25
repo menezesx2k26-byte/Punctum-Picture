@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { buildSiteMetadata } from "./lib/metadata";
 import { loadPublicSiteSettings } from "./lib/server-content";
 import "./globals.css";
-import "./hero-responsive.css";
 
 export const dynamic = "force-dynamic";
 
