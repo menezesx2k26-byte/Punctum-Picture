@@ -36,6 +36,6 @@ describe("identidade visual pública", () => {
   });
 
   it("limita a fotografia no mobile para evitar zoom de uma imagem 16:9 em uma tela vertical", () => {
-    expect(getHeroMobileStageHeight()).toBe("62svh");
+    expect(getHeroMobileStageHeight()).toBe("50svh");
   });
 });
