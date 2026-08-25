@@ -1,4 +1,4 @@
-name: Replace hero from exact transfer source
+name: Publish 4K hero candidate
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: punctum-hero-from-transfer-exact
+  group: punctum-hero-publish
   cancel-in-progress: false
 
 jobs:
@@ -27,37 +27,29 @@ jobs:
           node-version: 22
           package-manager-cache: false
 
-      - name: Reconstruct exact 4K hero from Git transfer branch
+      - name: Fetch verified 4K hero candidate already stored in Git
         shell: bash
         run: |
           set -euo pipefail
-          git fetch origin fix/hero-q90-exact-transfer:refs/remotes/origin/fix/hero-q90-exact-transfer
-          mapfile -t parts < <(git ls-tree -r --name-only origin/fix/hero-q90-exact-transfer requests/hero-source-q90-exact | grep -E '/part-[0-9]+\.b64$' | sort)
-          [ "${#parts[@]}" -gt 0 ]
-          : > /tmp/hero-maria-q90.b64
-          for part in "${parts[@]}"; do
-            git show "origin/fix/hero-q90-exact-transfer:${part}" >> /tmp/hero-maria-q90.b64
-          done
-          tr -d '\r\n\t ' < /tmp/hero-maria-q90.b64 | base64 --decode > /tmp/hero-maria-q90.webp
-          file /tmp/hero-maria-q90.webp
-          wc -c /tmp/hero-maria-q90.webp
-          sha256sum /tmp/hero-maria-q90.webp
-          [ "$(wc -c < /tmp/hero-maria-q90.webp)" = '371054' ]
-          echo '448b8888b073e0690093097d0feda82b5424ff1c72dd1238c1e8f0b8d28026e0  /tmp/hero-maria-q90.webp' | sha256sum -c -
-          [ "$(head -c 4 /tmp/hero-maria-q90.webp)" = 'RIFF' ]
-          [ "$(dd if=/tmp/hero-maria-q90.webp bs=1 skip=8 count=4 status=none)" = 'WEBP' ]
+          git fetch origin fix/hero-native-exact:refs/remotes/origin/fix/hero-native-exact
+          git show origin/fix/hero-native-exact:public/images/hero-maria.webp > /tmp/hero-maria.webp
+          file /tmp/hero-maria.webp
+          wc -c /tmp/hero-maria.webp
+          sha256sum /tmp/hero-maria.webp
+          [ "$(head -c 4 /tmp/hero-maria.webp)" = 'RIFF' ]
+          [ "$(dd if=/tmp/hero-maria.webp bs=1 skip=8 count=4 status=none)" = 'WEBP' ]
 
-      - name: Install ImageMagick and verify decode
+      - name: Verify decode and 4K dimensions
         shell: bash
         run: |
           set -euo pipefail
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends imagemagick
-          identify /tmp/hero-maria-q90.webp
-          [ "$(identify -format '%wx%h' /tmp/hero-maria-q90.webp)" = '3840x2160' ]
+          identify /tmp/hero-maria.webp
+          [ "$(identify -format '%wx%h' /tmp/hero-maria.webp)" = '3840x2160' ]
 
       - name: Replace production hero
-        run: cp /tmp/hero-maria-q90.webp public/images/hero-maria.webp
+        run: cp /tmp/hero-maria.webp public/images/hero-maria.webp
 
       - name: Install dependencies
         run: npm ci
@@ -77,7 +69,7 @@ jobs:
       - name: Full tests
         run: npm test
 
-      - name: Commit exact verified hero
+      - name: Commit verified 4K hero
         shell: bash
         run: |
           set -euo pipefail
@@ -86,8 +78,8 @@ jobs:
           git add public/images/hero-maria.webp
           git diff --cached --check
           if git diff --cached --quiet; then
-            echo 'Exact hero already present.'
+            echo '4K hero already present.'
             exit 0
           fi
-          git commit -m 'fix: publish exact verified 4k hero'
+          git commit -m 'fix: publish verified 4k hero'
           git push origin HEAD:main
