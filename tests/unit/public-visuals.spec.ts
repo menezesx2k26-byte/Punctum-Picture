@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getHeroObjectPosition,
+  getHeroMobileStageHeight,
   getPublicVisualAsset,
   getSiteHeaderClassName,
 } from "../../app/lib/public-visuals";
@@ -29,7 +30,12 @@ describe("identidade visual pública", () => {
     });
   });
 
-  it("mantém a fotógrafa à direita do enquadramento para liberar a área de copy", () => {
-    expect(getHeroObjectPosition()).toBe("45% 42%");
+  it("usa enquadramentos distintos no desktop e no mobile", () => {
+    expect(getHeroObjectPosition("desktop")).toBe("45% 42%");
+    expect(getHeroObjectPosition("mobile")).toBe("60% 38%");
+  });
+
+  it("limita a fotografia no mobile para evitar zoom de uma imagem 16:9 em uma tela vertical", () => {
+    expect(getHeroMobileStageHeight()).toBe("62svh");
   });
 });
