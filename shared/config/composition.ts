@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { heroMediaRefSchema } from "./hero-media-reference";
 import { internalImageIdSchema } from "./image-reference";
 import {
   SECTION_ALIGNMENT_IDS,
@@ -43,6 +44,7 @@ const heroSectionSchema = z.object({
   enabled: z.boolean(),
   variant: z.enum(["cinematic", "editorial", "fullscreen", "split"]),
   appearance: appearanceSchema(["default", "dark", "photo"]),
+  heroMedia: heroMediaRefSchema.nullable().optional(),
 }).strict();
 
 const statementSectionSchema = z.object({
@@ -140,7 +142,7 @@ const defaultAppearance = {
 export const PUNCTUM_DEFAULT_COMPOSITION_CONFIG = compositionConfigSchema.parse({
   home: {
     sections: [
-      { id: "home-hero", type: "hero", enabled: true, variant: "cinematic", appearance: defaultAppearance },
+      { id: "home-hero", type: "hero", enabled: true, variant: "cinematic", appearance: defaultAppearance, heroMedia: null },
       { id: "home-statement", type: "statement", enabled: true, variant: "manifesto", appearance: defaultAppearance },
       { id: "home-photo-reel", type: "photo-reel", enabled: true, variant: "horizontal", appearance: defaultAppearance, photoIds: [] },
       { id: "home-featured-work", type: "featured-work", enabled: true, variant: "editorial-grid", appearance: defaultAppearance, itemCount: 6 },
