@@ -16,9 +16,15 @@ const PUBLIC_VISUAL_ASSETS = {
   },
 } as const;
 
-const HERO_OBJECT_POSITION = "45% 42%" as const;
+const HERO_OBJECT_POSITIONS = {
+  desktop: "45% 42%",
+  mobile: "60% 38%",
+} as const;
+
+const HERO_MOBILE_STAGE_HEIGHT = "62svh" as const;
 
 export type PublicVisualAssetRole = keyof typeof PUBLIC_VISUAL_ASSETS;
+export type HeroViewport = keyof typeof HERO_OBJECT_POSITIONS;
 
 export function getPublicVisualAsset<Role extends PublicVisualAssetRole>(
   role: Role,
@@ -26,8 +32,14 @@ export function getPublicVisualAsset<Role extends PublicVisualAssetRole>(
   return PUBLIC_VISUAL_ASSETS[role];
 }
 
-export function getHeroObjectPosition(): typeof HERO_OBJECT_POSITION {
-  return HERO_OBJECT_POSITION;
+export function getHeroObjectPosition<Viewport extends HeroViewport>(
+  viewport: Viewport,
+): (typeof HERO_OBJECT_POSITIONS)[Viewport] {
+  return HERO_OBJECT_POSITIONS[viewport];
+}
+
+export function getHeroMobileStageHeight(): typeof HERO_MOBILE_STAGE_HEIGHT {
+  return HERO_MOBILE_STAGE_HEIGHT;
 }
 
 export function getSiteHeaderClassName(dark: boolean): string {
