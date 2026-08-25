@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  getHeroObjectPosition,
   getPublicVisualAsset,
   getSiteHeaderClassName,
 } from "../../app/lib/public-visuals";
@@ -26,5 +27,9 @@ describe("identidade visual pública", () => {
       width: 3840,
       height: 2160,
     });
+  });
+
+  it("mantém a fotógrafa à direita do enquadramento para liberar a área de copy", () => {
+    expect(getHeroObjectPosition()).toBe("45% 42%");
   });
 });
