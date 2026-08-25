@@ -1,3 +1,4 @@
+/* Mobile hero: keep the 16:9 photograph in a bounded stage so portrait screens do not force destructive zoom. */
 .hero-image img {
   object-position: var(--hero-object-position, 45% 42%) !important;
 }
