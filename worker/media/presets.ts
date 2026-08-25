@@ -3,6 +3,7 @@ export const IMAGE_PRESETS = {
   card: { width: 800, height: 1000, fit: "cover", quality: 82 },
   gallery: { width: 1600, height: 1600, fit: "scale-down", quality: 82 },
   hero: { width: 2000, height: 1400, fit: "cover", quality: 85 },
+  display: { width: 3840, height: 2160, fit: "scale-down", quality: 90 },
   og: { width: 1200, height: 630, fit: "cover", quality: 85 },
 } as const satisfies Record<
   string,
