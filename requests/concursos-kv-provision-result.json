@@ -1,0 +1,10 @@
+{
+  "status": "success",
+  "namespace_title": "concursos-watch-state",
+  "namespace_id": "3e5124d6a92e41879d513dba0597607b",
+  "source_sha": "272be1125beada3de5902fc60abaa1d936fd9a21",
+  "tree_sha": "2cbfc50ed6b4b62a178c6292901090b720e534a1",
+  "worker_deployed": false,
+  "cloudflare_state_change": "create_or_reuse_kv_only",
+  "checkedAt": "2026-08-26T20:04:45.157Z"
+}
