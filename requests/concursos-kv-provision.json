@@ -1,0 +1,6 @@
+{
+  "nonce": 1,
+  "requested_by": "gabriel-site-ops",
+  "namespace": "concursos-watch-state",
+  "allowed_change": "create_or_reuse_kv_only"
+}
