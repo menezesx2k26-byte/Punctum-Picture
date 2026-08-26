@@ -59,15 +59,14 @@ jobs:
             echo "WATCH_STATE namespace id ausente"
             exit 1
           fi
-          mkdir -p requests
-          node -e 'const fs=require("fs");const data={status:"success",namespace_title:"concursos-watch-state",namespace_id:process.env.KV_ID,source_sha:process.env.SOURCE_SHA,tree_sha:process.env.TREE_SHA,worker_deployed:false,cloudflare_state_change:"create_or_reuse_kv_only",checkedAt:new Date().toISOString()};fs.writeFileSync("requests/concursos-kv-provision-result.json",JSON.stringify(data,null,2)+"\n")' \
-            KV_ID="$KV_ID" SOURCE_SHA="$SOURCE_SHA" TREE_SHA="$TREE_SHA"
+
+          KV_ID="$KV_ID" SOURCE_SHA="$SOURCE_SHA" TREE_SHA="$TREE_SHA" node -e 'const fs=require("fs");const data={status:"success",namespace_title:"concursos-watch-state",namespace_id:process.env.KV_ID,source_sha:process.env.SOURCE_SHA,tree_sha:process.env.TREE_SHA,worker_deployed:false,cloudflare_state_change:"create_or_reuse_kv_only",checkedAt:new Date().toISOString()};fs.writeFileSync("/tmp/concursos-kv-provision-result.json",JSON.stringify(data,null,2)+"\n")'
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin main
           git reset --hard origin/main
-          cp requests/concursos-kv-provision-result.json /tmp/concursos-kv-provision-result.json
+          mkdir -p requests
           cp /tmp/concursos-kv-provision-result.json requests/concursos-kv-provision-result.json
           git add requests/concursos-kv-provision-result.json
           if git diff --cached --quiet; then exit 0; fi
