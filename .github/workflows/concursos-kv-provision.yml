@@ -1,0 +1,79 @@
+name: Provision Concursos KV
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "requests/concursos-kv-provision.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: punctum-concursos-kv-provision
+  cancel-in-progress: false
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CF_KV_NAMESPACE_TITLE: concursos-watch-state
+    steps:
+      - name: Checkout credential host
+        uses: actions/checkout@v7
+
+      - name: Checkout Concursos source
+        uses: actions/checkout@v7
+        with:
+          repository: menezesx2k26-byte/Verifica-ao-Diaria-dos-Concursos
+          ref: main
+          path: target
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+          package-manager-cache: false
+
+      - name: Install Wrangler dependencies
+        working-directory: target/cloudflare
+        run: npm install --no-audit --no-fund
+
+      - name: Create or reuse only the Concursos KV namespace
+        working-directory: target/cloudflare
+        run: node scripts/bootstrap.mjs
+
+      - name: Persist non-secret namespace reference
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_SHA="$(git -C target rev-parse HEAD)"
+          TREE_SHA="$(git -C target rev-parse HEAD:cloudflare)"
+          KV_ID="$(node -e 'const fs=require("fs");const c=JSON.parse(fs.readFileSync("target/cloudflare/wrangler.generated.jsonc","utf8"));process.stdout.write(c.kv_namespaces?.find(x=>x.binding==="WATCH_STATE")?.id||"")')"
+          if [[ -z "$KV_ID" ]]; then
+            echo "WATCH_STATE namespace id ausente"
+            exit 1
+          fi
+          mkdir -p requests
+          node -e 'const fs=require("fs");const data={status:"success",namespace_title:"concursos-watch-state",namespace_id:process.env.KV_ID,source_sha:process.env.SOURCE_SHA,tree_sha:process.env.TREE_SHA,worker_deployed:false,cloudflare_state_change:"create_or_reuse_kv_only",checkedAt:new Date().toISOString()};fs.writeFileSync("requests/concursos-kv-provision-result.json",JSON.stringify(data,null,2)+"\n")' \
+            KV_ID="$KV_ID" SOURCE_SHA="$SOURCE_SHA" TREE_SHA="$TREE_SHA"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git reset --hard origin/main
+          cp requests/concursos-kv-provision-result.json /tmp/concursos-kv-provision-result.json
+          cp /tmp/concursos-kv-provision-result.json requests/concursos-kv-provision-result.json
+          git add requests/concursos-kv-provision-result.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: record Concursos KV provisioning"
+          git push
+
+      - name: Cleanup generated config
+        if: always()
+        run: rm -f target/cloudflare/wrangler.generated.jsonc target/cloudflare/.secrets.generated.json
