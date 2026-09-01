@@ -35,6 +35,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
+import { LOCAL_SEO_LOCATIONS } from "../../../shared/local-seo";
 
 type AlbumImage = {
   id: string;
@@ -553,9 +554,16 @@ export function AlbumEditor({ albumId }: { albumId: string }) {
                 <span>Local</span>
                 <input
                   className="admin-input"
+                  list="punctum-seo-locations"
+                  placeholder="Cidade - UF"
                   value={album.location ?? ""}
                   onChange={(event) => setAlbum({ ...album, location: event.target.value })}
                 />
+                <datalist id="punctum-seo-locations">
+                  {LOCAL_SEO_LOCATIONS.map((location) => (
+                    <option key={location.slug} value={`${location.city} - ${location.state}`} />
+                  ))}
+                </datalist>
               </label>
               <label>
                 <span>Data do ensaio</span>

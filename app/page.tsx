@@ -4,6 +4,7 @@ import {
   loadFeaturedAlbums,
   loadPublicExperience,
 } from "./lib/server-content";
+import { LOCAL_SEO_LOCATIONS } from "../shared/local-seo";
 
 export default async function Home() {
   const experience = await loadPublicExperience();
@@ -19,7 +20,12 @@ export default async function Home() {
     url: process.env.PUBLIC_SITE_URL ?? "https://punctumpicture.com",
     image: `${process.env.PUBLIC_SITE_URL ?? "https://punctumpicture.com"}/photos/p110.jpg`,
     description: site.seoDescription,
-    areaServed: "Brasil",
+    telephone: site.whatsappE164 ? `+${site.whatsappE164}` : undefined,
+    areaServed: LOCAL_SEO_LOCATIONS.map((location) => ({
+      "@type": "City",
+      name: location.city,
+      containedInPlace: { "@type": "State", name: location.stateName },
+    })),
     founder: { "@type": "Person", name: "Maria Helena" },
     ...(site.instagramUrl ? { sameAs: [site.instagramUrl] } : {}),
     ...(site.contactEmail ? { email: site.contactEmail } : {}),

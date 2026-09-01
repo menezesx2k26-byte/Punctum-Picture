@@ -67,6 +67,7 @@ export function SiteFooter({
         <nav aria-label="Navegação do rodapé">
           <Link href="/portfolio">{editorial.chrome.footer.stories}</Link>
           <Link href="/arquivo">{editorial.chrome.footer.archive}</Link>
+          <Link href="/fotografia">Onde fotografo</Link>
           <Link href="/contato">{editorial.chrome.footer.contact}</Link>
           {site.instagramUrl ? (
             <a href={site.instagramUrl} target="_blank" rel="noreferrer">

@@ -4625,3 +4625,167 @@ body {
   .story-card,
   .site-nav a::after { transform: none !important; transition: none !important; }
 }
+
+/* Local SEO: service-area pages share the public Punctum design language. */
+.local-seo-hero .portfolio-hero-copy {
+  align-self: center;
+}
+
+.local-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 1.8rem;
+  color: var(--muted);
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.local-breadcrumb a {
+  transition: color var(--motion-duration-fast) ease;
+}
+
+.local-breadcrumb a:hover,
+.local-breadcrumb a:focus-visible {
+  color: var(--purple-plum);
+}
+
+.local-area-section {
+  padding-top: 0;
+}
+
+.local-area-section .section-heading h2 em,
+.local-service-grid h2 em {
+  color: var(--purple-plum);
+  font-weight: 400;
+}
+
+.local-area-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
+  gap: 1px;
+  border: 1px solid var(--line);
+  background: var(--line);
+}
+
+.local-area-card {
+  min-height: 20rem;
+  padding: clamp(1.4rem, 3vw, 2.4rem);
+  background: color-mix(in srgb, var(--paper) 96%, var(--color-primary) 4%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: background var(--motion-duration-base) ease;
+}
+
+.local-area-card:hover,
+.local-area-card:focus-visible {
+  background: color-mix(in srgb, var(--paper) 88%, var(--color-primary) 12%);
+}
+
+.local-area-card > span {
+  color: var(--purple-plum);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.local-area-card h2 {
+  margin: 1.1rem 0 1rem;
+  font-family: var(--font-heading);
+  font-size: clamp(2.2rem, 4vw, 3.6rem);
+  font-weight: 400;
+  letter-spacing: -0.045em;
+  line-height: 0.9;
+}
+
+.local-area-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.75;
+}
+
+.local-area-card strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: auto;
+  padding-top: 2rem;
+  font-size: 0.68rem;
+}
+
+.local-service-section {
+  background: var(--background-manifesto);
+  color: var(--color-on-dark);
+}
+
+.local-service-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.72fr);
+  gap: clamp(2.5rem, 8vw, 8rem);
+  align-items: start;
+}
+
+.local-service-grid h2,
+.local-seo-cta h2 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: clamp(3rem, 7vw, 6.4rem);
+  font-weight: 400;
+  letter-spacing: -0.05em;
+  line-height: 0.9;
+}
+
+.local-service-copy > p,
+.local-seo-cta p {
+  margin: 0;
+  color: var(--color-on-dark-muted);
+  line-height: 1.8;
+}
+
+.local-service-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 2rem 0 0;
+  padding: 0;
+  border-top: 1px solid rgba(255, 249, 255, 0.24);
+  list-style: none;
+}
+.local-service-list li {
+  padding: 0.9rem 0;
+  border-bottom: 1px solid rgba(255, 249, 255, 0.18);
+  color: var(--color-on-dark);
+  font-size: 0.72rem;
+}
+.local-service-list li:nth-child(odd) { padding-right: 1rem; }
+.local-service-list li:nth-child(even) {
+  padding-left: 1rem;
+  border-left: 1px solid rgba(255, 249, 255, 0.18);
+}
+.local-service-copy .text-link { color: var(--color-on-dark); }
+
+.local-seo-cta {
+  background: var(--background-contact);
+  color: var(--color-on-dark);
+}
+.local-seo-cta-inner { max-width: 72rem; }
+.local-seo-cta h2 { max-width: 11ch; }
+.local-seo-cta p { max-width: 35rem; margin-top: 1.5rem; }
+.local-seo-cta .text-link { color: var(--color-on-dark); }
+
+.compact-heading { margin-bottom: 2rem; }
+.local-area-grid-compact .local-area-card { min-height: 13rem; }
+.local-area-grid-compact .local-area-card h2 { font-size: clamp(1.9rem, 3.5vw, 3rem); }
+
+@media (max-width: 800px) {
+  .local-service-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+  .local-area-grid { grid-template-columns: 1fr; }
+  .local-area-card { min-height: 15rem; }
+  .local-service-list { grid-template-columns: 1fr; }
+  .local-service-list li:nth-child(odd),
+  .local-service-list li:nth-child(even) { padding-inline: 0; border-left: 0; }
+  .local-seo-hero .portfolio-hero-copy { padding-top: 1rem; }
+}

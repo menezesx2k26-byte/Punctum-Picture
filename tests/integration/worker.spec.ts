@@ -655,6 +655,12 @@ describe("Worker Punctum Picture", () => {
     expect(response.status).toBe(200);
     const xml = await response.text();
     expect(xml).toContain("http://localhost:8787/arquivo");
+    expect(xml).toContain("http://localhost:8787/fotografia");
+    expect(xml).toContain("http://localhost:8787/fotografia/joinville");
+    expect(xml).toContain("http://localhost:8787/fotografia/curitiba");
+    expect(xml).toContain("http://localhost:8787/fotografia/sao-bento-do-sul");
+    expect(xml).toContain("http://localhost:8787/fotografia/rio-negrinho");
+    expect(xml).toContain("http://localhost:8787/fotografia/campo-alegre");
     expect(xml).toContain("http://localhost:8787/ensaios/ritos-de-luz");
     expect(xml).not.toContain("http://localhost:8787/ensaios/maria-helena");
   });
