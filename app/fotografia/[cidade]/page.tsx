@@ -13,6 +13,7 @@ import {
   localSeoLocationBySlug,
   matchesLocalSeoLocation,
 } from "../../../shared/local-seo";
+import { SERVICE_SEO_SERVICES } from "../../../shared/service-seo";
 
 type PageProps = { params: Promise<{ cidade: string }> };
 
@@ -124,7 +125,13 @@ export default async function CityPhotographyPage({ params }: PageProps) {
             <div className="local-service-copy">
               <p>{location.detail}</p>
               <ul className="local-service-list" aria-label={`Tipos de fotografia em ${location.city}`}>
-                {LOCAL_SEO_SERVICES.map((service) => <li key={service}>{service}</li>)}
+                {SERVICE_SEO_SERVICES.map((service) => (
+                  <li key={service.slug}>
+                    <Link href={`/servicos/${service.slug}`}>
+                      {service.name} <ArrowUpRight size={14} aria-hidden="true" />
+                    </Link>
+                  </li>
+                ))}
               </ul>
               <Link className="text-link" href="/contato">
                 Contar sua ideia <ArrowUpRight size={16} aria-hidden="true" />

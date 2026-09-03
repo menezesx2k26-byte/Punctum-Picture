@@ -1,4 +1,5 @@
 import { LOCAL_SEO_LOCATIONS } from "../shared/local-seo";
+import { SERVICE_SEO_SERVICES } from "../shared/service-seo";
 import { envString, requireDb } from "./utils/env";
 
 function xmlEscape(value: string): string {
@@ -31,6 +32,12 @@ export async function sitemap(env: Env): Promise<Response> {
     { path: "/fotografia", changefreq: "monthly", priority: "0.9" },
     ...LOCAL_SEO_LOCATIONS.map((location) => ({
       path: `/fotografia/${location.slug}`,
+      changefreq: "monthly",
+      priority: "0.8",
+    })),
+    { path: "/servicos", changefreq: "monthly", priority: "0.9" },
+    ...SERVICE_SEO_SERVICES.map((service) => ({
+      path: `/servicos/${service.slug}`,
       changefreq: "monthly",
       priority: "0.8",
     })),

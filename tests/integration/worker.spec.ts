@@ -661,6 +661,13 @@ describe("Worker Punctum Picture", () => {
     expect(xml).toContain("http://localhost:8787/fotografia/sao-bento-do-sul");
     expect(xml).toContain("http://localhost:8787/fotografia/rio-negrinho");
     expect(xml).toContain("http://localhost:8787/fotografia/campo-alegre");
+    expect(xml).toContain("http://localhost:8787/servicos");
+    expect(xml).toContain("http://localhost:8787/servicos/retratos");
+    expect(xml).toContain("http://localhost:8787/servicos/eventos");
+    expect(xml).toContain("http://localhost:8787/servicos/musica-e-shows");
+    expect(xml).toContain("http://localhost:8787/servicos/fotografia-esportiva");
+    expect(xml).toContain("http://localhost:8787/servicos/familias");
+    expect(xml).toContain("http://localhost:8787/servicos/fotografia-documental");
     expect(xml).toContain("http://localhost:8787/ensaios/ritos-de-luz");
     expect(xml).not.toContain("http://localhost:8787/ensaios/maria-helena");
   });
