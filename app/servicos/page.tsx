@@ -37,7 +37,7 @@ export default async function ServicesPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <SiteHeader dark site={site} editorial={config.editorial} />
-      <main>
+      <main id="conteudo">
         <header className="portfolio-hero local-seo-hero">
           <div className="portfolio-hero-copy">
             <p className="eyebrow">Serviços · portfólio real</p>
@@ -64,14 +64,14 @@ export default async function ServicesPage() {
             <div className="section-heading">
               <h2 id="services-title">Escolha pelo que<br /><em>você quer preservar.</em></h2>
               <p>
-                Cada página reúne apenas trabalhos compatíveis já publicados,
-                explica a abordagem e aponta as cidades atendidas.
+                Dos retratos aos palcos, o ponto de partida é o encontro.
+                Conheça cada abordagem e veja as histórias que ela produziu.
               </p>
             </div>
-            <div className="local-area-grid">
+            <div className="local-area-grid service-hub-grid">
               {services.map((service) => (
                 <Link key={service.href} href={service.href} className="local-area-card">
-                  <span>Serviço</span>
+                  <Image src={service.image} alt="" width={120} height={160} sizes="120px" className="service-index-image" />
                   <h2>{service.name}</h2>
                   <p>{service.lead}</p>
                   <strong>

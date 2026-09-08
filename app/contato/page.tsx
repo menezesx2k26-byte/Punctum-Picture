@@ -21,53 +21,16 @@ export default async function ContactPage() {
   return (
     <SiteThemeRoot className="contact-page" config={config}>
       <SiteHeader site={site} editorial={config.editorial} />
-      <main>
-        <header
-          className="contact-page-hero"
-          style={{ minHeight: "100svh", alignItems: "center" }}
-        >
-          <div className="contact-page-image">
-            <Image
-              src="/photos/p033.jpg"
-              alt="Paisagem ao entardecer fotografada por Maria Helena"
-              fill
-              priority
-              quality={100}
-              sizes="100vw"
-              style={{ filter: "none" }}
-            />
-          </div>
-          <div
-            className="contact-page-copy"
-            style={{
-              paddingTop: "clamp(9rem, 16vh, 12rem)",
-              paddingBottom: "clamp(3rem, 6vh, 5rem)",
-            }}
-          >
-            <p className="eyebrow">{copy.hero.eyebrow}</p>
-            <h1
-              style={{
-                maxWidth: "9ch",
-                fontSize: "clamp(3.1rem, 5.6vw, 6.2rem)",
-                lineHeight: 0.86,
-              }}
-            >
-              <EditorialText text={copy.hero.title} />
-            </h1>
-            <p>{copy.hero.body}</p>
-          </div>
-          <span className="contact-photo-note">{copy.hero.imageNote}</span>
+      <main id="conteudo" className="contact-layout">
+        <header className="contact-page-copy">
+          <p className="eyebrow">{copy.hero.eyebrow}</p>
+          <h1><EditorialText text={copy.hero.title} /></h1>
+          <p>{copy.hero.body}</p>
+          <figure><Image src="/photos/p033.jpg" alt="Paisagem ao entardecer fotografada por Maria Helena" width={1440} height={960} priority sizes="(max-width: 700px) 75vw, 35vw" /><figcaption>{copy.hero.imageNote}</figcaption></figure>
         </header>
-
-        <section className="section contact-form-section">
-          <div className="section-inner contact-section">
-            <div className="contact-intro reveal">
-              <p className="eyebrow">{copy.form.eyebrow}</p>
-              <h2>{copy.form.title}<br /><em>{copy.form.accent}</em></h2>
-              <p>{copy.form.body}</p>
-            </div>
-            <ContactForm site={site} whatsappLabel={config.editorial.chrome.whatsappCta} />
-          </div>
+        <section aria-labelledby="contact-form-title">
+          <div className="contact-form-heading"><p className="eyebrow">{copy.form.eyebrow}</p><h2 id="contact-form-title">{copy.form.title} {copy.form.accent}</h2><p>{copy.form.body}</p></div>
+          <ContactForm site={site} whatsappLabel={config.editorial.chrome.whatsappCta} />
         </section>
       </main>
       <SiteFooter site={site} editorial={config.editorial} />

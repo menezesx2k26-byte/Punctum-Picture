@@ -27,6 +27,7 @@ export function SiteHeader({
 
   return (
     <header className={getSiteHeaderClassName(dark)}>
+      <a className="skip-link" href="#conteudo">Ir para o conteúdo</a>
       <Link href="/" className="wordmark" aria-label={`${site.brandName} — início`}>
         <span className="wordmark-art" aria-hidden="true">
           <Image
@@ -38,6 +39,7 @@ export function SiteHeader({
           />
         </span>
       </Link>
+      <span className="header-author">Fotografias por Maria Helena</span>
       <nav className="site-nav" aria-label="Navegação principal">
         <Link href="/portfolio">{editorial.chrome.navigation.portfolio}</Link>
         <Link href="/arquivo">{editorial.chrome.navigation.archive}</Link>
@@ -67,6 +69,8 @@ export function SiteFooter({
         <nav aria-label="Navegação do rodapé">
           <Link href="/portfolio">{editorial.chrome.footer.stories}</Link>
           <Link href="/arquivo">{editorial.chrome.footer.archive}</Link>
+          <Link href="/#sobre">Sobre Maria Helena</Link>
+          <Link href="/servicos">O que fotografo</Link>
           <Link href="/fotografia">Onde fotografo</Link>
           <Link href="/contato">{editorial.chrome.footer.contact}</Link>
           {site.instagramUrl ? (

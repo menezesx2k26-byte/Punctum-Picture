@@ -27,7 +27,7 @@ export default async function ArchivePage() {
   return (
     <SiteThemeRoot className="archive-page" config={config}>
       <SiteHeader dark site={site} editorial={config.editorial} />
-      <main>
+      <main id="conteudo">
         <header className="archive-hero">
           <p className="eyebrow"><PublicStatsText variant="archive-range" /></p>
           <h1>{copy.hero.title}<br /><em>{copy.hero.accent}</em></h1>

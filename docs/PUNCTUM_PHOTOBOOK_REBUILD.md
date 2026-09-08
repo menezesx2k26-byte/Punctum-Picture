@@ -64,3 +64,17 @@ Não alterar contratos de API, esquema/migrations, dados de produção, Worker, 
 | Publicação | PENDENTE |
 
 Dependências: nenhuma alteração. Próximo passo: estabilizar preview, registrar baseline responsivo e implementar composição.
+
+## Checkpoint de implementação — 2026-09-08
+
+Composição implementada na branch: abertura em dupla página; EssayLink compartilhado; títulos/legendas fora das imagens; portfólio e contato compactados; sequência de ensaio íntegra; arquivo com dialog nativo, setas/gesto e restauração de foco; carrossel manual; imagens de serviços corrigidas; CSS público reconstruído e CSS administrativo extraído com seletores compartilhados escopados. Marca oficial intacta. Nenhuma dependência adicionada/removida.
+
+O preset `sheet` (640 × 640, scale-down) é uma extensão aditiva do pipeline existente: miniaturas de arquivo íntegras sem carregar a versão de galeria de 1600 px. Os seis presets anteriores e contratos existentes permanecem iguais. Sem alteração de migrations, banco de produção, storage ou deploy.
+
+O emulador local de Images acrescentou padding preto indevido. A reprodução local usa `localPhotographyFixtures`, plugin estritamente `serve` e inativo sem manifesto local ignorado, com cópias das imagens públicas reais. 192 registros públicos reproduzidos em D1 local; parte dos downloads de uploads retornou 503 e ainda precisa ser verificada. Nenhum fixture pode entrar no artefato final.
+
+Primeiro candidato: typecheck passou, lint passou, 97 testes passaram e build completo passou. Após adicionar preset sheet e regressões específicas, repetir gates. A revisão independente encontrou contraste em superfície accent e foco do dialog (corrigidos em código, verificação renderizada pendente) e porta dev (fixada em 3000). O revisor interrompeu por limite de uso; sua revisão está incompleta.
+
+Estado do Director: NEEDS_REVISION. Home e portfólio foram inspecionados em 1363 e 390 px; reduzir espaço antes das fotos do portfólio e abaixo do hero mobile foi necessário. Correções feitas, nova captura pendente. Ainda faltam QA completo, evidências finais, PR e publicação. Não integrar enquanto gates estiverem abertos.
+
+A sessão de preview saudável anterior foi encerrada durante o intervalo da conversa. Reiniciada para retomada. A inspeção responsiva usa um frame local com o HTML SSR real, preservando os headers de segurança da aplicação. Artefato de inspeção local não será publicado.

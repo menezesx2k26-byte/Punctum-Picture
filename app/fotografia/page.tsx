@@ -49,7 +49,7 @@ export default async function PhotographyAreasPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <SiteHeader dark site={site} editorial={config.editorial} />
-      <main>
+      <main id="conteudo">
         <header className="portfolio-hero local-seo-hero">
           <div className="portfolio-hero-copy">
             <p className="eyebrow">Atendimento em Santa Catarina e Paraná</p>
@@ -76,9 +76,9 @@ export default async function PhotographyAreasPage() {
             <div className="section-heading">
               <h2 id="areas-title">Onde a Punctum<br /><em>fotografa.</em></h2>
               <p>
-                As páginas abaixo foram feitas para responder a buscas locais sem
-                esconder o portfólio atrás de texto genérico. Cada uma leva ao contato
-                e passa a destacar trabalhos da cidade quando o ensaio tem o local cadastrado.
+                Maria se desloca para fotografar em Santa Catarina e no Paraná.
+                Escolha a região e vamos conversar sobre o lugar, a data
+                e a história que você quer registrar.
               </p>
             </div>
             <div className="local-area-grid">

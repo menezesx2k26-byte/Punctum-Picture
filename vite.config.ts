@@ -1,5 +1,6 @@
 import vinext from "vinext";
 import { defineConfig } from "vite";
+import { localPhotographyFixtures } from "./build/local-photography-fixtures";
 import { sites } from "./build/sites-vite-plugin";
 
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
@@ -42,6 +43,7 @@ export default defineConfig(async ({ command }) => {
 
   return {
     server: {
+      port: 3000,
       host: "0.0.0.0",
       allowedHosts: ["terminal.local"],
       ...(isCodexSeatbeltSandbox
@@ -49,6 +51,7 @@ export default defineConfig(async ({ command }) => {
         : {}),
     },
     plugins: [
+      localPhotographyFixtures(),
       vinext(),
       sites(),
       cloudflare({

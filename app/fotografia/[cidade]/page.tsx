@@ -90,7 +90,7 @@ export default async function CityPhotographyPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <SiteHeader dark site={site} editorial={config.editorial} />
-      <main>
+      <main id="conteudo">
         <header className="portfolio-hero local-seo-hero">
           <div className="portfolio-hero-copy">
             <nav className="local-breadcrumb" aria-label="Breadcrumb">

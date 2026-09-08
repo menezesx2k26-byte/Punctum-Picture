@@ -20,7 +20,8 @@ export function ContactForm({
     event.preventDefault();
     setStatus("sending");
     setMessage("Enviando sua mensagem…");
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const payload = Object.fromEntries(form.entries());
     try {
       const response = await fetch("/api/public/inquiries", {
@@ -34,7 +35,7 @@ export function ContactForm({
         };
         throw new Error(body.error?.message ?? "Não foi possível enviar.");
       }
-      event.currentTarget.reset();
+      formElement.reset();
       setStatus("success");
       setMessage("Mensagem recebida. Retornaremos em breve.");
     } catch (error) {

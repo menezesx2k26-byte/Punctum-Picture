@@ -1,4 +1,6 @@
 export const IMAGE_PRESETS = {
+  // A light, uncropped contact sheet for the public photographic archive.
+  sheet: { width: 640, height: 640, fit: "scale-down", quality: 78 },
   thumb: { width: 320, height: 320, fit: "cover", quality: 78 },
   card: { width: 800, height: 1000, fit: "cover", quality: 82 },
   gallery: { width: 1600, height: 1600, fit: "scale-down", quality: 82 },

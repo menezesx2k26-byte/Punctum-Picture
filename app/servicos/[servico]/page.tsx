@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { albumArtworkSource } from "../../lib/album-artwork";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { notFound } from "next/navigation";
@@ -54,7 +55,7 @@ export default async function ServicePage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <SiteHeader dark site={site} editorial={config.editorial} />
-      <main>
+      <main id="conteudo">
         <header className="portfolio-hero local-seo-hero">
           <div className="portfolio-hero-copy">
             <nav className="local-breadcrumb" aria-label="Breadcrumb">
@@ -71,9 +72,10 @@ export default async function ServicePage({ params }: PageProps) {
           </div>
           <div className="portfolio-hero-image">
             <Image
-              src={service.image}
+              src={(model.albums[0] && albumArtworkSource(model.albums[0])) || service.image}
               alt={`Imagem do portfólio para ${service.name.toLowerCase()}`}
               fill
+              unoptimized
               priority
               sizes="(max-width: 820px) 100vw, 46vw"
             />
@@ -100,7 +102,7 @@ export default async function ServicePage({ params }: PageProps) {
           <div className="section-inner">
             <div className="portfolio-section-header">
               <p id="service-work-title">
-                Trabalhos publicados que sustentam este serviço no portfólio.
+                Um pouco desse olhar, em histórias completas.
               </p>
               <Link href="/portfolio">Ver portfólio completo</Link>
             </div>
@@ -108,7 +110,7 @@ export default async function ServicePage({ params }: PageProps) {
               <PortfolioGrid albums={model.albums} />
             ) : (
               <p className="service-empty-copy">
-                O portfólio publicado ainda não tem um ensaio marcado para este recorte.
+                Novas histórias estão a caminho. Converse com Maria sobre sua ideia.
               </p>
             )}
           </div>
