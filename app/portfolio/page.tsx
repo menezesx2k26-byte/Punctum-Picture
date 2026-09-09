@@ -44,10 +44,10 @@ export default async function PortfolioPage() {
 
         <section className="section portfolio-section" id="historias">
           <div className="section-inner">
-            <div className="portfolio-section-header">
+            <PortfolioGrid albums={albums} />
+            <div className="portfolio-section-header portfolio-archive-link">
               <Link href="/arquivo"><PublicStatsText variant="archive-link" /></Link>
             </div>
-            <PortfolioGrid albums={albums} />
             <p className="portfolio-reading-note">{copy.listing.intro}</p>
           </div>
         </section>

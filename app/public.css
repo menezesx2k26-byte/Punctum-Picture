@@ -96,6 +96,8 @@
 .essay-caption>svg { margin-top:1.5rem; }
 .artwork-empty { font-family:var(--font-heading); font-size:2.5rem; padding:4rem 1rem; }
 .portfolio-filter,.archive-filters { display:flex; flex-wrap:wrap; gap:.4rem 1.6rem; }
+.portfolio-mobile-filter { display:none; }
+.portfolio-archive-link { margin-top:3rem; }
 .portfolio-filter { margin-bottom:2.7rem; padding-bottom:1rem; border-bottom:1px solid var(--color-border); }
 .portfolio-filter button,.archive-filters button { min-height:44px; padding:.5rem 0; font-size:.72rem; background:transparent; border:0; border-bottom:1px solid transparent; color:var(--color-muted); }
 .portfolio-filter button[aria-pressed="true"],.archive-filters button[aria-pressed="true"] { border-color:currentColor; color:var(--color-foreground); }
@@ -306,6 +308,9 @@
  .portfolio-section-header { display:block; margin-bottom:1.5rem; }
  .portfolio-section-header>a { display:inline-flex; align-items:center; min-height:44px; }
  .portfolio-filter,.archive-filters { gap:.3rem 1.3rem; }
+ .portfolio-filter { display:none; }
+ .portfolio-mobile-filter { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding-bottom:1rem; margin-bottom:1.5rem; border-bottom:1px solid var(--color-border); font-size:.75rem; color:var(--color-muted); }
+ .portfolio-mobile-filter select { font:inherit; font-size:1rem; min-height:44px; max-width:70%; border:0; border-radius:0; background:var(--color-background); color:var(--color-foreground); padding:.5rem; }
  .manifesto-grid { gap:3rem; }
  .manifesto-image { max-width:85%; }
  .manifesto[data-home-section-variant="side-portrait"] .manifesto-image { order:0; }
@@ -314,14 +319,18 @@
  .contact-layout { display:flex; flex-direction:column; padding-top:2rem; gap:1.25rem; }
  .contact-page-copy { display:contents; }
  .contact-page-copy h1 { margin:.5rem 0; }
- .contact-layout>section { order:1; margin-top:1.5rem; }
+ .contact-layout>section { order:1; margin-top:1.5rem; display:flex; flex-direction:column; }
+ .contact-layout .contact-form-heading { order:2; margin:3rem 0 0; }
  .contact-page-copy figure { order:2; }
  .contact-page-copy figure { max-width:75%; margin-top:2rem; }
  .contact-page-copy h1 { max-width:14ch; }
  .contact-form { gap:1.3rem 1rem; }
  .contact-form-heading h2 { font-size:2.6rem; }
  .portfolio-hero { padding-top:2rem; }
- .portfolio-index-hero { gap:.5rem; }
+ .portfolio-index-hero { gap:.5rem; padding-top:1.2rem; }
+ .portfolio-index-hero h1 { margin:.6rem 0 1rem; }
+ .portfolio-index-hero .portfolio-note { padding-bottom:0; }
+ .portfolio-note .text-link { display:none; }
  .portfolio-index-hero h1 { font-size:3.2rem; }
  .portfolio-index-hero + .portfolio-section { padding-top:1rem; }
  .portfolio-note { font-size:.8rem; }
