@@ -1,7 +1,7 @@
 {
   "status": "success",
-  "checkedAt": "2026-09-03T09:24:06Z",
-  "sourceCommit": "4d7a1726e4a903a033afecfbb32b87c5f6205cae",
+  "checkedAt": "2026-09-09T16:41:14Z",
+  "sourceCommit": "2a310b03c2b05b42716eeeb04c3980ef05b7f226",
   "worker": "punctum-picture-migration",
   "workerUrl": "https://punctum-picture-migration.menezesx2k26.workers.dev",
   "productionUrl": "https://punctumpicture.com",
