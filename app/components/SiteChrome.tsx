@@ -35,6 +35,7 @@ export function SiteHeader({
             alt={logo.alt}
             width={logo.width}
             height={logo.height}
+            sizes="(max-width: 700px) 65px, 90px"
             priority
           />
         </span>
