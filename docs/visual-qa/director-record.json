@@ -1,0 +1,52 @@
+{
+  "objective": "Reconstruir integralmente o frontend público da Punctum Picture sem regressão funcional, SEO ou operacional",
+  "visual_thesis": "Livro de fotografia digital: preto fotográfico neutro, fotografias íntegras, legendas externas e sequência editorial",
+  "system_constraints": {
+    "tokens": "Site Config/theme resolver/registries existentes",
+    "type": "Cormorant Garamond + Manrope administráveis",
+    "layout": "Dupla página, escalas alternadas, mobile image-first; breakpoints 380/700/1000/1600",
+    "imagery": "Acervo real e marca oficial; contain em fotos e capas",
+    "motion": "Entrada discreta e controles manuais; reduced motion obrigatório",
+    "states": "focus-visible, disabled/sending, empty, error, filtros e dialog nativo"
+  },
+  "preserve_constraints": [
+    "D1/R2/Images/Worker",
+    "API/auth/admin/publicação",
+    "Site Config/Studio",
+    "conteúdo/categorias/ordem/capa/alt",
+    "SEO/canonical/sitemap/robots/JSON-LD",
+    "Cloudflare deploy"
+  ],
+  "strategy": "rebuild presentation, reuse-first",
+  "lead": "frontend-design",
+  "support": [],
+  "reviewers": [
+    "engineering review",
+    "frontend-quality-reviewer",
+    "Frontend Director rendered inspection"
+  ],
+  "dependency_changes": [],
+  "structural_changes": [
+    "Shared EssayLink",
+    "Public CSS rebuilt; admin CSS extracted/scoped",
+    "Home/portfolio/essay/archive/contact/services/local templates",
+    "Native dialog and manual carousel",
+    "Mobile filter and form order",
+    "Additive sheet image preset"
+  ],
+  "gates": {
+    "functional": "PASS",
+    "engineering": "PASS",
+    "visual": "PASS",
+    "responsive": "PASS",
+    "accessibility": "PASS",
+    "design_system": "PASS",
+    "performance": "PASS",
+    "production": "PENDING"
+  },
+  "open_failures": [],
+  "state": "APPROVED",
+  "candidate_commit": "40067720a976296b8de6a41fa1f6ea3cab7d7686",
+  "preview_version": "1c082973-9926-4cc3-9ae0-807778024558",
+  "pr": 7
+}

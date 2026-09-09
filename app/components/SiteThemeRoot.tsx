@@ -1,3 +1,4 @@
+import "../public.css";
 import type { ReactNode } from "react";
 import { PUNCTUM_DEFAULT_SITE_CONFIG } from "../../shared/config";
 import { siteThemeRootProps } from "../lib/site-theme";

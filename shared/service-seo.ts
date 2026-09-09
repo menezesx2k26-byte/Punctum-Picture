@@ -60,7 +60,7 @@ export const SERVICE_SEO_SERVICES: readonly ServiceSeo[] = [
       "No palco, luz e movimento mudam rápido. A fotografia precisa antecipar gestos sem afastar a imagem da energia que o público e quem se apresenta realmente viveram.",
     detail:
       "A experiência publicada da Punctum inclui apresentações em que luz dura, sombra, proximidade e movimento fazem parte da narrativa. O planejamento combina acesso, duração da cobertura e momentos importantes sem prometer uma cena que não existe.",
-    image: "/photos/p097.jpg",
+    image: "/photos/p015.jpg",
     serviceType: "Fotografia de música e shows",
     categorySlugs: ["musica"],
   },
@@ -74,7 +74,7 @@ export const SERVICE_SEO_SERVICES: readonly ServiceSeo[] = [
       "Esporte pede leitura de movimento antes do clique. A câmera acompanha concentração, velocidade e decisão para chegar ao instante sem interromper a ação.",
     detail:
       "O portfólio reúne jogos, beach tennis e cenas de movimento em que posição e timing importam mais do que dirigir quem está competindo. A conversa prévia define acesso, duração e quais momentos merecem cobertura prioritária.",
-    image: "/photos/p038.jpg",
+    image: "/photos/p079.jpg",
     serviceType: "Fotografia esportiva",
     categorySlugs: ["esporte", "movimento"],
   },
@@ -88,7 +88,7 @@ export const SERVICE_SEO_SERVICES: readonly ServiceSeo[] = [
       "Família rende imagens quando as pessoas conseguem continuar sendo elas mesmas. A sessão pode ter alguma direção, mas não precisa controlar cada gesto para funcionar.",
     detail:
       "A fotografia acompanha vínculos, brincadeiras e pequenas celebrações com atenção ao que muda de uma pessoa para outra. Antes do encontro, a conversa ajuda a escolher ritmo e lugar sem montar uma rotina de poses igual para toda família.",
-    image: "/photos/p015.jpg",
+    image: "/photos/p085.jpg",
     serviceType: "Fotografia de família",
     categorySlugs: ["familia"],
   },
@@ -102,7 +102,7 @@ export const SERVICE_SEO_SERVICES: readonly ServiceSeo[] = [
       "No trabalho documental, a imagem nasce da atenção ao que já está acontecendo. Pessoas, espaço e tempo entram na narrativa sem precisar parecer uma produção montada.",
     detail:
       "Os ensaios publicados passam por fé, encontros coletivos e cenas do cotidiano. A proposta é entender primeiro o contexto e só então decidir distância, ritmo e presença da câmera, preservando a leitura de quem vive a situação.",
-    image: "/photos/p047.jpg",
+    image: "/photos/p009.jpg",
     serviceType: "Fotografia documental",
     categorySlugs: ["documental", "cotidiano"],
   },

@@ -22,10 +22,10 @@ export function HomeAboutSection({
       <div className="section-inner manifesto-grid">
         <div className="manifesto-image reveal">
           <Image
-            src="/photos/p061.jpg"
-            alt="Retrato teatral em vestido vermelho fotografado por Maria Helena"
-            width={1800}
-            height={2400}
+            src="/photos/p001.jpg"
+            alt="Maria Helena fotografando com uma câmera"
+            width={1024}
+            height={1536}
             sizes="(max-width: 900px) 100vw, 42vw"
           />
           <span aria-hidden="true">{copy.imageNote}</span>

@@ -47,7 +47,7 @@ export function HomePhotoReelSection({
         </div>
       ) : (
         <div className={section.variant === "filmstrip" ? "photo-filmstrip" : undefined}>
-          <PhotoCarousel images={images} hint={copy.hint} />
+          <PhotoCarousel images={selectedImages} hint={copy.hint} />
         </div>
       )}
     </section>

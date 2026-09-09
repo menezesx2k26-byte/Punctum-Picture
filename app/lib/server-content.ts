@@ -83,6 +83,9 @@ export async function loadHomeCarousel(config: SiteConfig) {
   if (config.theme.background.imageId) configuredIds.add(config.theme.background.imageId);
   for (const section of config.pages.home.sections) {
     if (section.appearance.backgroundImageId) configuredIds.add(section.appearance.backgroundImageId);
+    if (section.type === "hero" && section.heroMedia?.kind === "portfolio-image") {
+      configuredIds.add(section.heroMedia.id);
+    }
     if (section.type === "photo-reel") {
       section.photoIds.forEach((imageId) => configuredIds.add(imageId));
     }

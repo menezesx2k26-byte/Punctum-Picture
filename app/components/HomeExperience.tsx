@@ -21,9 +21,6 @@ export function HomeExperience({
 }) {
   return (
     <SiteThemeRoot config={config}>
-      <a className="skip-link" href="#conteudo">
-        Ir para o conteúdo
-      </a>
       <SiteHeader site={site} editorial={config.editorial} />
       <main id="conteudo">
         <HomeRenderer

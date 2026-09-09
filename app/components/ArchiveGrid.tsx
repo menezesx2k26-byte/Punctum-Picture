@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PublicArchiveImage } from "../../shared/public-content";
 
 type ArchiveViewImage = PublicArchiveImage & {
@@ -15,6 +15,9 @@ type ArchiveViewImage = PublicArchiveImage & {
 };
 
 export function ArchiveGrid({ images }: { images: PublicArchiveImage[] }) {
+  const openerRef = useRef<HTMLButtonElement | null>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
   const [filter, setFilter] = useState("Tudo");
   const [selected, setSelected] = useState<string | null>(null);
   const liveImages = useMemo<ArchiveViewImage[]>(
@@ -22,7 +25,7 @@ export function ArchiveGrid({ images }: { images: PublicArchiveImage[] }) {
       images.map((image, index) => ({
         ...image,
         number: index + 1,
-        src: image.thumbUrl,
+        src: `/media/${image.id}/sheet`,
         fullSrc: image.url,
         alt: image.altText ?? `Fotografia do ensaio ${image.albumTitle}`,
         category:
@@ -66,26 +69,24 @@ export function ArchiveGrid({ images }: { images: PublicArchiveImage[] }) {
     [selectedIndex, visible],
   );
 
+  const isOpen = selectedImage !== null;
   useEffect(() => {
-    if (!selectedImage) return;
+    const dialog = dialogRef.current;
+    if (!dialog || !isOpen) return;
+    dialog.showModal();
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setSelected(null);
-      if (event.key === "ArrowLeft") step(-1);
-      if (event.key === "ArrowRight") step(1);
-    }
-    window.addEventListener("keydown", onKeyDown);
     return () => {
+      dialog.close();
       document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", onKeyDown);
+      openerRef.current?.focus({ preventScroll: true });
     };
-  }, [selectedImage, step]);
+  }, [isOpen]);
 
   return (
     <>
       <div className="archive-toolbar">
-        <p>{visible.length.toString().padStart(3, "0")} fotografias</p>
+        <p role="status">{visible.length.toString().padStart(3, "0")} fotografias</p>
         <div className="archive-filters" aria-label="Filtrar arquivo">
           {categories.map((category) => (
             <button
@@ -110,7 +111,7 @@ export function ArchiveGrid({ images }: { images: PublicArchiveImage[] }) {
             className={`archive-card archive-card-${index % 7}`}
             key={image.id}
             type="button"
-            onClick={() => setSelected(image.id)}
+            onClick={(event) => { openerRef.current = event.currentTarget; setSelected(image.id); }}
             aria-label={`Abrir fotografia ${image.number}: ${image.alt}`}
           >
             <span className="archive-image">
@@ -131,11 +132,15 @@ export function ArchiveGrid({ images }: { images: PublicArchiveImage[] }) {
       </div>
 
       {selectedImage ? (
-        <div
+        <dialog
+          ref={dialogRef}
           className="lightbox"
-          role="dialog"
-          aria-modal="true"
           aria-label="Fotografia ampliada"
+          onCancel={() => setSelected(null)}
+          onKeyDown={(event) => {
+            if (event.key === "ArrowLeft") { event.preventDefault(); step(-1); }
+            if (event.key === "ArrowRight") { event.preventDefault(); step(1); }
+          }}
         >
           <button
             className="lightbox-close"
@@ -153,7 +158,17 @@ export function ArchiveGrid({ images }: { images: PublicArchiveImage[] }) {
           >
             <ArrowLeft size={22} />
           </button>
-          <div className="lightbox-image">
+          <div className="lightbox-stage"
+            onTouchStart={(event) => { if (event.touches.length === 1) touchStart.current = { x: event.touches[0].clientX, y: event.touches[0].clientY }; else touchStart.current = null; }}
+            onTouchEnd={(event) => {
+              const start = touchStart.current;
+              touchStart.current = null;
+              if (!start || !event.changedTouches.length) return;
+              const dx = event.changedTouches[0].clientX - start.x;
+              const dy = event.changedTouches[0].clientY - start.y;
+              if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) step(dx < 0 ? 1 : -1);
+            }}
+          >
             <Image
               src={selectedImage.fullSrc}
               alt={selectedImage.alt}
@@ -184,7 +199,7 @@ export function ArchiveGrid({ images }: { images: PublicArchiveImage[] }) {
           >
             <ArrowRight size={22} />
           </button>
-        </div>
+        </dialog>
       ) : null}
     </>
   );
