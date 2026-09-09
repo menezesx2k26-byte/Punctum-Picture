@@ -1,0 +1,107 @@
+{
+  "archivePresets": [
+    {
+      "bytes": 8096,
+      "preset": "thumb",
+      "status": 200
+    },
+    {
+      "bytes": 17344,
+      "preset": "sheet",
+      "status": 200
+    },
+    {
+      "bytes": 168563,
+      "preset": "gallery",
+      "status": 200
+    }
+  ],
+  "checkedAt": "2026-09-09T16:31:19.822Z",
+  "note": "Resource bytes from HTTP responses, not Core Web Vitals; sequential requests from Windows client",
+  "sites": [
+    {
+      "cssBytes": 167808,
+      "firstImages": [
+        {
+          "bytes": 11,
+          "loading": "eager",
+          "src": "/_vinext/image?url=%2Flogo-punctum-transparent.png&amp;w=1254&amp;q=75",
+          "status": 400
+        },
+        {
+          "bytes": 241944,
+          "loading": "eager",
+          "src": "/media/a66bbe1b-d1f8-449f-bc08-481f73253ed5/display",
+          "status": 200
+        },
+        {
+          "bytes": 396741,
+          "loading": "lazy",
+          "src": "/photos/p001.jpg",
+          "status": 200
+        },
+        {
+          "bytes": 175336,
+          "loading": "lazy",
+          "src": "/media/static-p009/gallery",
+          "status": 200
+        }
+      ],
+      "htmlBytes": 60088,
+      "origin": "https://punctumpicture.com",
+      "status": 200,
+      "stylesheets": [
+        {
+          "decodedBytes": 167808,
+          "path": "/assets/index-DvdZn7oF.css",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "cssBytes": 148150,
+      "firstImages": [
+        {
+          "bytes": 11,
+          "loading": "eager",
+          "src": "/_vinext/image?url=%2Flogo-punctum-transparent.png&amp;w=1254&amp;q=75",
+          "status": 400
+        },
+        {
+          "bytes": 175336,
+          "loading": "lazy",
+          "src": "/media/static-p009/gallery",
+          "status": 200
+        },
+        {
+          "bytes": 241944,
+          "loading": "eager",
+          "src": "/media/a66bbe1b-d1f8-449f-bc08-481f73253ed5/display",
+          "status": 200
+        },
+        {
+          "bytes": 396741,
+          "loading": "lazy",
+          "src": "/photos/p001.jpg",
+          "status": 200
+        }
+      ],
+      "htmlBytes": 60602,
+      "origin": "https://1c082973-punctum-picture-migration.menezesx2k26.workers.dev",
+      "status": 200,
+      "stylesheets": [
+        {
+          "decodedBytes": 148150,
+          "path": "/assets/index-DTBT-t-w.css",
+          "status": 200
+        }
+      ]
+    }
+  ],
+  "interpretation": {
+    "cssReductionPercent": 11.714581,
+    "logo": "HTML fallback w=1254 returns 400 in both baseline and candidate. Rendered browser selects srcset w=640 in candidate, w=1920 before; loaded successfully. Legacy Vinext fallback limitation remains.",
+    "archive": "thumb crop 8096 bytes; full-frame sheet 17344 bytes; gallery 168563 bytes. The new sheet deliberately trades 9248 bytes for intact frames and greater detail.",
+    "cwv": "No Lighthouse or field Core Web Vitals claim."
+  }
+}

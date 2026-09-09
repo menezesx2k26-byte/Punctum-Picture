@@ -2,7 +2,7 @@
 
 ## Autoridade e estado
 
-Frontend Director: IN_PROGRESS. Contrato instalado lido em `C:\Users\Pichau\.agents\skills\frontend-director\SKILL.md` em 2026-09-08. Lead: frontend-design (RUFLOW). Execução sequencial. Revisão visual e de acessibilidade após candidato estável. O usuário delegou expressamente decisões reversíveis e continuidade até aprovação; não há gate de aprovação intermediária.
+Frontend Director: APPROVED (candidato 4006772, 2026-09-09). Publicação e verificação pós-merge em andamento. Contrato instalado lido em `C:\Users\Pichau\.agents\skills\frontend-director\SKILL.md` em 2026-09-08. Lead: frontend-design (RUFLOW). Execução sequencial. Revisão visual e de acessibilidade após candidato estável. O usuário delegou expressamente decisões reversíveis e continuidade até aprovação; não há gate de aprovação intermediária.
 
 ## Reconhecimento verificado
 
@@ -51,21 +51,37 @@ Não alterar contratos de API, esquema/migrations, dados de produção, Worker, 
 6. Gates: typecheck, lint, suíte completa, build, rotas, links/canonicals/schema; QA renderizado 360/390/768/1363/1920, foco/teclado, lightbox, filtros, formulário sem envio real, console/rede, imagens e payloads.
 7. Revisão: se houver falha, NEEDS_REVISION e correção autônoma. Branch/commits/PR; preview quando infra suportar. Só integrar após todos os gates materiais. Validar versão publicada pelo fluxo Cloudflare existente.
 
-## Gates
+## Gates finais do candidato — 2026-09-09
 
-| Gate | Estado |
-| --- | --- |
-| Baseline testes | PASS: 97/97 |
-| Funcional candidato | PENDENTE |
-| Engenharia candidato | PENDENTE |
-| Visual desktop/mobile | PENDENTE |
-| UX/acessibilidade | PENDENTE |
-| Performance | PENDENTE |
-| Publicação | PENDENTE |
+| Gate | Evidência | Estado |
+| --- | --- | --- |
+| Funcional | Navegação HTTPS; filtro mobile; lightbox/setas/Escape/foco; formulário enviado e limpo apenas no D1 local isolado; 20 rotas HTTP 200 + 2 HTTP 404 esperados | PASS |
+| Engenharia | Typecheck, lint, 100 testes / 22 arquivos, build local e Windows; CI [34376688734](https://github.com/menezesx2k26-byte/Punctum-Picture/actions/runs/34376688734) | PASS |
+| Visual | Cloud Browser: home, portfólio, arquivo, ensaios horizontal/vertical e série de 52 fotos, contato, serviço e cidade; antes/depois desktop + mobile | PASS |
+| Responsividade | 360, 390, 768, desktop ~1363 e 1920 px. 1920 inspecionado em frame com viewport real, reduzido visualmente para caber na captura; sem overflow do documento | PASS |
+| UX/acessibilidade | Skip link visível com Tab; outline; dialog modal, foco contido/restaurado, Escape e setas; alvos principais ≥44 px; feedback de envio e disabled; reduced-motion no CSS/carrossel | PASS |
+| Studio/conformidade | Resolver e registries existentes; HomeExperience compartilhado; tema claro + fundo escuro configurado com contraste preservado; statement centralizado renderizado. Configuração alterada somente no D1 local e restaurada | PASS |
+| Performance | CSS entregue 167.808 → 148.150 bytes (−11,7%); hero 241.944 bytes, inalterado; logo seleciona 640 em vez de 1920 no navegador; miniaturas sheet de 640 px, lazy loading e nenhuma biblioteca nova | PASS |
+| Isolamento | Fixtures 17,9 MB retirados de public; plugin apenas serve, dist sem qa/qa-media; sem dados de teste publicados | PASS |
+| Publicação | Candidato aprovado; integração pelo workflow Git main → Cloudflare e smoke publicado | PENDENTE |
 
-Dependências: nenhuma alteração. Próximo passo: estabilizar preview, registrar baseline responsivo e implementar composição.
+[Comparação visual com capturas originais](visual-qa/comparison.html) · [Smokes de rotas](visual-qa/route-smoke-preview.json) · [Medições de recursos](visual-qa/performance-preview.json).
 
-## Checkpoint de implementação — 2026-09-08
+Preview final: https://1c082973-punctum-picture-migration.menezesx2k26.workers.dev · versão `1c082973-9926-4cc3-9ae0-807778024558`. Upload de versão sem trocar tráfego de produção, migrations ou triggers. Canonicals mantidos em punctumpicture.com; preview noindex. PR [#7](https://github.com/menezesx2k26-byte/Punctum-Picture/pull/7).
+
+## Revisão final do Director
+
+Estratégia: rebuild da apresentação, com reuse-first dos contratos e da infraestrutura. Lead: frontend-design. Review: revisão independente de engenharia, seguida de frontend-quality-reviewer e inspeção visual pelo Director. Os três achados materiais da revisão — contraste do fundo configurável, centralização do statement e fixtures no build — foram corrigidos e verificados. Iteração final compactou filtro/abertura do portfólio e trouxe o formulário antes da informação repetida no mobile.
+
+A composição depende das fotografias: proporções íntegras, legendas fora das imagens, escalas alternadas e retrato real da autora. Não há catálogo de cards, badges, shaders ou imagem externa. O sistema funciona como sequência fotográfica e passa no transplant test. Páginas de serviço/local compartilham a direção, preservam os seis serviços e cinco regiões atendidas e não inventam estabelecimento físico.
+
+Mudanças estruturais: HomeHeroSection recomposto; EssayLink compartilhado; CSS público reconstruído e CSS admin extraído/escopado; navegação/rodapé e contato reconstruídos; galeria dialog nativa; carrossel manual; resolução de foto selecionada pelo Studio preservada; fotografias adequadas nos serviços. Nenhuma dependência adicionada, removida ou atualizada. O comando dev foi ajustado à integração Vite existente; deploy e framework de produção preservados. O único acréscimo no pipeline é o preset aditivo sheet, sem mudar os seis presets anteriores.
+
+Limites reais da evidência: mobile usa documento SSR real em viewport de inspeção, não um aparelho físico; não há alegação de métricas de campo/Core Web Vitals ou nota Lighthouse. Os 192 registros da origem têm width/height nulos: dívida de metadados preexistente, sem reparo no D1 de produção nesta reconstrução. O fallback src do logo gerado pelo Vinext pede largura 1254 não aceita pelo endpoint (também na versão antiga); navegadores inspecionados usam srcset válido e carregam a marca. Isso fica registrado como dívida de compatibilidade do framework. As thumbnails sheet custam 17.344 bytes na amostra contra 8.096 do antigo thumb recortado; o ganho é preservar enquadramento e detalhe, evitando a galeria de 168.563 bytes nesse espaço.
+
+Nenhuma falha material aberta no candidato. Estado: APPROVED. A conclusão operacional depende ainda da verificação publicada abaixo.
+
+## Histórico — checkpoint de implementação — 2026-09-08
 
 Composição implementada na branch: abertura em dupla página; EssayLink compartilhado; títulos/legendas fora das imagens; portfólio e contato compactados; sequência de ensaio íntegra; arquivo com dialog nativo, setas/gesto e restauração de foco; carrossel manual; imagens de serviços corrigidas; CSS público reconstruído e CSS administrativo extraído com seletores compartilhados escopados. Marca oficial intacta. Nenhuma dependência adicionada/removida.
 
