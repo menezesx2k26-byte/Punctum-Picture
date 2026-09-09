@@ -42,11 +42,19 @@
     "accessibility": "PASS",
     "design_system": "PASS",
     "performance": "PASS",
-    "production": "PENDING"
+    "production": "PASS"
   },
   "open_failures": [],
   "state": "APPROVED",
   "candidate_commit": "40067720a976296b8de6a41fa1f6ea3cab7d7686",
   "preview_version": "1c082973-9926-4cc3-9ae0-807778024558",
-  "pr": 7
+  "pr": 7,
+  "production_commit": "2a310b03c2b05b42716eeeb04c3980ef05b7f226",
+  "production_workflow": "https://github.com/menezesx2k26-byte/Punctum-Picture/actions/runs/34378054225",
+  "production_smoke": "route-smoke-production.json",
+  "known_preexisting_debts": [
+    "width/height nulos nos 192 registros",
+    "fallback src do logo em Vinext; srcset renderizado válido",
+    "www unexpected-stats já registrado no deploy de 2026-09-03"
+  ]
 }

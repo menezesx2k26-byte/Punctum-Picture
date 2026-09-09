@@ -2,7 +2,7 @@
 
 ## Autoridade e estado
 
-Frontend Director: APPROVED (candidato 4006772, 2026-09-09). Publicação e verificação pós-merge em andamento. Contrato instalado lido em `C:\Users\Pichau\.agents\skills\frontend-director\SKILL.md` em 2026-09-08. Lead: frontend-design (RUFLOW). Execução sequencial. Revisão visual e de acessibilidade após candidato estável. O usuário delegou expressamente decisões reversíveis e continuidade até aprovação; não há gate de aprovação intermediária.
+Frontend Director: APPROVED (candidato 4006772, 2026-09-09). Publicado e verificado após o merge 2a310b0. Contrato instalado lido em `C:\Users\Pichau\.agents\skills\frontend-director\SKILL.md` em 2026-09-08. Lead: frontend-design (RUFLOW). Execução sequencial. Revisão visual e de acessibilidade após candidato estável. O usuário delegou expressamente decisões reversíveis e continuidade até aprovação; não há gate de aprovação intermediária.
 
 ## Reconhecimento verificado
 
@@ -63,7 +63,7 @@ Não alterar contratos de API, esquema/migrations, dados de produção, Worker, 
 | Studio/conformidade | Resolver e registries existentes; HomeExperience compartilhado; tema claro + fundo escuro configurado com contraste preservado; statement centralizado renderizado. Configuração alterada somente no D1 local e restaurada | PASS |
 | Performance | CSS entregue 167.808 → 148.150 bytes (−11,7%); hero 241.944 bytes, inalterado; logo seleciona 640 em vez de 1920 no navegador; miniaturas sheet de 640 px, lazy loading e nenhuma biblioteca nova | PASS |
 | Isolamento | Fixtures 17,9 MB retirados de public; plugin apenas serve, dist sem qa/qa-media; sem dados de teste publicados | PASS |
-| Publicação | Candidato aprovado; integração pelo workflow Git main → Cloudflare e smoke publicado | PENDENTE |
+| Publicação | Merge 2a310b0; deploy 34378054225 e CI 34378054129 concluídos; smoke autenticado do Studio; 22 rotas 200 + 2 404 esperados; inspeção Cloud Browser em produção | PASS |
 
 [Comparação visual com capturas originais](visual-qa/comparison.html) · [Smokes de rotas](visual-qa/route-smoke-preview.json) · [Medições de recursos](visual-qa/performance-preview.json).
 
@@ -79,7 +79,7 @@ Mudanças estruturais: HomeHeroSection recomposto; EssayLink compartilhado; CSS 
 
 Limites reais da evidência: mobile usa documento SSR real em viewport de inspeção, não um aparelho físico; não há alegação de métricas de campo/Core Web Vitals ou nota Lighthouse. Os 192 registros da origem têm width/height nulos: dívida de metadados preexistente, sem reparo no D1 de produção nesta reconstrução. O fallback src do logo gerado pelo Vinext pede largura 1254 não aceita pelo endpoint (também na versão antiga); navegadores inspecionados usam srcset válido e carregam a marca. Isso fica registrado como dívida de compatibilidade do framework. As thumbnails sheet custam 17.344 bytes na amostra contra 8.096 do antigo thumb recortado; o ganho é preservar enquadramento e detalhe, evitando a galeria de 168.563 bytes nesse espaço.
 
-Nenhuma falha material aberta no candidato. Estado: APPROVED. A conclusão operacional depende ainda da verificação publicada abaixo.
+Nenhuma falha material aberta no candidato. Estado: APPROVED. Conclusão operacional confirmada pela verificação publicada abaixo.
 
 ## Histórico — checkpoint de implementação — 2026-09-08
 
@@ -94,3 +94,13 @@ Primeiro candidato: typecheck passou, lint passou, 97 testes passaram e build co
 Estado do Director: NEEDS_REVISION. Home e portfólio foram inspecionados em 1363 e 390 px; reduzir espaço antes das fotos do portfólio e abaixo do hero mobile foi necessário. Correções feitas, nova captura pendente. Ainda faltam QA completo, evidências finais, PR e publicação. Não integrar enquanto gates estiverem abertos.
 
 A sessão de preview saudável anterior foi encerrada durante o intervalo da conversa. Reiniciada para retomada. A inspeção responsiva usa um frame local com o HTML SSR real, preservando os headers de segurança da aplicação. Artefato de inspeção local não será publicado.
+
+## Verificação publicada — 2026-09-09
+
+O [PR #7](https://github.com/menezesx2k26-byte/Punctum-Picture/pull/7) foi integrado como `2a310b03c2b05b42716eeeb04c3980ef05b7f226`. O [deploy 34378054225](https://github.com/menezesx2k26-byte/Punctum-Picture/actions/runs/34378054225) e a [CI 34378054129](https://github.com/menezesx2k26-byte/Punctum-Picture/actions/runs/34378054129) concluíram com sucesso. O pipeline confirmou hero WebP, API pública e Studio autenticado. Resultado sanitizado persistido pelo próprio workflow em requests/cloudflare-git-deploy-result.json.
+
+[Smoke independente de produção](visual-qa/route-smoke-production.json): 22 respostas 200 e dois 404 esperados; 192 fotos, 16 ensaios, sete categorias. Canonicals corretos e sem noindex no domínio principal. Inclui seis serviços, cinco cidades, ensaio curto e ensaio de 52 fotografias. Cloud Browser confirmou a home publicada, navegação para portfólio, filtro Música com três ensaios e contato. Nenhuma imagem carregada falhou; nenhum erro de aplicação no console (mensagens da extensão do ambiente excluídas). Formulário de produção não foi enviado.
+
+As capturas punctum-published-home-20260909.jpg e punctum-published-contact-20260909.jpg documentam a versão em punctumpicture.com. O único alerta do pipeline é `wwwSmokeStatus: unexpected-stats`, idêntico ao resultado de 2026-09-03 na baseline 38c43d1. Trata-se de débito preexistente de domínio/infraestrutura, fora desta reconstrução pública. O domínio canônico principal foi validado.
+
+Estado final do Frontend Director: **APPROVED**. Todos os gates materiais da reconstrução e a verificação pós-publicação possuem evidência.

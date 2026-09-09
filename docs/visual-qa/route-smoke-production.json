@@ -1,0 +1,270 @@
+{
+  "base": "https://punctumpicture.com",
+  "checkedAt": "2026-09-09T21:20:58.944Z",
+  "commit": "2a310b03c2b05b42716eeeb04c3980ef05b7f226",
+  "routes": [
+    {
+      "bytes": 60602,
+      "canonical": "https://punctumpicture.com/",
+      "h1": 1,
+      "jsonLd": 2,
+      "ms": 3423,
+      "path": "/",
+      "robots": null,
+      "status": 200,
+      "title": "Punctum Picture — fotografia autoral"
+    },
+    {
+      "bytes": 61685,
+      "canonical": "https://punctumpicture.com/portfolio",
+      "h1": 1,
+      "jsonLd": 0,
+      "ms": 2179,
+      "path": "/portfolio",
+      "robots": null,
+      "status": 200,
+      "title": "Portfólio — Punctum Picture"
+    },
+    {
+      "bytes": 188824,
+      "canonical": "https://punctumpicture.com/arquivo",
+      "h1": 1,
+      "jsonLd": 0,
+      "ms": 2211,
+      "path": "/arquivo",
+      "robots": null,
+      "status": 200,
+      "title": "Arquivo completo — Punctum Picture"
+    },
+    {
+      "bytes": 25418,
+      "canonical": "https://punctumpicture.com/contato",
+      "h1": 1,
+      "jsonLd": 0,
+      "ms": 1945,
+      "path": "/contato",
+      "robots": null,
+      "status": 200,
+      "title": "Contato — Punctum Picture"
+    },
+    {
+      "bytes": 36279,
+      "canonical": "https://punctumpicture.com/servicos",
+      "h1": 1,
+      "jsonLd": 2,
+      "ms": 2126,
+      "path": "/servicos",
+      "robots": null,
+      "status": 200,
+      "title": "Serviços de fotografia autoral — Punctum Picture"
+    },
+    {
+      "bytes": 34230,
+      "canonical": "https://punctumpicture.com/fotografia",
+      "h1": 1,
+      "jsonLd": 2,
+      "ms": 1881,
+      "path": "/fotografia",
+      "robots": null,
+      "status": 200,
+      "title": "Fotógrafa em Santa Catarina e Paraná — Punctum Picture"
+    },
+    {
+      "bytes": 4910,
+      "h1": 0,
+      "jsonLd": 0,
+      "ms": 254,
+      "path": "/sitemap.xml",
+      "robots": null,
+      "status": 200
+    },
+    {
+      "bytes": 1925,
+      "h1": 0,
+      "jsonLd": 0,
+      "ms": 59,
+      "path": "/robots.txt",
+      "robots": null,
+      "status": 200
+    },
+    {
+      "bytes": 9,
+      "h1": 0,
+      "jsonLd": 0,
+      "ms": 56,
+      "path": "/missing-redesign-qa",
+      "robots": null,
+      "status": 404
+    },
+    {
+      "bytes": 24,
+      "h1": 0,
+      "jsonLd": 0,
+      "ms": 295,
+      "path": "/studio-preview-internal",
+      "robots": null,
+      "status": 404
+    },
+    {
+      "bytes": 9727,
+      "canonical": "https://punctumpicture.com/",
+      "h1": 1,
+      "jsonLd": 0,
+      "ms": 907,
+      "path": "/admin",
+      "robots": null,
+      "status": 200,
+      "title": "Acesso ao painel — Punctum Picture"
+    },
+    {
+      "bytes": 84969,
+      "canonical": "https://punctumpicture.com/ensaios/jogo-do-gremio",
+      "h1": 1,
+      "jsonLd": 0,
+      "ms": 2480,
+      "path": "/ensaios/jogo-do-gremio",
+      "robots": null,
+      "status": 200,
+      "title": "Jogo do Grêmio — Punctum Picture"
+    },
+    {
+      "bytes": 30143,
+      "canonical": "https://punctumpicture.com/ensaios/intervalos-da-cidade",
+      "h1": 1,
+      "jsonLd": 0,
+      "ms": 2139,
+      "path": "/ensaios/intervalos-da-cidade",
+      "robots": null,
+      "status": 200,
+      "title": "Intervalos da cidade — Punctum Picture"
+    },
+    {
+      "bytes": 42491,
+      "canonical": "https://punctumpicture.com/servicos/retratos",
+      "h1": 1,
+      "jsonLd": 2,
+      "ms": 1912,
+      "path": "/servicos/retratos",
+      "robots": null,
+      "status": 200,
+      "title": "Fotografia de retratos com olhar autoral — Punctum Picture"
+    },
+    {
+      "bytes": 46398,
+      "canonical": "https://punctumpicture.com/servicos/eventos",
+      "h1": 1,
+      "jsonLd": 2,
+      "ms": 1887,
+      "path": "/servicos/eventos",
+      "robots": null,
+      "status": 200,
+      "title": "Fotografia de eventos com olhar documental — Punctum Picture"
+    },
+    {
+      "bytes": 40875,
+      "canonical": "https://punctumpicture.com/servicos/musica-e-shows",
+      "h1": 1,
+      "jsonLd": 2,
+      "ms": 1888,
+      "path": "/servicos/musica-e-shows",
+      "robots": null,
+      "status": 200,
+      "title": "Fotografia de música e shows ao vivo — Punctum Picture"
+    },
+    {
+      "bytes": 43157,
+      "canonical": "https://punctumpicture.com/servicos/fotografia-esportiva",
+      "h1": 1,
+      "jsonLd": 2,
+      "ms": 1901,
+      "path": "/servicos/fotografia-esportiva",
+      "robots": null,
+      "status": 200,
+      "title": "Fotografia esportiva e movimento — Punctum Picture"
+    },
+    {
+      "bytes": 37379,
+      "canonical": "https://punctumpicture.com/servicos/familias",
+      "h1": 1,
+      "jsonLd": 2,
+      "ms": 1870,
+      "path": "/servicos/familias",
+      "robots": null,
+      "status": 200,
+      "title": "Fotografia de família com afeto e presença — Punctum Picture"
+    },
+    {
+      "bytes": 43435,
+      "canonical": "https://punctumpicture.com/servicos/fotografia-documental",
+      "h1": 1,
+      "jsonLd": 2,
+      "ms": 1910,
+      "path": "/servicos/fotografia-documental",
+      "robots": null,
+      "status": 200,
+      "title": "Fotografia documental de histórias reais — Punctum Picture"
+    },
+    {
+      "bytes": 47968,
+      "canonical": "https://punctumpicture.com/fotografia/joinville",
+      "h1": 1,
+      "jsonLd": 2,
+      "ms": 1898,
+      "path": "/fotografia/joinville",
+      "robots": null,
+      "status": 200,
+      "title": "Fotógrafa em Joinville, SC | Retratos — Punctum Picture"
+    },
+    {
+      "bytes": 47928,
+      "canonical": "https://punctumpicture.com/fotografia/curitiba",
+      "h1": 1,
+      "jsonLd": 2,
+      "ms": 1931,
+      "path": "/fotografia/curitiba",
+      "robots": null,
+      "status": 200,
+      "title": "Fotógrafa em Curitiba, PR | Retratos — Punctum Picture"
+    },
+    {
+      "bytes": 48134,
+      "canonical": "https://punctumpicture.com/fotografia/sao-bento-do-sul",
+      "h1": 1,
+      "jsonLd": 2,
+      "ms": 1947,
+      "path": "/fotografia/sao-bento-do-sul",
+      "robots": null,
+      "status": 200,
+      "title": "Fotógrafa em São Bento do Sul, SC — Punctum Picture"
+    },
+    {
+      "bytes": 47976,
+      "canonical": "https://punctumpicture.com/fotografia/rio-negrinho",
+      "h1": 1,
+      "jsonLd": 2,
+      "ms": 1889,
+      "path": "/fotografia/rio-negrinho",
+      "robots": null,
+      "status": 200,
+      "title": "Fotógrafa em Rio Negrinho, SC | Retratos — Punctum Picture"
+    },
+    {
+      "bytes": 48002,
+      "canonical": "https://punctumpicture.com/fotografia/campo-alegre",
+      "h1": 1,
+      "jsonLd": 2,
+      "ms": 1946,
+      "path": "/fotografia/campo-alegre",
+      "robots": null,
+      "status": 200,
+      "title": "Fotógrafa em Campo Alegre, SC | Retratos — Punctum Picture"
+    }
+  ],
+  "stats": {
+    "stats": {
+      "albumCount": 16,
+      "categoryCount": 7,
+      "photoCount": 192
+    }
+  }
+}
