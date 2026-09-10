@@ -1,6 +1,6 @@
 {
-  "objective": "Reconstrução visual radical da Punctum Picture superando esterilidade e vazio cartesiano",
-  "visual_thesis": "Punctum como acontecimento: Mesa de Edição / Arquivo Vivo com ritmo cinematográfico. Cilindro 3D espacial com inércia física (SpatialCarousel), fita de filme 35mm com fotogramas numerados, diagramação editorial assimétrica com quebra de simetria e presença autoral de Maria Helena.",
+  "objective": "Reconstrução visual com alma autoral da Punctum Picture (Maria Helena) ao redor do Carrossel 3D aprovado",
+  "visual_thesis": "Punctum como acontecimento: intimidade, afeto, atmosfera e memória. Paleta autoral com nuances violeta/berinjela/ameixa escura e off-white quente. O SpatialCarousel 3D é o coração espacial intocável; o restante do ecossistema ganha ritmo cinematográfico assimétrico, quebra de esterilidade e presença humana genuína de Maria Helena.",
   "system_constraints": {
     "tokens": "Site Config/theme resolver/registries existentes preservados",
     "type": "Cormorant Garamond + Manrope administráveis",
@@ -36,16 +36,20 @@
     "HomeContactSection com regiões de atendimento e layout elevado"
   ],
   "evidence_captures": [
+    "docs/visual-qa/soul-rebuild-home-desktop.png",
+    "docs/visual-qa/soul-rebuild-home-fullpage.png",
+    "docs/visual-qa/soul-rebuild-home-entire.png",
+    "docs/visual-qa/soul-rebuild-home-mobile-390.png",
+    "docs/visual-qa/soul-rebuild-home-mobile-360.png",
+    "docs/visual-qa/soul-rebuild-portfolio.png",
+    "docs/visual-qa/soul-rebuild-arquivo.png",
+    "docs/visual-qa/soul-rebuild-contato.png",
+    "docs/visual-qa/soul-rebuild-servicos.png",
+    "docs/visual-qa/soul-rebuild-ensaio.png",
+    "docs/visual-qa/soul-rebuild-home-footer-verified.png",
     "docs/visual-qa/punctum-revision-home-desktop.png",
     "docs/visual-qa/punctum-revision-home-full.png",
-    "docs/visual-qa/punctum-revision-home-mobile.png",
-    "docs/visual-qa/punctum-revision-portfolio.png",
-    "docs/visual-qa/punctum-revision-essay.png",
-    "docs/visual-qa/punctum-revision-archive.png",
-    "docs/visual-qa/punctum-revision-contact.png",
-    "docs/visual-qa/lab-desktop-direction1-render.png",
-    "docs/visual-qa/lab-desktop-direction2-cinema.png",
-    "docs/visual-qa/lab-desktop-direction3-radical.png"
+    "docs/visual-qa/punctum-revision-home-mobile.png"
   ],
   "gates": {
     "functional": "PASS",
@@ -58,6 +62,27 @@
     "production": "READY"
   },
   "open_failures": [],
-  "candidate_commit": "9080a67",
-  "state": "APPROVED"
+  "candidate_commit": "4a32cc3",
+  "state": "APPROVED",
+  "approved_by": "Gabriel Menezes",
+  "approved_at": "2026-09-10T11:04:43-03:00",
+  "rollback": {
+    "status": "READY",
+    "baseline_sha": "17ac1008b5462434d892754c32dd68ad6c9889b3",
+    "deployment_id": "111b6ebd-f82d-4357-aa94-ae98022f76c8",
+    "worker_version_id": "cc6a8fb3-3952-4181-a933-295d89b2a158",
+    "preview_drill_url": "https://rollback-drill-punctum-picture-migration.menezesx2k26.workers.dev",
+    "runbook": "docs/operations/PUNCTUM-ROLLBACK.md",
+    "tested_at": "2026-09-10T11:33:00Z",
+    "verified_by": "Cloudflare Preview Alias Drill + Headless Playwright Inspection",
+    "locked_carousel_preserved": true
+  },
+  "governance": {
+    "carousel_visual_lock": true,
+    "carousel_status": "APPROVED",
+    "site_status": "APPROVED",
+    "purple_palette_required": true,
+    "authorial_soul_required": true,
+    "rollback_ready": true
+  }
 }

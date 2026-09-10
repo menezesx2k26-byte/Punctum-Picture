@@ -9,14 +9,14 @@
     min-height: auto;
     padding-top: var(--hero-mobile-stage-height, 50svh);
     overflow: hidden;
-    background: #0d1010;
+    background: var(--color-background);
   }
 
   .hero-image {
     position: absolute;
     inset: 0 0 auto;
     height: var(--hero-mobile-stage-height, 50svh);
-    z-index: -2;
+    z-index: 0;
   }
 
   .hero-image img {
@@ -27,8 +27,8 @@
     inset: 0 0 auto;
     height: var(--hero-mobile-stage-height, 50svh);
     background:
-      linear-gradient(180deg, rgba(10, 12, 10, 0.3), transparent 36%),
-      linear-gradient(0deg, rgba(13, 16, 16, 0.94), transparent 50%);
+      linear-gradient(180deg, rgba(18, 10, 23, 0.2), transparent 36%),
+      linear-gradient(0deg, var(--color-background), transparent 50%);
   }
 
   .hero-copy {
@@ -36,8 +36,8 @@
     z-index: 1;
     width: 100%;
     margin: 0;
-    padding: 1.35rem 1rem 2.75rem;
-    background: #0d1010;
+    padding: 1.5rem 1rem 3rem;
+    background: var(--color-background);
   }
 
   .hero-copy h1,
