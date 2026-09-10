@@ -12,10 +12,125 @@ export function HomeAboutSection({
   copy: EditorialConfig["home"]["about"];
   section: HomeSectionConfig;
 }) {
+  const variant = section.variant;
+
+  if (variant === "centered") {
+    return (
+      <section
+        id="sobre"
+        className="section manifesto manifesto-centered"
+        aria-labelledby="sobre-title"
+        {...homeSectionAttributes(section)}
+      >
+        <div className="section-inner manifesto-centered-wrap">
+          <div className="manifesto-centered-image">
+            <Image
+              src="/photos/p001.jpg"
+              alt="Maria Helena fotografando com uma câmera"
+              width={600}
+              height={800}
+              sizes="(max-width: 700px) 80vw, 360px"
+            />
+            <span aria-hidden="true" className="manifesto-caption-tag">{copy.imageNote}</span>
+          </div>
+          <div className="manifesto-centered-text">
+            <p className="eyebrow">{copy.eyebrow}</p>
+            <blockquote id="sobre-title">
+              <EditorialText text={copy.quote} />
+            </blockquote>
+            <p className="manifesto-body">{copy.body}</p>
+            <Link className="text-link light-link" href="/arquivo">
+              {copy.cta} <ArrowUpRight size={16} />
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (variant === "editorial") {
+    return (
+      <section
+        id="sobre"
+        className="section manifesto manifesto-editorial"
+        aria-labelledby="sobre-title"
+        {...homeSectionAttributes(section)}
+      >
+        <div className="section-inner manifesto-editorial-grid">
+          <div className="manifesto-editorial-lead">
+            <p className="eyebrow">{copy.eyebrow}</p>
+            <blockquote id="sobre-title" className="manifesto-pullquote">
+              <EditorialText text={copy.quote} />
+            </blockquote>
+            <div className="manifesto-editorial-bio">
+              <p>{copy.body}</p>
+              <div className="manifesto-region-pill">
+                <span>Atuação: Joinville · Curitiba · Região Sul</span>
+              </div>
+              <Link className="text-link light-link" href="/arquivo">
+                {copy.cta} <ArrowUpRight size={16} />
+              </Link>
+            </div>
+          </div>
+          <div className="manifesto-image manifesto-editorial-image reveal">
+            <Image
+              src="/photos/p001.jpg"
+              alt="Maria Helena fotografando com uma câmera"
+              width={1024}
+              height={1536}
+              sizes="(max-width: 900px) 100vw, 45vw"
+            />
+            <span aria-hidden="true">{copy.imageNote}</span>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (variant === "side-portrait") {
+    return (
+      <section
+        id="sobre"
+        className="section manifesto manifesto-side"
+        aria-labelledby="sobre-title"
+        {...homeSectionAttributes(section)}
+      >
+        <div className="section-inner manifesto-side-grid">
+          <div className="manifesto-image manifesto-side-image reveal">
+            <Image
+              src="/photos/p001.jpg"
+              alt="Maria Helena fotografando com uma câmera"
+              width={800}
+              height={1200}
+              sizes="(max-width: 900px) 100vw, 32vw"
+            />
+            <span aria-hidden="true">{copy.imageNote}</span>
+          </div>
+          <div className="manifesto-side-content reveal">
+            <p className="eyebrow">{copy.eyebrow}</p>
+            <blockquote id="sobre-title">
+              <EditorialText text={copy.quote} />
+            </blockquote>
+            <p className="manifesto-body">{copy.body}</p>
+            <div className="manifesto-tags-list">
+              <span className="manifesto-tag">Fotografia documental e autoral</span>
+              <span className="manifesto-tag">Curitiba & Joinville</span>
+              <span className="manifesto-tag">Acervo vivo</span>
+            </div>
+            <Link className="text-link light-link" href="/arquivo">
+              {copy.cta} <ArrowUpRight size={16} />
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Default: portrait
   return (
     <section
       id="sobre"
-      className="section manifesto"
+      className="section manifesto manifesto-portrait"
       aria-labelledby="sobre-title"
       {...homeSectionAttributes(section)}
     >
@@ -30,12 +145,15 @@ export function HomeAboutSection({
           />
           <span aria-hidden="true">{copy.imageNote}</span>
         </div>
-        <div className="reveal">
+        <div className="reveal manifesto-copy-block">
           <p className="eyebrow">{copy.eyebrow}</p>
           <blockquote id="sobre-title">
             <EditorialText text={copy.quote} />
           </blockquote>
           <p>{copy.body}</p>
+          <div className="manifesto-location-line">
+            <span>Joinville · Curitiba · São Bento do Sul · Campo Alegre · Rio Negrinho</span>
+          </div>
           <Link className="text-link light-link" href="/arquivo">
             {copy.cta} <ArrowUpRight size={16} />
           </Link>

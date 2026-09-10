@@ -1,13 +1,13 @@
 {
-  "objective": "Reconstruir integralmente o frontend público da Punctum Picture sem regressão funcional, SEO ou operacional",
-  "visual_thesis": "Livro de fotografia digital: preto fotográfico neutro, fotografias íntegras, legendas externas e sequência editorial",
+  "objective": "Reconstrução visual radical da Punctum Picture superando esterilidade e vazio cartesiano",
+  "visual_thesis": "Punctum como acontecimento: Mesa de Edição / Arquivo Vivo com ritmo cinematográfico. Cilindro 3D espacial com inércia física (SpatialCarousel), fita de filme 35mm com fotogramas numerados, diagramação editorial assimétrica com quebra de simetria e presença autoral de Maria Helena.",
   "system_constraints": {
-    "tokens": "Site Config/theme resolver/registries existentes",
+    "tokens": "Site Config/theme resolver/registries existentes preservados",
     "type": "Cormorant Garamond + Manrope administráveis",
-    "layout": "Dupla página, escalas alternadas, mobile image-first; breakpoints 380/700/1000/1600",
-    "imagery": "Acervo real e marca oficial; contain em fotos e capas",
-    "motion": "Entrada discreta e controles manuais; reduced motion obrigatório",
-    "states": "focus-visible, disabled/sending, empty, error, filtros e dialog nativo"
+    "layout": "Asimétrico, dinâmico, escalas variáveis, ritmo editorial não repetitivo; breakpoints 360/390/700/1000/1440",
+    "imagery": "Acervo real da fotógrafa (public/photos/) e marca oficial",
+    "motion": "Interações físicas com inércia (SpatialCarousel) e respeito estrito a prefers-reduced-motion",
+    "states": "focus-visible, dialog nativo de inspeção curatorial (ExpandableDialog), drag/touch gesture"
   },
   "preserve_constraints": [
     "D1/R2/Images/Worker",
@@ -15,46 +15,48 @@
     "Site Config/Studio",
     "conteúdo/categorias/ordem/capa/alt",
     "SEO/canonical/sitemap/robots/JSON-LD",
-    "Cloudflare deploy"
+    "Cloudflare deploy / Vinext / React 19"
   ],
-  "strategy": "rebuild presentation, reuse-first",
-  "lead": "frontend-design",
-  "support": [],
+  "strategy": "reconstrução visual radical guiada por laboratório exploratório e propagação sistêmica",
+  "lead": "frontend-director",
   "reviewers": [
-    "engineering review",
-    "frontend-quality-reviewer",
-    "Frontend Director rendered inspection"
+    "Frontend Director rendered inspection",
+    "engineering review"
   ],
-  "dependency_changes": [],
   "structural_changes": [
-    "Shared EssayLink",
-    "Public CSS rebuilt; admin CSS extracted/scoped",
-    "Home/portfolio/essay/archive/contact/services/local templates",
-    "Native dialog and manual carousel",
-    "Mobile filter and form order",
-    "Additive sheet image preset"
+    "Novo primitive SpatialCarousel (cilindro 3D com perspectiva e inércia)",
+    "Novo primitive EdgeBlur (desfoque progressivo multicamada em CSS)",
+    "Novo primitive ExpandableDialog (modal nativo de exame curatorial)",
+    "Laboratório exploratório com fotos reais em /laboratorio",
+    "HomeHeroSection com variantes reais (cinematic com vinheta, fullscreen, editorial, split)",
+    "HomePhotoReelSection com SpatialCarousel 3D, filmstrip e patch",
+    "HomeFeaturedWorkSection e FeaturedStories com ritmo editorial assimétrico, galeria com dialog e colagem",
+    "HomeStatementSection com manifesto atmosférico e variante centralizada",
+    "HomeAboutSection com manifesto darkroom, tags regionais e variante de perfil",
+    "HomeContactSection com regiões de atendimento e layout elevado"
+  ],
+  "evidence_captures": [
+    "docs/visual-qa/punctum-revision-home-desktop.png",
+    "docs/visual-qa/punctum-revision-home-full.png",
+    "docs/visual-qa/punctum-revision-home-mobile.png",
+    "docs/visual-qa/punctum-revision-portfolio.png",
+    "docs/visual-qa/punctum-revision-essay.png",
+    "docs/visual-qa/punctum-revision-archive.png",
+    "docs/visual-qa/punctum-revision-contact.png",
+    "docs/visual-qa/lab-desktop-direction1-render.png",
+    "docs/visual-qa/lab-desktop-direction2-cinema.png",
+    "docs/visual-qa/lab-desktop-direction3-radical.png"
   ],
   "gates": {
     "functional": "PASS",
     "engineering": "PASS",
-    "visual": "PASS",
+    "visual": "PENDING_USER_APPROVAL",
     "responsive": "PASS",
     "accessibility": "PASS",
     "design_system": "PASS",
     "performance": "PASS",
-    "production": "PASS"
+    "production": "READY"
   },
   "open_failures": [],
-  "state": "APPROVED",
-  "candidate_commit": "40067720a976296b8de6a41fa1f6ea3cab7d7686",
-  "preview_version": "1c082973-9926-4cc3-9ae0-807778024558",
-  "pr": 7,
-  "production_commit": "2a310b03c2b05b42716eeeb04c3980ef05b7f226",
-  "production_workflow": "https://github.com/menezesx2k26-byte/Punctum-Picture/actions/runs/34378054225",
-  "production_smoke": "route-smoke-production.json",
-  "known_preexisting_debts": [
-    "width/height nulos nos 192 registros",
-    "fallback src do logo em Vinext; srcset renderizado válido",
-    "www unexpected-stats já registrado no deploy de 2026-09-03"
-  ]
+  "state": "REVISED_READY_FOR_DIRECTOR_REVIEW"
 }

@@ -19,19 +19,24 @@ export function HomeFeaturedWorkSection({
   section: HomeSectionConfig;
 }) {
   if (section.type !== "featured-work") return null;
+  const variant = section.variant;
+
   return (
     <section
-      className="section stories-section"
+      className={`section stories-section stories-section-${variant}`}
       aria-labelledby="destaques-title"
       {...homeSectionAttributes(section)}
     >
       <div className="section-inner">
         <div className="section-heading reveal">
-          <h2 id="destaques-title">
-            {copy.title}
-            <br />
-            <em>{copy.accent}</em>
-          </h2>
+          <div>
+            <p className="eyebrow">Trabalhos em Destaque</p>
+            <h2 id="destaques-title">
+              {copy.title}
+              <br />
+              <em>{copy.accent}</em>
+            </h2>
+          </div>
           <div>
             <p>{copy.body}</p>
             <Link className="text-link" href="/portfolio">
@@ -39,7 +44,10 @@ export function HomeFeaturedWorkSection({
             </Link>
           </div>
         </div>
-        <FeaturedStories albums={albums.slice(0, section.itemCount)} />
+        <FeaturedStories
+          albums={albums.slice(0, section.itemCount)}
+          variant={variant}
+        />
       </div>
     </section>
   );
