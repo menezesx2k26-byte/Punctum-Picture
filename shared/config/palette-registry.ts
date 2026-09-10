@@ -135,21 +135,42 @@ export const PALETTE_REGISTRY = {
   },
   "nocturne-plum": {
     id: "nocturne-plum",
-    label: "Noite fotográfica",
-    description: "Preto neutro, luz quente e cor nas fotografias.",
+    label: "Ameixa e Noite Autoral",
+    description: "Profundidade preto-violeta, berinjela rica, lavanda e luz quente nas fotografias.",
     mode: "dark",
     colors: {
-      background: "#151514", surface: "#1c1c1a", surfaceSoft: "#292925",
-      foreground: "#f1eee7", muted: "#b4b2a9", primary: "#e5dfce",
-      primaryDeep: "#c3bda9", secondary: "#272722", accent: "#e5dfce",
-      warmAccent: "#d5ac88", editorialAccent: "#e5dfce", mauve: "#1b1b19",
-      mist: "#33332e", night: "#10100f", border: "rgba(241, 238, 231, 0.22)",
-      onDark: "#f1eee7", onDarkMuted: "#b4b2a9",
+      background: "#120a17",
+      surface: "#1c1024",
+      surfaceSoft: "#2a1736",
+      foreground: "#f6eef8",
+      muted: "#baa4c2",
+      primary: "#e0c8eb",
+      primaryDeep: "#3d1952",
+      secondary: "#5c2a75",
+      accent: "#e6cef1",
+      warmAccent: "#dca6c8",
+      editorialAccent: "#e2cbe8",
+      mauve: "#8e5fa0",
+      mist: "#381e46",
+      night: "#0b050f",
+      border: "rgba(230, 206, 241, 0.18)",
+      onDark: "#fbf7fd",
+      onDarkMuted: "#c8b5cf",
     },
     surfaces: {
-      carousel: "#191918", manifesto: "#1c1c1a", contact: "#1c1c1a",
-      archive: "#151514", footer: "#10100f", albumStory: "#151514",
-      lightbox: "#10100f",
+      carousel:
+        "radial-gradient(ellipse at 15% 20%, rgba(98, 42, 125, 0.28), transparent 36rem), radial-gradient(ellipse at 85% 80%, rgba(140, 55, 120, 0.2), transparent 40rem), #120a17",
+      manifesto:
+        "radial-gradient(circle at 18% 24%, rgba(110, 48, 140, 0.24), transparent 30rem), linear-gradient(145deg, #1c1024 0%, #2a1736 100%)",
+      contact:
+        "radial-gradient(ellipse at 10% 15%, rgba(125, 55, 150, 0.22), transparent 34rem), #180d20",
+      archive:
+        "radial-gradient(ellipse at 85% 15%, rgba(95, 40, 120, 0.2), transparent 38rem), #120a17",
+      footer:
+        "linear-gradient(180deg, #120a17 0%, #0b050f 100%)",
+      albumStory:
+        "radial-gradient(ellipse at 20% 20%, rgba(115, 45, 145, 0.25), transparent 40rem), #150c1b",
+      lightbox: "rgba(11, 5, 15, 0.98)",
     },
   },
   "ink-minimal": {

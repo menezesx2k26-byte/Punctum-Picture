@@ -36,16 +36,20 @@
     "HomeContactSection com regiões de atendimento e layout elevado"
   ],
   "evidence_captures": [
+    "docs/visual-qa/soul-rebuild-home-desktop.png",
+    "docs/visual-qa/soul-rebuild-home-fullpage.png",
+    "docs/visual-qa/soul-rebuild-home-entire.png",
+    "docs/visual-qa/soul-rebuild-home-mobile-390.png",
+    "docs/visual-qa/soul-rebuild-home-mobile-360.png",
+    "docs/visual-qa/soul-rebuild-portfolio.png",
+    "docs/visual-qa/soul-rebuild-arquivo.png",
+    "docs/visual-qa/soul-rebuild-contato.png",
+    "docs/visual-qa/soul-rebuild-servicos.png",
+    "docs/visual-qa/soul-rebuild-ensaio.png",
+    "docs/visual-qa/soul-rebuild-home-footer-verified.png",
     "docs/visual-qa/punctum-revision-home-desktop.png",
     "docs/visual-qa/punctum-revision-home-full.png",
-    "docs/visual-qa/punctum-revision-home-mobile.png",
-    "docs/visual-qa/punctum-revision-portfolio.png",
-    "docs/visual-qa/punctum-revision-essay.png",
-    "docs/visual-qa/punctum-revision-archive.png",
-    "docs/visual-qa/punctum-revision-contact.png",
-    "docs/visual-qa/lab-desktop-direction1-render.png",
-    "docs/visual-qa/lab-desktop-direction2-cinema.png",
-    "docs/visual-qa/lab-desktop-direction3-radical.png"
+    "docs/visual-qa/punctum-revision-home-mobile.png"
   ],
   "gates": {
     "functional": "PASS",
