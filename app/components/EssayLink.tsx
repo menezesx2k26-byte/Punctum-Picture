@@ -12,7 +12,7 @@ export function EssayLink({ album, index, heading = "h3" }: {
   const Heading = heading;
   const source = albumArtworkSource(album);
   return (
-    <Link className="essay-link" href={`/ensaios/${album.slug}`}>
+    <Link className="essay-link" href={`/ensaios/${album.slug}`} data-cursor="open">
       <div className="essay-artwork">
         {source ? <Image src={source} alt={`Capa do ensaio ${album.title}`} width={1200} height={1600} unoptimized sizes="(max-width: 700px) 100vw, 50vw" /> : <span className="artwork-empty">{album.title}</span>}
       </div>
