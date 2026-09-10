@@ -1799,4 +1799,193 @@
   }
 }
 
+/* ==========================================================================
+   PUNCTUM GALLERY & SENSORY MATERIALITY (Frontend Director — Full Gallery)
+   ========================================================================== */
+
+/* 1. Baryta Grain Layer (Tactile analog film paper micro-texture) */
+.baryta-grain-layer {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9990;
+  opacity: 0.038;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* 2. Gallery Contextual Cursor Badge */
+.gallery-cursor-badge {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 99999;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.42rem 0.9rem;
+  border-radius: 9999px;
+  background: rgba(18, 10, 23, 0.92);
+  border: 1px solid rgba(224, 200, 235, 0.45);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), 0 0 20px rgba(120, 60, 150, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transform: translate3d(-100px, -100px, 0);
+  opacity: 0;
+  transform-origin: center center;
+  transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s ease;
+  will-change: transform, opacity;
+}
+
+.gallery-cursor-badge.is-visible {
+  opacity: 1;
+}
+
+.gallery-cursor-text {
+  font-family: var(--font-body, monospace);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #f7f1f9;
+  white-space: nowrap;
+}
+
+/* 3. Home Contact Sheet (Analog Negatives below 3D Carousel) */
+.home-contact-sheet {
+  max-width: 1400px;
+  margin: 3.5rem auto 0;
+  padding: 2.5rem 2rem 0;
+  border-top: 1px solid rgba(224, 200, 235, 0.12);
+}
+
+.contact-sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1.5rem;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-muted, #b89ec9);
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.contact-sheet-tag {
+  color: var(--color-primary, #e0c8eb);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+}
+
+.contact-sheet-instruction {
+  opacity: 0.75;
+}
+
+/* 4. Featured Stories Curatorial Switcher & Projector Stage */
+.featured-stories-container {
+  width: 100%;
+}
+
+.stories-view-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2.2rem;
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid rgba(224, 200, 235, 0.12);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.view-bar-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--color-muted, #b89ec9);
+}
+
+.view-bar-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.view-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.95rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  border: 1px solid rgba(224, 200, 235, 0.16);
+  background: rgba(224, 200, 235, 0.05);
+  color: #d4c4dc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-switch-btn:hover {
+  background: rgba(224, 200, 235, 0.14);
+  border-color: rgba(224, 200, 235, 0.35);
+  color: #fff;
+}
+
+.view-switch-btn.is-active {
+  background: var(--color-primary, #e0c8eb);
+  color: var(--color-background, #120a17);
+  border-color: var(--color-primary, #e0c8eb);
+  font-weight: 600;
+}
+
+.stories-projector-stage {
+  border-radius: var(--radius-surface, 6px);
+  position: relative;
+  overflow: hidden;
+  background: #0f0714;
+  border: 1px solid rgba(224, 200, 235, 0.1);
+}
+
+.stories-projector-stage .radical-content-layer {
+  padding: 3.5rem clamp(1.5rem, 4vw, 3rem);
+}
+
+.stories-projector-stage .active-detail-card {
+  background: rgba(24, 13, 31, 0.88);
+  border: 1px solid rgba(224, 200, 235, 0.22);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.7), 0 0 30px rgba(120, 60, 150, 0.15);
+}
+
+/* 5. Authorial Quote Capsule in About Section */
+.cinema-quote-capsule {
+  margin: 2.2rem 0;
+  padding: 1.6rem 1.8rem;
+  border-left: 3px solid var(--color-primary, #e0c8eb);
+  background: rgba(224, 200, 235, 0.035);
+  border-radius: 0 6px 6px 0;
+}
+
+.author-visceral-quote {
+  font-family: var(--font-heading, serif);
+  font-size: clamp(1.15rem, 1.9vw, 1.5rem);
+  line-height: 1.4;
+  color: var(--color-foreground, #f7f1f9);
+  font-style: italic;
+  margin: 0;
+}
+
+.author-quote-signature {
+  display: block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-primary, #e0c8eb);
+  margin-top: 0.9rem;
+  font-weight: 500;
+}
+
 

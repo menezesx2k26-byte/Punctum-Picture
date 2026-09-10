@@ -135,7 +135,7 @@ export function HomeAboutSection({
       {...homeSectionAttributes(section)}
     >
       <div className="section-inner manifesto-grid">
-        <div className="manifesto-image reveal">
+        <div className="manifesto-image reveal" data-cursor="examine">
           <Image
             src="/photos/p001.jpg"
             alt="Maria Helena fotografando com uma câmera"
@@ -151,10 +151,16 @@ export function HomeAboutSection({
             <EditorialText text={copy.quote} />
           </blockquote>
           <p>{copy.body}</p>
+          <div className="cinema-quote-capsule">
+            <blockquote className="author-visceral-quote">
+              “Não busco o momento perfeito da pose, mas o segundo imediatamente anterior — quando a pessoa ainda não se armou contra a lente.”
+            </blockquote>
+            <span className="author-quote-signature">— Maria Helena · Caderno de Campo</span>
+          </div>
           <div className="manifesto-location-line">
             <span>Joinville · Curitiba · São Bento do Sul · Campo Alegre · Rio Negrinho</span>
           </div>
-          <Link className="text-link light-link" href="/arquivo">
+          <Link className="text-link light-link" href="/arquivo" data-cursor="open">
             {copy.cta} <ArrowUpRight size={16} />
           </Link>
         </div>

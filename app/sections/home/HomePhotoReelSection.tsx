@@ -115,7 +115,7 @@ export function HomePhotoReelSection({
         </div>
       ) : (
         /* Default: horizontal 3D Spatial Carousel */
-        <div className="spatial-reel-container">
+        <div className="spatial-reel-container" data-cursor="drag">
           <SpatialCarousel
             images={selectedImages}
             onSelectImage={(image) => setSelectedImage(image)}
@@ -123,11 +123,44 @@ export function HomePhotoReelSection({
           <div className="spatial-reel-footer">
             <span className="spatial-reel-badge">Mesa de Contato 3D</span>
             <p className="spatial-reel-hint">
-              {copy.hint || "Arraste com o mouse/toque para girar no espaço 3D · Use as setas ← → · Clique na foto para ampliar"}
+              {copy.hint || "Arraste com o mouse/toque para girar no espaço 3D · Use as setas ← → · Clique na foto para examinar"}
             </p>
-            <Link href="/arquivo" className="text-link">
+            <Link href="/arquivo" className="text-link" data-cursor="open">
               Ver arquivo completo ({images.length} fotografias) <ArrowUpRight size={15} />
             </Link>
+          </div>
+
+          {/* Folha de Contato Analógica — Negativos Selecionados */}
+          <div className="home-contact-sheet">
+            <div className="contact-sheet-header">
+              <span className="contact-sheet-tag">Negativos de Contato</span>
+              <span className="contact-sheet-instruction">Clique em qualquer ampliação para exame em alta fidelidade</span>
+            </div>
+            <div className="contact-sheet-grid">
+              {selectedImages.slice(0, 8).map((img, i) => (
+                <button
+                  key={img.id}
+                  type="button"
+                  className="contact-frame"
+                  data-cursor="examine"
+                  onClick={() => setSelectedImage(img)}
+                  aria-label={`Examinar fotografia ${img.albumTitle || img.category}`}
+                >
+                  <span className="frame-marker">#{String(i + 1).padStart(2, "0")}</span>
+                  <div className="frame-image-wrapper">
+                    <Image
+                      src={img.src}
+                      alt={img.alt}
+                      width={280}
+                      height={360}
+                      unoptimized
+                      sizes="140px"
+                    />
+                  </div>
+                  <span className="frame-category">{img.category}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}

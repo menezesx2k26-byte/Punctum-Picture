@@ -2,6 +2,8 @@ import "../public.css";
 import type { ReactNode } from "react";
 import { PUNCTUM_DEFAULT_SITE_CONFIG } from "../../shared/config";
 import { siteThemeRootProps } from "../lib/site-theme";
+import { BarytaGrain } from "./visual/BarytaGrain";
+import { GalleryCursor } from "./visual/GalleryCursor";
 
 export function SiteThemeRoot({
   children,
@@ -17,6 +19,8 @@ export function SiteThemeRoot({
       className={["site-shell", className].filter(Boolean).join(" ")}
       {...siteThemeRootProps(config)}
     >
+      <BarytaGrain />
+      <GalleryCursor />
       {children}
     </div>
   );
