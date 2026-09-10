@@ -14,11 +14,11 @@ export const PUNCTUM_DEFAULT_SITE_CONFIG = siteConfigSchema.parse({
   },
   theme: {
     palette: {
-      id: "punctum-violet",
-      mode: "light",
+      id: "nocturne-plum",
+      mode: "dark",
     },
     typography: {
-      headingFamily: "cormorant-garamond",
+      headingFamily: "instrument-serif",
       bodyFamily: "manrope",
       headingScale: "display",
       bodyScale: "comfortable",

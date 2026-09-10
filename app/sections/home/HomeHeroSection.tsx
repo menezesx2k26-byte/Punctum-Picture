@@ -1,3 +1,4 @@
+import { LensHero } from "../../components/visual/LensHero";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
@@ -24,6 +25,8 @@ export function HomeHeroSection({
     (image) => image.albumSlug && image.src !== hero.src,
   );
   const variant = section.variant;
+
+  if (variant === "cinematic") return <LensHero hero={hero} copy={copy} section={section} />;
 
   if (variant === "fullscreen") {
     return (

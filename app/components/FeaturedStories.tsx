@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { StorySequence } from "./visual/StorySequence";
 import { useState } from "react";
 import { ArrowUpRight, Sparkles, Grid, Layers } from "lucide-react";
 import type { PublicAlbumSummary } from "../../shared/public-content";
@@ -38,7 +39,7 @@ export function FeaturedStories({
             aria-pressed={mode === "projector"}
           >
             <Sparkles size={13} />
-            <span>Passagem de Luz</span>
+            <span>Percorrer</span>
           </button>
           <button
             type="button"
@@ -47,7 +48,7 @@ export function FeaturedStories({
             aria-pressed={mode === "editorial"}
           >
             <Grid size={13} />
-            <span>Grade Editorial</span>
+            <span>Grade</span>
           </button>
           <button
             type="button"
@@ -56,79 +57,13 @@ export function FeaturedStories({
             aria-pressed={mode === "collage"}
           >
             <Layers size={13} />
-            <span>Pranchas</span>
+            <span>Composição</span>
           </button>
         </div>
       </div>
 
       {/* MODO 1: PASSAGEM DE LUZ (Índice Editorial com Fundo Projetado) */}
-      {mode === "projector" && (
-        <div className="scene-indice-radical stories-projector-stage">
-          <div className="radical-backdrop">
-            {activeHoverAlbum && (
-              <div className="radical-backdrop-image-container">
-                <Image
-                  src={albumArtworkSource(activeHoverAlbum) || "/photos/p001.jpg"}
-                  alt={activeHoverAlbum.title}
-                  fill
-                  unoptimized
-                  priority
-                  sizes="100vw"
-                  className="radical-stage-photo"
-                />
-                <div className="radical-backdrop-overlay" />
-                <EdgeBlur position="bottom" height={100} />
-              </div>
-            )}
-          </div>
-
-          <div className="radical-content-layer">
-            <ul className="radical-project-list">
-              {albums.map((album, idx) => (
-                <li
-                  key={album.id}
-                  className={`radical-project-item ${
-                    activeHoverAlbum?.id === album.id ? "is-focused" : ""
-                  }`}
-                  onMouseEnter={() => setActiveHoverAlbum(album)}
-                  onTouchStart={() => setActiveHoverAlbum(album)}
-                >
-                  <Link
-                    href={`/ensaios/${album.slug}`}
-                    className="radical-project-link"
-                    data-cursor="open"
-                  >
-                    <span className="radical-idx">{String(idx + 1).padStart(2, "0")}</span>
-                    <span className="radical-title">{album.title}</span>
-                    <span className="radical-category">
-                      {album.categories.map((c) => c.name).join(" · ")}
-                    </span>
-                    <ArrowUpRight className="radical-arrow" size={24} />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-
-            <div className="radical-active-detail">
-              {activeHoverAlbum && (
-                <div className="active-detail-card" data-cursor="open">
-                  <span className="active-detail-eyebrow">Ensaio em Foco</span>
-                  <h3 className="active-detail-title">{activeHoverAlbum.title}</h3>
-                  {activeHoverAlbum.subtitle && (
-                    <p className="active-detail-sub">{activeHoverAlbum.subtitle}</p>
-                  )}
-                  <Link
-                    href={`/ensaios/${activeHoverAlbum.slug}`}
-                    className="text-link"
-                  >
-                    Mergulhar neste ensaio <ArrowUpRight size={16} />
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {mode === "projector" && <StorySequence albums={albums} />}
 
       {/* MODO 2: GRADE EDITORIAL */}
       {mode === "editorial" && (
@@ -153,7 +88,7 @@ export function FeaturedStories({
                   />
                 ) : null}
                 <div className="editorial-lead-badge">
-                  <span>DESTAQUE CURATORIAL · ENSAIO 01</span>
+                  <span>{albums[0].title}</span>
                 </div>
               </div>
               <div className="editorial-lead-info">
@@ -215,7 +150,6 @@ export function FeaturedStories({
                   ) : null}
                 </div>
                 <div className="collage-caption">
-                  <small className="collage-number">PRANCHA {String(index + 1).padStart(2, "0")}</small>
                   <h4>{album.title}</h4>
                   <p>{album.categories.map((c) => c.name).join(" · ")}</p>
                 </div>

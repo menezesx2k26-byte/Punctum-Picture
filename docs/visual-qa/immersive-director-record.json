@@ -1,0 +1,29 @@
+{
+  "objective": "Integrar lente e sequência imersiva ao frontend real",
+  "visual_thesis": "Entrada pela câmera seguida por fotografias em grande escala, reenquadramento na rolagem e legendas em repouso; ambiente roxo e escrita natural.",
+  "preserve_constraints": [
+    "SpatialCarousel 3D",
+    "Lente",
+    "CMS/API/D1/R2",
+    "Mobile",
+    "WhatsApp configurado"
+  ],
+  "strategy": "refactor",
+  "lead": "frontend-director",
+  "support": [],
+  "reviewers": [],
+  "dependency_changes": [],
+  "structural_changes": [
+    "LensHero na variante cinematic",
+    "StorySequence no modo Percorrer",
+    "CSS escopado à home"
+  ],
+  "gates": {
+    "engineering": "NOT_RUN",
+    "visual": "NOT_RUN",
+    "functional": "NOT_RUN",
+    "mobile": "NOT_RUN"
+  },
+  "open_failures": [],
+  "state": "IN_PROGRESS"
+}

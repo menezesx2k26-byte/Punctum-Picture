@@ -1,3 +1,4 @@
+import "../immersive.css";
 import type { SiteConfig } from "../../shared/config";
 import type {
   PublicAlbumSummary,
@@ -20,7 +21,7 @@ export function HomeExperience({
   carouselImages: CarouselImage[];
 }) {
   return (
-    <SiteThemeRoot config={config}>
+    <SiteThemeRoot config={config} className="immersive-home">
       <SiteHeader site={site} editorial={config.editorial} />
       <main id="conteudo">
         <HomeRenderer

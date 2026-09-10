@@ -26,6 +26,8 @@ export function SpatialCarousel({
   const velocityRef = useRef(0);
   const lastXRef = useRef(0);
   const lastTimeRef = useRef(0);
+  const gestureRef = useRef<{id:number; y:number; axis:"pending"|"horizontal"|"vertical"} | null>(null);
+  const movedRef = useRef(false);
   const animFrameRef = useRef<number | null>(null);
 
   const count = images.length;
@@ -89,12 +91,21 @@ export function SpatialCarousel({
 
   // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      e.preventDefault();
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      velocityRef.current = 0;
+    }
     if (e.key === "ArrowLeft") {
       setRotation((prev) => prev + angleStep);
     } else if (e.key === "ArrowRight") {
       setRotation((prev) => prev - angleStep);
     }
   };
+
+  useEffect(() => () => {
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+  }, []);
 
   // Autoplay slow rotation if requested and not interacting
   useEffect(() => {
@@ -139,13 +150,39 @@ export function SpatialCarousel({
     <div
       ref={containerRef}
       className={`spatial-carousel-stage ${isDragging ? "is-dragging" : ""} ${className}`}
-      onMouseDown={(e) => handlePointerDown(e.clientX)}
-      onMouseMove={(e) => handlePointerMove(e.clientX)}
-      onMouseUp={handlePointerUp}
-      onMouseLeave={handlePointerUp}
-      onTouchStart={(e) => handlePointerDown(e.touches[0].clientX)}
-      onTouchMove={(e) => handlePointerMove(e.touches[0].clientX)}
-      onTouchEnd={handlePointerUp}
+      onPointerDown={(e) => {
+        if (!e.isPrimary || e.button !== 0) return;
+        gestureRef.current = {id:e.pointerId,y:e.clientY,axis:"pending"};
+        movedRef.current = false;
+        handlePointerDown(e.clientX);
+      }}
+      onPointerMove={(e) => {
+        const gesture = gestureRef.current;
+        if (!gesture || gesture.id !== e.pointerId) return;
+        const dx = Math.abs(e.clientX - startXRef.current);
+        const dy = Math.abs(e.clientY - gesture.y);
+        if (Math.max(dx,dy) > 6) movedRef.current = true;
+        if (gesture.axis === "pending" && Math.max(dx,dy) > 6) {
+          gesture.axis = dx > dy ? "horizontal" : "vertical";
+          if (gesture.axis === "horizontal") e.currentTarget.setPointerCapture(e.pointerId);
+        }
+        if (gesture.axis === "horizontal") handlePointerMove(e.clientX);
+      }}
+      onPointerUp={(e) => {
+        const gesture = gestureRef.current;
+        if (!gesture || gesture.id !== e.pointerId) return;
+        gestureRef.current = null;
+        if (gesture.axis === "horizontal") handlePointerUp();
+        else setIsDragging(false);
+      }}
+      onPointerCancel={() => {
+        gestureRef.current = null;
+        movedRef.current = true;
+        velocityRef.current = 0;
+        setIsDragging(false);
+        if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      }}
+      onDragStart={(e) => e.preventDefault()}
       onKeyDown={handleKeyDown}
       tabIndex={0}
       role="region"
@@ -163,14 +200,19 @@ export function SpatialCarousel({
           const isFront = relativeAngle < 70 || relativeAngle > 290;
 
           return (
-            <div
+            <button
               key={image.id}
+              type="button"
+              tabIndex={isFront ? 0 : -1}
+              aria-label={`Abrir ${image.albumTitle || image.alt}`}
               className={`spatial-card ${isFront ? "is-front" : "is-back"}`}
               style={{
                 transform: `rotateY(${itemAngle}deg) translateZ(${radius}px)`,
               }}
-              onClick={() => {
-                if (Math.abs(lastXRef.current - startXRef.current) < 5) {
+              onClick={(e) => {
+                if (e.detail === 0 || !movedRef.current) {
+                  if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+                  velocityRef.current = 0;
                   onSelectImage?.(image);
                 }
               }}
@@ -187,7 +229,7 @@ export function SpatialCarousel({
                   <p className="spatial-card-title">{image.albumTitle}</p>
                 </div>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
