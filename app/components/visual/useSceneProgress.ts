@@ -29,14 +29,21 @@ export function useSceneProgress() {
     observer.observe(scene);
     const resize = new ResizeObserver(request);
     resize.observe(scene);
+    const stage = scene.firstElementChild;
+    const checkFit = () => {
+      if (stage) scene.dataset.tall = String(stage.scrollHeight > innerHeight - 24);
+      request();
+    };
+    const fit = new ResizeObserver(checkFit);
+    if (stage) fit.observe(stage);
     addEventListener("scroll", request, {passive:true});
-    addEventListener("resize", request);
+    addEventListener("resize", checkFit);
     media.addEventListener("change", preference);
     preference();
     return () => {
       cancelAnimationFrame(frame);
-      observer.disconnect(); resize.disconnect();
-      removeEventListener("scroll", request); removeEventListener("resize", request);
+      observer.disconnect(); resize.disconnect(); fit.disconnect();
+      removeEventListener("scroll", request); removeEventListener("resize", checkFit);
       media.removeEventListener("change", preference);
       delete scene.dataset.motion;
     };

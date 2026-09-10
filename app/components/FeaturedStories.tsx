@@ -8,7 +8,6 @@ import { ArrowUpRight, Sparkles, Grid, Layers } from "lucide-react";
 import type { PublicAlbumSummary } from "../../shared/public-content";
 import { albumArtworkSource } from "../lib/album-artwork";
 import { EssayLink } from "./EssayLink";
-import { EdgeBlur } from "./visual/EdgeBlur";
 
 export function FeaturedStories({
   albums,
@@ -19,9 +18,6 @@ export function FeaturedStories({
 }) {
   const [mode, setMode] = useState<"projector" | "editorial" | "collage">(
     variant === "collage" ? "collage" : "projector"
-  );
-  const [activeHoverAlbum, setActiveHoverAlbum] = useState<PublicAlbumSummary | null>(
-    albums[0] || null
   );
 
   if (!albums.length) return null;

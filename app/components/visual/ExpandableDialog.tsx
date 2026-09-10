@@ -19,9 +19,17 @@ export function ExpandableDialog({ image, onClose }: ExpandableDialogProps) {
     if (!dialog) return;
 
     if (image) {
+      const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      const previousOverflow = document.body.style.overflow;
       if (!dialog.open) {
         dialog.showModal();
       }
+      document.body.style.overflow = "hidden";
+      return () => {
+        dialog.close();
+        document.body.style.overflow = previousOverflow;
+        if (previousFocus?.isConnected) previousFocus.focus({preventScroll:true});
+      };
     } else {
       if (dialog.open) {
         dialog.close();

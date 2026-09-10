@@ -151,12 +151,6 @@ export function HomeAboutSection({
             <EditorialText text={copy.quote} />
           </blockquote>
           <p>{copy.body}</p>
-          <div className="cinema-quote-capsule">
-            <blockquote className="author-visceral-quote">
-              “Não busco o momento perfeito da pose, mas o segundo imediatamente anterior — quando a pessoa ainda não se armou contra a lente.”
-            </blockquote>
-            <span className="author-quote-signature">— Maria Helena · Caderno de Campo</span>
-          </div>
           <div className="manifesto-location-line">
             <span>Joinville · Curitiba · São Bento do Sul · Campo Alegre · Rio Negrinho</span>
           </div>

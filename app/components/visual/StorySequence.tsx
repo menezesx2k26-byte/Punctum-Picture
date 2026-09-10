@@ -10,11 +10,11 @@ import { useSceneProgress } from "./useSceneProgress";
 function Story({album}: {album:PublicAlbumSummary}) {
   const ref = useSceneProgress();
   const source = albumArtworkSource(album);
-  return <article ref={ref} className="sequence-story">
+  return <article ref={ref} className={`sequence-story${source ? "" : " sequence-story-without-cover"}`}>
     <div className="sequence-stage">
-      <Link className="sequence-art" href={`/ensaios/${album.slug}`} aria-label={`Ver ensaio ${album.title}`}>
-        {source && <Image src={source} alt={`Capa do ensaio ${album.title}`} width={1600} height={1200} unoptimized sizes="(min-width: 900px) 72vw, 100vw"/>}
-      </Link>
+      {source && <Link className="sequence-art" href={`/ensaios/${album.slug}`} aria-label={`Ver ensaio ${album.title}`}>
+        <Image src={source} alt={`Capa do ensaio ${album.title}`} width={1600} height={1200} unoptimized sizes="(min-width: 900px) 72vw, 100vw"/>
+      </Link>}
       <div className="sequence-caption">
         <p>{album.categories.map(c=>c.name).join(" · ")}</p>
         <h3><Link href={`/ensaios/${album.slug}`}>{album.title}</Link></h3>

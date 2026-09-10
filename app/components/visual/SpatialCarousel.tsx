@@ -86,7 +86,7 @@ export function SpatialCarousel({
   const handlePointerUp = () => {
     if (!isDragging) return;
     setIsDragging(false);
-    animFrameRef.current = requestAnimationFrame(animateMomentum);
+    animateMomentum();
   };
 
   // Keyboard navigation
@@ -106,6 +106,13 @@ export function SpatialCarousel({
   useEffect(() => () => {
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
   }, []);
+
+  useEffect(() => {
+    if (reducedMotion && animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      velocityRef.current = 0;
+    }
+  }, [reducedMotion]);
 
   // Autoplay slow rotation if requested and not interacting
   useEffect(() => {
@@ -181,6 +188,12 @@ export function SpatialCarousel({
         velocityRef.current = 0;
         setIsDragging(false);
         if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      }}
+      onPointerLeave={() => {
+        if (gestureRef.current?.axis === "pending") {
+          gestureRef.current = null;
+          setIsDragging(false);
+        }
       }}
       onDragStart={(e) => e.preventDefault()}
       onKeyDown={handleKeyDown}

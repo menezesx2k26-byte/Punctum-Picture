@@ -8,10 +8,12 @@ import { GalleryCursor } from "./visual/GalleryCursor";
 export function SiteThemeRoot({
   children,
   className,
+  ambientCursor = true,
   config = PUNCTUM_DEFAULT_SITE_CONFIG,
 }: {
   children: ReactNode;
   className?: string;
+  ambientCursor?: boolean;
   config?: unknown;
 }) {
   return (
@@ -20,7 +22,7 @@ export function SiteThemeRoot({
       {...siteThemeRootProps(config)}
     >
       <BarytaGrain />
-      <GalleryCursor />
+      {ambientCursor && <GalleryCursor />}
       {children}
     </div>
   );

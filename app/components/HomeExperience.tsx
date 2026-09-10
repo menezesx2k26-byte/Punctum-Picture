@@ -21,7 +21,7 @@ export function HomeExperience({
   carouselImages: CarouselImage[];
 }) {
   return (
-    <SiteThemeRoot config={config} className="immersive-home">
+    <SiteThemeRoot config={config} className="immersive-home" ambientCursor={false}>
       <SiteHeader site={site} editorial={config.editorial} />
       <main id="conteudo">
         <HomeRenderer

@@ -13,7 +13,7 @@ Branch: `feat/immersive-lens-mobile`. Base: `b22a93bef189f5f73211b9263e9c0700f23
 
 ## Próximas verificações obrigatórias
 
-1. Rodar typecheck, lint, testes focados e build. A primeira verificação de tipos passou antes das últimas melhorias no carrossel/textos; repetir no candidato final.
+1. Revalidar o candidato após novas mudanças. Typecheck passou; 30 testes em quatro suites passaram; lint focado sem erros (warnings existentes de img); build passou. A rodada final de build está registrada no Director.
 2. Abrir home real, confirmar se a configuração ativa usa hero `cinematic`, reel `horizontal` e ensaios habilitados. Não forçar outras variantes sem analisar configuração.
 3. Validar 320/390/430px e desktop, rolagem reversa, skip da lente, navegação aos ensaios, giro/toque/cancelamento do carrossel, foco e dialog/WhatsApp.
 4. Revisar tamanho de texto, fotos reais, enquadramento e sobreposição. Sticky não pode prender legenda maior que a viewport. Telas baixas e movimento reduzido têm fluxo normal.
@@ -25,3 +25,13 @@ Branch: `feat/immersive-lens-mobile`. Base: `b22a93bef189f5f73211b9263e9c0700f23
 Carrossel 3D original, câmera abrindo lente e mobile são inegociáveis. Não substituir por slider ou grade. Preservar API/Studio/D1/R2/contato/SEO. Não usar números decorativos, frases vagas ou citação inventada. O router frontend-director fornecido no handoff dirige a revisão. Não publicar em main automaticamente; preparar branch e evidências.
 
 Estado: IN_PROGRESS. Isto é código de implementação em revisão, não aprovação visual final. A prévia antiga em 4188 é um protótipo separado e não prova integração. Servidor do checkout foi iniciado em 4190.
+
+## Evidência obtida nesta sessão
+
+- Home real respondeu HTTP 200 após aplicar as migrations existentes somente ao D1 LOCAL.
+- Dados locais de exemplo tinham capas vazias: foram associadas à primeira imagem do próprio álbum somente no banco local, sem alterar migrations ou dados remotos.
+- Inspeção em 390×844 e 1440×900: nenhuma rolagem horizontal na página; abertura da lente e hierarquia tipográfica renderizadas; fotografias da sequência carregadas.
+- Seta direita girou o cilindro de 0 para -45 graus. Clique em Fé e Tradição abriu o diálogo; WhatsApp ficou oculto; fechamento devolveu foco ao botão da foto e restaurou o scroll do documento.
+- Removida a citação fixa sem fonte “Não busco o momento perfeito...” da seção Sobre. Texto persistido no banco ainda pode conter redação antiga: revisar no Studio sem sobrescrever automaticamente.
+- Cursor ornamental desativado na home; componente preservado nas outras páginas.
+- Não foram realizados testes de toque em aparelho físico, auditoria de desempenho, avaliação integral de todas as variantes do CMS ou publicação.

@@ -1,29 +1,40 @@
-{
-  "objective": "Integrar lente e sequência imersiva ao frontend real",
-  "visual_thesis": "Entrada pela câmera seguida por fotografias em grande escala, reenquadramento na rolagem e legendas em repouso; ambiente roxo e escrita natural.",
-  "preserve_constraints": [
-    "SpatialCarousel 3D",
-    "Lente",
-    "CMS/API/D1/R2",
-    "Mobile",
-    "WhatsApp configurado"
-  ],
-  "strategy": "refactor",
-  "lead": "frontend-director",
-  "support": [],
-  "reviewers": [],
-  "dependency_changes": [],
-  "structural_changes": [
-    "LensHero na variante cinematic",
-    "StorySequence no modo Percorrer",
-    "CSS escopado à home"
-  ],
-  "gates": {
-    "engineering": "NOT_RUN",
-    "visual": "NOT_RUN",
-    "functional": "NOT_RUN",
-    "mobile": "NOT_RUN"
-  },
-  "open_failures": [],
-  "state": "IN_PROGRESS"
+﻿{
+    "objective":  "Integrar lente e sequência imersiva ao frontend real",
+    "visual_thesis":  "Entrada pela câmera seguida por fotografias em grande escala, reenquadramento na rolagem e legendas em repouso; ambiente roxo e escrita natural.",
+    "preserve_constraints":  [
+                                 "SpatialCarousel 3D",
+                                 "Lente",
+                                 "CMS/API/D1/R2",
+                                 "Mobile",
+                                 "WhatsApp configurado"
+                             ],
+    "strategy":  "refactor",
+    "lead":  "frontend-director",
+    "support":  [
+
+                ],
+    "reviewers":  [
+
+                  ],
+    "dependency_changes":  [
+
+                           ],
+    "structural_changes":  [
+                               "LensHero na variante cinematic",
+                               "StorySequence no modo Percorrer",
+                               "CSS escopado à home"
+                           ],
+    "gates":  {
+                  "engineering":  "PASS: typecheck; focused lint without errors; 30 unit tests; final vinext build",
+                  "visual":  "PARTIAL: rendered inspection 390x844 and 1440x900",
+                  "functional":  "PARTIAL: carousel keyboard, open/close dialog, focus restoration and WhatsApp visibility verified",
+                  "mobile":  "PARTIAL: viewport inspection; real touch-device QA pending"
+              },
+    "open_failures":  [
+                          "GitHub push requires local authentication",
+                          "Real-device gestures, reduced-motion and 200% text matrix still pending",
+                          "Published Studio text/theme must be reviewed separately; defaults do not overwrite stored content",
+                          "Complete artistic refinement and measured performance audit remain"
+                      ],
+    "state":  "IN_PROGRESS"
 }
