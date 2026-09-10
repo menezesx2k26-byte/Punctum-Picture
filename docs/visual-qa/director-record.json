@@ -62,8 +62,10 @@
     "production": "READY"
   },
   "open_failures": [],
-  "candidate_commit": "9080a67",
-  "state": "IN_PROGRESS",
+  "candidate_commit": "4a32cc3",
+  "state": "APPROVED",
+  "approved_by": "Gabriel Menezes",
+  "approved_at": "2026-09-10T11:04:43-03:00",
   "rollback": {
     "status": "READY",
     "baseline_sha": "17ac1008b5462434d892754c32dd68ad6c9889b3",
@@ -78,7 +80,7 @@
   "governance": {
     "carousel_visual_lock": true,
     "carousel_status": "APPROVED",
-    "site_status": "IN_PROGRESS",
+    "site_status": "APPROVED",
     "purple_palette_required": true,
     "authorial_soul_required": true,
     "rollback_ready": true
