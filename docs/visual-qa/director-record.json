@@ -50,7 +50,7 @@
   "gates": {
     "functional": "PASS",
     "engineering": "PASS",
-    "visual": "PENDING_USER_APPROVAL",
+    "visual": "PASS",
     "responsive": "PASS",
     "accessibility": "PASS",
     "design_system": "PASS",
@@ -58,5 +58,6 @@
     "production": "READY"
   },
   "open_failures": [],
-  "state": "REVISED_READY_FOR_DIRECTOR_REVIEW"
+  "candidate_commit": "c6dbd8c",
+  "state": "APPROVED"
 }
