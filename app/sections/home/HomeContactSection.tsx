@@ -16,9 +16,11 @@ export function HomeContactSection({
   site: PublicSiteSettings;
   whatsappLabel: string;
 }) {
+  const variant = section.variant;
+
   return (
     <section
-      className="section contact-home"
+      className={`section contact-home contact-variant-${variant}`}
       aria-labelledby="contato-title"
       {...homeSectionAttributes(section)}
     >
@@ -29,7 +31,13 @@ export function HomeContactSection({
             <EditorialText text={copy.title} />
           </h2>
           <p>{copy.body}</p>
-          <MessageCircle aria-hidden="true" size={28} />
+          <div className="contact-service-regions">
+            <span className="contact-region-badge">Joinville</span>
+            <span className="contact-region-badge">Curitiba</span>
+            <span className="contact-region-badge">São Bento do Sul</span>
+            <span className="contact-region-badge">Campo Alegre</span>
+          </div>
+          <MessageCircle aria-hidden="true" size={28} className="contact-intro-icon" />
         </div>
         <ContactForm site={site} whatsappLabel={whatsappLabel} />
       </div>

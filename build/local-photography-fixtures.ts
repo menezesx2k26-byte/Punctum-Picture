@@ -8,14 +8,22 @@ export function localPhotographyFixtures(): Plugin {
     name: "local-photography-fixtures",
     apply: "serve",
     async configureServer(server) {
-      let manifest: Record<string, string>;
+      let manifest: Record<string, string> = {};
       try {
         manifest = JSON.parse(await readFile(resolve(server.config.root, ".qa/qa-media/index.json"), "utf8"));
-      } catch { return; }
+      } catch {
+        manifest = {};
+      }
       server.middlewares.use(async (request, response, next) => {
         const match = request.url?.match(/^\/media\/([^/]+)\/(?:sheet|thumb|card|gallery|hero|display|og)(?:\?|$)/);
         const fixturePath = request.url?.split("?")[0];
-        const asset = (match && manifest[match[1]]) || fixturePath;
+        let asset = match ? manifest[match[1]] : fixturePath;
+        if (!asset && match) {
+          const staticMatch = match[1].match(/^static-p(\d{3})$/);
+          if (staticMatch) {
+            asset = `/photos/p${staticMatch[1]}.jpg`;
+          }
+        }
         if (!asset || !/^\/(?:photos|qa-media)\/[a-zA-Z0-9-]+\.jpg$|^\/qa\/(?:index|frame)\.html$/.test(asset)) return next();
         try {
           const directory = asset.startsWith("/photos/") ? "public" : ".qa";
