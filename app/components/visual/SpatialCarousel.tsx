@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { CarouselImage } from "../../lib/portfolio";
 
 interface SpatialCarouselProps {
@@ -19,8 +19,6 @@ export function SpatialCarousel({
   const containerRef = useRef<HTMLDivElement>(null);
   const [rotation, setRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [reducedMotion, setReducedMotion] = useState(false);
 
   // Interaction tracking refs
   const startXRef = useRef(0);
@@ -32,26 +30,30 @@ export function SpatialCarousel({
 
   const count = images.length;
   const angleStep = count > 0 ? 360 / count : 0;
-  // Radius based on count
   const radius = Math.max(380, Math.round((count * 180) / (2 * Math.PI)));
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(mediaQuery.matches);
-    const listener = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
-    mediaQuery.addEventListener("change", listener);
-    return () => mediaQuery.removeEventListener("change", listener);
-  }, []);
+  const reducedMotion = useSyncExternalStore(
+    (callback) => {
+      const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+      mediaQuery.addEventListener("change", callback);
+      return () => mediaQuery.removeEventListener("change", callback);
+    },
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    () => false,
+  );
 
   // Momentum decay animation
   const animateMomentum = useCallback(() => {
-    if (Math.abs(velocityRef.current) > 0.05) {
-      velocityRef.current *= 0.94; // friction
-      setRotation((prev) => prev + velocityRef.current);
-      animFrameRef.current = requestAnimationFrame(animateMomentum);
-    } else {
-      velocityRef.current = 0;
+    function loop() {
+      if (Math.abs(velocityRef.current) > 0.05) {
+        velocityRef.current *= 0.94; // friction
+        setRotation((prev) => prev + velocityRef.current);
+        animFrameRef.current = requestAnimationFrame(loop);
+      } else {
+        velocityRef.current = 0;
+      }
     }
+    animFrameRef.current = requestAnimationFrame(loop);
   }, []);
 
   const handlePointerDown = (clientX: number) => {
@@ -169,7 +171,6 @@ export function SpatialCarousel({
               }}
               onClick={() => {
                 if (Math.abs(lastXRef.current - startXRef.current) < 5) {
-                  setSelectedIndex(index);
                   onSelectImage?.(image);
                 }
               }}

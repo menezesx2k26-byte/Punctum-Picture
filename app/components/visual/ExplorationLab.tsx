@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowUpRight, Maximize2, Sparkles, Film, Grid, Eye } from "lucide-react";
+import { ArrowUpRight, Film, Grid, Eye } from "lucide-react";
 import type { CarouselImage } from "../../lib/portfolio";
 import type { PublicAlbumSummary, PublicSiteSettings } from "../../../shared/public-content";
 import { SpatialCarousel } from "./SpatialCarousel";
@@ -13,13 +13,13 @@ import { ExpandableDialog } from "./ExpandableDialog";
 type DirectionMode = "mesa-edicao" | "cinema" | "indice-radical";
 
 interface ExplorationLabProps {
-  site: PublicSiteSettings;
+  site?: PublicSiteSettings;
   images: CarouselImage[];
   albums: PublicAlbumSummary[];
   initialDirection?: DirectionMode;
 }
 
-export function ExplorationLab({ site, images, albums, initialDirection = "mesa-edicao" }: ExplorationLabProps) {
+export function ExplorationLab({ images, albums, initialDirection = "mesa-edicao" }: ExplorationLabProps) {
   const [activeDirection, setActiveDirection] = useState<DirectionMode>(initialDirection);
   const [selectedPhoto, setSelectedPhoto] = useState<CarouselImage | null>(null);
   const [activeHoverAlbum, setActiveHoverAlbum] = useState<PublicAlbumSummary | null>(
