@@ -1,6 +1,6 @@
 {
-  "objective": "Reconstrução visual radical da Punctum Picture superando esterilidade e vazio cartesiano",
-  "visual_thesis": "Punctum como acontecimento: Mesa de Edição / Arquivo Vivo com ritmo cinematográfico. Cilindro 3D espacial com inércia física (SpatialCarousel), fita de filme 35mm com fotogramas numerados, diagramação editorial assimétrica com quebra de simetria e presença autoral de Maria Helena.",
+  "objective": "Reconstrução visual com alma autoral da Punctum Picture (Maria Helena) ao redor do Carrossel 3D aprovado",
+  "visual_thesis": "Punctum como acontecimento: intimidade, afeto, atmosfera e memória. Paleta autoral com nuances violeta/berinjela/ameixa escura e off-white quente. O SpatialCarousel 3D é o coração espacial intocável; o restante do ecossistema ganha ritmo cinematográfico assimétrico, quebra de esterilidade e presença humana genuína de Maria Helena.",
   "system_constraints": {
     "tokens": "Site Config/theme resolver/registries existentes preservados",
     "type": "Cormorant Garamond + Manrope administráveis",
@@ -59,5 +59,24 @@
   },
   "open_failures": [],
   "candidate_commit": "9080a67",
-  "state": "APPROVED"
+  "state": "IN_PROGRESS",
+  "rollback": {
+    "status": "READY",
+    "baseline_sha": "17ac1008b5462434d892754c32dd68ad6c9889b3",
+    "deployment_id": "111b6ebd-f82d-4357-aa94-ae98022f76c8",
+    "worker_version_id": "cc6a8fb3-3952-4181-a933-295d89b2a158",
+    "preview_drill_url": "https://rollback-drill-punctum-picture-migration.menezesx2k26.workers.dev",
+    "runbook": "docs/operations/PUNCTUM-ROLLBACK.md",
+    "tested_at": "2026-09-10T11:33:00Z",
+    "verified_by": "Cloudflare Preview Alias Drill + Headless Playwright Inspection",
+    "locked_carousel_preserved": true
+  },
+  "governance": {
+    "carousel_visual_lock": true,
+    "carousel_status": "APPROVED",
+    "site_status": "IN_PROGRESS",
+    "purple_palette_required": true,
+    "authorial_soul_required": true,
+    "rollback_ready": true
+  }
 }
