@@ -1,4 +1,5 @@
 import "../immersive.css";
+import { MotionControl } from "./visual/motion-preference";
 import type { SiteConfig } from "../../shared/config";
 import type {
   PublicAlbumSummary,
@@ -32,6 +33,7 @@ export function HomeExperience({
         />
       </main>
       <SiteFooter site={site} editorial={config.editorial} />
+      <div className="motion-preference-bar"><MotionControl /></div>
     </SiteThemeRoot>
   );
 }

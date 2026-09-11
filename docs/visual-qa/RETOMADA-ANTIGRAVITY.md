@@ -1,37 +1,32 @@
-# Retomada — experiência imersiva Punctum
+# Punctum — implementação final
 
-Branch: `feat/immersive-lens-mobile`. Base: `b22a93bef189f5f73211b9263e9c0700f231ea1b`.
+Implementação local concluída e revisada em 11/09/2026. Branch: feat/immersive-lens-mobile. Base: b22a93bef189f5f73211b9263e9c0700f231ea1b.
 
-## O que já está implementado
+A prévia integrada é http://127.0.0.1:4190/ enquanto o servidor estiver ativo. A porta 4188 era um protótipo. Não houve deploy ou alteração do banco remoto. GitHub ainda sem autenticação nesta máquina: a branch não foi enviada.
 
-- `LensHero`: abertura da lente na variante existente `cinematic`, usando imagem e textos configurados no Studio. Sem schema novo ou mudança de API.
-- `StorySequence`: modo Percorrer de FeaturedStories com fotos grandes, composições alternadas, enquadramento por scroll e legendas em repouso. Modos Grade e Composição preservados.
-- `useSceneProgress`: observação de cenas, uma atualização por quadro, desmontagem e movimento reduzido.
-- `immersive.css`: integração escopada à home; controles de tamanho confortável, legendas naturais, sem números ornamentais; WhatsApp com safe area e ocultação durante diálogo/campos focados.
-- SpatialCarousel continua sendo o cilindro 3D original. Melhorias de Pointer Events distinguem scroll vertical de giro horizontal, tratam cancelamento e oferecem botões acessíveis.
-- Defaults editoriais mais diretos, citação do print fornecido de Maria, Instrument Serif + Manrope e modo roxo escuro. Configuração publicada tem precedência; não sobrescrever D1 para aplicar defaults.
+Leia ESPECIFICACAO-FINAL.md para direção, comportamento, mobile e critérios de regressão. O código atual prevalece sobre o HTML histórico do pacote de referências.
 
-## Próximas verificações obrigatórias
+## Implementado
 
-1. Revalidar o candidato após novas mudanças. Typecheck passou; 30 testes em quatro suites passaram; lint focado sem erros (warnings existentes de img); build passou. A rodada final de build está registrada no Director.
-2. Abrir home real, confirmar se a configuração ativa usa hero `cinematic`, reel `horizontal` e ensaios habilitados. Não forçar outras variantes sem analisar configuração.
-3. Validar 320/390/430px e desktop, rolagem reversa, skip da lente, navegação aos ensaios, giro/toque/cancelamento do carrossel, foco e dialog/WhatsApp.
-4. Revisar tamanho de texto, fotos reais, enquadramento e sobreposição. Sticky não pode prender legenda maior que a viewport. Telas baixas e movimento reduzido têm fluxo normal.
-5. O mapa de progresso precisa refletir a altura visual real, inclusive barra do navegador móvel. Refinar conforme inspeção.
-6. A autenticação GitHub local está ausente. Push tentado sem interação falhou; não assumir que esta branch existe no remoto.
+- Abertura da lente vinculada à rolagem, usando imagem/textos configurados no Studio e opção de seguir diretamente às fotografias.
+- Ensaios em escala grande, composição alternada, legenda sobre a borda e reenquadramento durante a rolagem. Grade e Composição preservadas.
+- Carrossel cilíndrico 3D original, gestos por eixo, teclado, cancelamento e prevenção de clique após arraste.
+- Visualizador nativo que restaura foco/scroll e oculta WhatsApp enquanto está aberto.
+- Instrument Serif + Manrope e roxo escuro nos defaults. Remoção de numeração ornamental e redação genérica de referência.
+- Miniaturas escalonadas, retrato com chegada discreta e contato com título animado; formulário estável.
+- WhatsApp flutuante de 56 px com safe area; reduz movimento no rodapé, persistente e respeitando o sistema.
+- Texto ampliado e composição alta recebem fluxo normal para não cortar conteúdo.
 
-## Restrições
+## Verificações concluídas
 
-Carrossel 3D original, câmera abrindo lente e mobile são inegociáveis. Não substituir por slider ou grade. Preservar API/Studio/D1/R2/contato/SEO. Não usar números decorativos, frases vagas ou citação inventada. O router frontend-director fornecido no handoff dirige a revisão. Não publicar em main automaticamente; preparar branch e evidências.
+Typecheck, build completo e 83 testes unitários em 20 arquivos passaram. Lint completo do repositório: zero erros e três avisos de img do pipeline de mídia existente. Matriz renderizada: 320×568, 390×844, 430×932, 844×390 e 1440×900, sem overflow horizontal.
 
-Estado: IN_PROGRESS. Isto é código de implementação em revisão, não aprovação visual final. A prévia antiga em 4188 é um protótipo separado e não prova integração. Servidor do checkout foi iniciado em 4190.
+Em 320 px, lente animada e texto sem overflow; WhatsApp 56 px. A rolagem levou o progresso da lente de 0 a 0,811 e expandiu o recorte. Console sem erros na inspeção final. Em 390 px, texto a 200% coube sem corte; cabeçalho ficou acima do título e cenas altas saíram de sticky. O ajuste temporário de teste foi removido.
 
-## Evidência obtida nesta sessão
+Reduzir movimento persistiu após reload. Arraste horizontal girou o cilindro sem abrir foto; arraste vertical não girou. Teclado interrompeu inércia. Foto abriu no diálogo; Escape fechou e restaurou o foco. WhatsApp ficou oculto no diálogo e nos campos focados. Ensaio Fé e Tradição abriu /ensaios/ritos-de-luz, com título e dez imagens. Formulário vazio bloqueou envio e focou o campo obrigatório; nenhum pedido real enviado.
 
-- Home real respondeu HTTP 200 após aplicar as migrations existentes somente ao D1 LOCAL.
-- Dados locais de exemplo tinham capas vazias: foram associadas à primeira imagem do próprio álbum somente no banco local, sem alterar migrations ou dados remotos.
-- Inspeção em 390×844 e 1440×900: nenhuma rolagem horizontal na página; abertura da lente e hierarquia tipográfica renderizadas; fotografias da sequência carregadas.
-- Seta direita girou o cilindro de 0 para -45 graus. Clique em Fé e Tradição abriu o diálogo; WhatsApp ficou oculto; fechamento devolveu foco ao botão da foto e restaurou o scroll do documento.
-- Removida a citação fixa sem fonte “Não busco o momento perfeito...” da seção Sobre. Texto persistido no banco ainda pode conter redação antiga: revisar no Studio sem sobrescrever automaticamente.
-- Cursor ornamental desativado na home; componente preservado nas outras páginas.
-- Não foram realizados testes de toque em aparelho físico, auditoria de desempenho, avaliação integral de todas as variantes do CMS ou publicação.
+## Limites honestos
+
+Não houve teste em aparelho físico, medição de Core Web Vitals em produção, envio real do formulário ou auditoria de todas as variantes do Studio. Antes de publicar, conferir configuração ativa, destino do WhatsApp e capas dos álbuns. Dados locais de exemplo tinham capas vazias: a prévia associou a primeira imagem de cada álbum somente ao D1 local. Álbuns sem capa continuam navegáveis em apresentação textual.
+
+Não forçar configurações sobre escolhas publicadas. Apenas a biografia genérica distribuída pelo código recebe atualização por igualdade exata; conteúdo autoral diferente é preservado e coberto por testes. Não executar deploy, migrations remotas ou push em main por inferência. Há automação de publicação no repositório. O bundle incremental requer o commit base no clone.

@@ -1,4 +1,6 @@
-import { MessageCircle } from "lucide-react";
+"use client";
+
+import { useSceneProgress } from "../../components/visual/useSceneProgress";
 import type { EditorialConfig, HomeSectionConfig } from "../../../shared/config";
 import type { PublicSiteSettings } from "../../../shared/public-content";
 import { ContactForm } from "../../components/ContactForm";
@@ -17,9 +19,11 @@ export function HomeContactSection({
   whatsappLabel: string;
 }) {
   const variant = section.variant;
+  const scene = useSceneProgress();
 
   return (
     <section
+      ref={scene}
       className={`section contact-home contact-variant-${variant}`}
       aria-labelledby="contato-title"
       {...homeSectionAttributes(section)}
@@ -37,7 +41,7 @@ export function HomeContactSection({
             <span className="contact-region-badge">São Bento do Sul</span>
             <span className="contact-region-badge">Campo Alegre</span>
           </div>
-          <MessageCircle aria-hidden="true" size={28} className="contact-intro-icon" />
+          <div className="contact-aperture" aria-hidden="true" />
         </div>
         <ContactForm site={site} whatsappLabel={whatsappLabel} />
       </div>

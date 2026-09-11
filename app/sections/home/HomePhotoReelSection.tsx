@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { useState } from "react";
+import { useSceneProgress } from "../../components/visual/useSceneProgress";
 import type { EditorialConfig, HomeSectionConfig } from "../../../shared/config";
 import type { CarouselImage } from "../../lib/portfolio";
 import { EditorialText } from "../../components/EditorialText";
@@ -22,6 +23,7 @@ export function HomePhotoReelSection({
   section: HomeSectionConfig;
 }) {
   const [selectedImage, setSelectedImage] = useState<CarouselImage | null>(null);
+  const scene = useSceneProgress();
 
   if (section.type !== "photo-reel") return null;
 
@@ -36,6 +38,7 @@ export function HomePhotoReelSection({
 
   return (
     <section
+      ref={scene}
       className={`carousel-section carousel-section-${variant}`}
       aria-labelledby="carousel-title"
       {...homeSectionAttributes(section)}

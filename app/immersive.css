@@ -1,5 +1,7 @@
 /* Photographs carry the movement; reading and direct manipulation have rest. */
 .site-shell.immersive-home {--gutter:clamp(1rem,4vw,4rem)}
+.site-shell.immersive-home {font-size:max(1rem,var(--font-size-body));background-color:var(--color-background)}
+.site-shell.immersive-home :is(h1,h2,h3,blockquote) {overflow-wrap:anywhere}
 .site-shell.immersive-home .eyebrow,.site-shell.immersive-home .spatial-card-category,.site-shell.immersive-home .spatial-reel-hint,.site-shell.immersive-home .spatial-carousel-hud {text-transform:none;letter-spacing:normal;font-size:.875rem}
 .site-shell.immersive-home .text-link,.site-shell.immersive-home .quiet-link {font-size:.9375rem;min-height:48px}
 .site-shell.immersive-home .hero-plate-badge,.site-shell.immersive-home .frame-marker,.site-shell.immersive-home .frame-category,.site-shell.immersive-home .contact-sheet-header,.site-shell.immersive-home .spatial-reel-badge {display:none}
@@ -89,3 +91,92 @@ body:has(dialog[open]) .floating-whatsapp,body:has(input:focus,textarea:focus,se
 .sequence-story-without-cover {min-height:0!important;padding-block:2rem!important}
 .sequence-story-without-cover .sequence-stage {position:relative!important;top:auto!important;display:block!important}
 @media(prefers-reduced-motion:reduce) {.lens-story {height:auto!important}.lens-stage {position:relative!important}.lens-housing {display:none!important}.lens-photograph {clip-path:none!important}.lens-caption,.lens-title {opacity:1!important;transform:none!important}.sequence-story {min-height:0}.sequence-stage {position:relative}.sequence-art img {transform:none}}
+
+/* Each photograph has its own spread, with a quiet caption crossing its edge. */
+.site-shell.immersive-home .thesis-colophon-tag {display:none}
+.site-shell.immersive-home .visual-thesis {padding-block:clamp(4rem,9vw,8rem);background:var(--color-background)}
+.site-shell.immersive-home .visual-thesis h2 {max-width:24ch}
+.site-shell.immersive-home .carousel-heading {gap:2rem;margin-bottom:2rem}
+.site-shell.immersive-home .spatial-carousel-hud {display:none}
+.site-shell.immersive-home .spatial-reel-footer {padding-bottom:2rem;border-bottom:1px solid var(--color-border)}
+.site-shell.immersive-home .home-contact-sheet {max-width:var(--container-max);margin:auto;padding-inline:var(--gutter)}
+.site-shell.immersive-home .contact-frame .frame-image-wrapper {aspect-ratio:3/4;height:auto}
+.site-shell.immersive-home .contact-frame img {width:100%;height:100%;object-fit:cover}
+.site-shell.immersive-home .contact-sheet-grid {grid-template-columns:repeat(4,minmax(0,1fr))}
+.site-shell.immersive-home .carousel-section {padding-bottom:clamp(4rem,8vw,8rem)}
+.sequence-caption h3 a {text-decoration:none}
+.sequence-caption .text-link {gap:2.5rem}
+.sequence-art:focus-visible {outline-offset:-5px}
+.sequence-description {font-size:1rem!important}
+.lens-barrel svg {mask-image:radial-gradient(circle,transparent 0 9%,#000 10%)}
+.lens-barrel svg {position:absolute;inset:28px;width:calc(100% - 56px);height:calc(100% - 56px)}
+.lens-glass {z-index:2;pointer-events:none}
+.lens-story[data-motion="reduced"] {height:auto}
+.lens-story[data-motion="reduced"] .lens-stage {position:relative}
+.lens-story[data-motion="reduced"] .lens-housing {display:none}
+.lens-story[data-motion="reduced"] .lens-photograph {clip-path:none}
+.lens-story[data-motion="reduced"] .lens-title,.lens-story[data-motion="reduced"] .lens-caption {opacity:1;transform:none}
+.lens-story[data-text-overflow="true"] {height:auto!important}
+.lens-story[data-text-overflow="true"] .lens-stage {height:auto;min-height:100svh;position:relative;display:flex;flex-direction:column;padding:7rem var(--gutter) 2rem;gap:2rem}
+.lens-story[data-text-overflow="true"] .lens-title {position:relative;inset:auto;order:0;opacity:1;transform:none}
+.lens-story[data-text-overflow="true"] .lens-housing {position:relative;inset:auto;height:280px;flex-shrink:0;order:1;opacity:1}
+.lens-story[data-text-overflow="true"] .lens-barrel {left:50%;top:50%;width:260px;height:260px;transform:translate(-50%,-50%)}
+.lens-story[data-text-overflow="true"] .lens-photograph {clip-path:none;opacity:.18}
+.lens-story[data-text-overflow="true"] .lens-caption {position:relative;inset:auto;order:2;opacity:1}
+.lens-story[data-text-overflow="true"] .lens-navigation {position:relative;inset:auto;order:3;align-items:start}
+.site-shell.immersive-home .manifesto {background:var(--color-background);overflow:clip}
+.site-shell.immersive-home .manifesto-image {overflow:clip}
+.site-shell.immersive-home .manifesto-image img {filter:none}
+.site-shell.immersive-home .manifesto-image>span {display:none}
+.site-shell.immersive-home .manifesto-location-line {font-size:.875rem;letter-spacing:normal;text-transform:none}
+.site-shell.immersive-home .contact-home {position:relative;overflow:clip;background:var(--color-surface)}
+.site-shell.immersive-home .contact-section {position:relative;z-index:1}
+.site-shell.immersive-home .contact-intro h2 {font-size:clamp(3rem,7.5vw,7.5rem);line-height:1.04;max-width:12ch}
+.site-shell.immersive-home .contact-intro>p {font-size:1rem}
+.contact-aperture {width:280px;height:280px;border-radius:50%;border:1px solid var(--color-border);box-shadow:0 0 0 26px color-mix(in srgb,var(--color-border) 30%,transparent),0 0 0 56px color-mix(in srgb,var(--color-border) 15%,transparent);margin:4rem auto -4rem;pointer-events:none}
+.site-shell.immersive-home .contact-region-badge {background:none;border:0;border-radius:0;padding:0;font-size:.875rem;letter-spacing:normal;text-transform:none}
+.site-shell.immersive-home .contact-service-regions {gap:.4rem 1rem}
+.site-shell.immersive-home .site-footer {padding-bottom:2rem}
+.motion-preference-bar {padding:0 var(--gutter) calc(2rem + env(safe-area-inset-bottom));display:flex;justify-content:flex-start}
+.motion-control {border:0;border-bottom:1px solid var(--color-border);background:none;color:var(--color-muted);font:inherit;font-size:.875rem;min-height:48px;padding:8px 0;max-width:calc(100% - 72px)}
+.motion-control:disabled {cursor:default}
+.motion-control[aria-pressed="true"] {color:var(--color-foreground)}
+.site-shell.immersive-home .floating-whatsapp {width:56px;height:56px;bottom:calc(16px + env(safe-area-inset-bottom));right:max(16px,env(safe-area-inset-right))}
+.site-shell.immersive-home .floating-whatsapp img {width:36px;height:36px}
+.site-shell.immersive-home:has(.lens-story[data-text-overflow="true"]) .site-header {position:relative;flex-wrap:wrap}
+.site-shell.immersive-home:has(.lens-story[data-text-overflow="true"]) .site-nav {flex-wrap:wrap}
+.lens-story[data-text-overflow="true"] .lens-stage {padding-top:2rem}
+.site-shell.immersive-home .lens-story[data-text-overflow="true"] h1 {font-size:clamp(2rem,10vw,4rem);max-width:100%}
+@media(max-width:359px) {.site-shell.immersive-home .lens-navigation>.text-link {display:none}}
+@media(min-width:900px) {
+ .sequence-story {padding-inline:var(--gutter);padding-bottom:8rem}
+ .sequence-stage,.sequence-story:nth-child(even) .sequence-stage {grid-template-columns:repeat(12,minmax(0,1fr));gap:0;align-items:end}
+ .sequence-art {grid-column:1/10;grid-row:1;aspect-ratio:4/3;max-height:78svh}
+ .sequence-caption {grid-column:9/13;grid-row:1;z-index:1;background:var(--color-background);padding:2rem 0 0 2rem;margin-bottom:-2rem}
+ .site-shell .sequence-caption h3 {font-size:clamp(3rem,4.6vw,5.6rem)}
+ .sequence-story:nth-child(even) .sequence-art {grid-column:4/13;aspect-ratio:4/3}
+ .sequence-story:nth-child(even) .sequence-caption {grid-column:1/5;padding:2rem 2rem 0 0}
+ .sequence-story:nth-child(3n) .sequence-art {aspect-ratio:16/11}
+ .site-shell.immersive-home .manifesto-grid {grid-template-columns:1fr 1fr;gap:8vw;align-items:center}
+ .site-shell.immersive-home .manifesto-image {max-width:480px;margin-left:6vw;transform:rotate(-2deg)}
+}
+@media(max-width:699px) {
+ .site-shell.immersive-home .contact-sheet-grid {grid-template-columns:repeat(2,minmax(0,1fr))}
+ .site-shell.immersive-home .carousel-heading {display:block;padding-inline:1rem}
+ .site-shell.immersive-home .carousel-heading>p {margin-top:1rem;font-size:1rem}
+ .site-shell.immersive-home .carousel-heading h2 {font-size:clamp(2.5rem,10vw,3.75rem)}
+ .sequence-art {max-height:65svh}
+ .sequence-caption {padding-inline:1rem;margin-top:-2rem;padding-top:1.5rem;background:var(--color-background);margin-right:1rem;z-index:1}
+ .sequence-story:nth-child(even) .sequence-caption {margin-left:1rem;margin-right:0}
+ .site-shell.immersive-home .contact-aperture {display:none}
+ .site-shell.immersive-home .contact-section {gap:2rem}
+ .site-shell.immersive-home .site-header {gap:.75rem}
+ .site-shell.immersive-home .site-nav {gap:clamp(.6rem,3vw,1.25rem)}
+ .site-shell.immersive-home .site-nav a {font-size:.875rem}
+ .site-shell.immersive-home .wordmark {width:58px;height:58px}
+}
+@media(prefers-reduced-motion:no-preference) {
+ .site-shell.immersive-home .manifesto[data-motion="ready"] .manifesto-image img {transform:translateY(calc((1 - var(--arrival,1))*24px)) scale(calc(1.06 - var(--arrival,1)*.06))}
+ .site-shell.immersive-home .contact-home[data-motion="ready"] .contact-aperture {transform:rotate(calc(var(--arrival,1)*30deg)) scale(calc(.85 + var(--arrival,1)*.15))}
+ .site-shell.immersive-home .contact-home[data-motion="ready"] .contact-intro h2 {transform:translateY(calc((1 - var(--arrival,1))*28px))}
+}

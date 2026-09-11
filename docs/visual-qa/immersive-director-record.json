@@ -1,40 +1,44 @@
-﻿{
-    "objective":  "Integrar lente e sequência imersiva ao frontend real",
-    "visual_thesis":  "Entrada pela câmera seguida por fotografias em grande escala, reenquadramento na rolagem e legendas em repouso; ambiente roxo e escrita natural.",
-    "preserve_constraints":  [
-                                 "SpatialCarousel 3D",
-                                 "Lente",
-                                 "CMS/API/D1/R2",
-                                 "Mobile",
-                                 "WhatsApp configurado"
-                             ],
-    "strategy":  "refactor",
-    "lead":  "frontend-director",
-    "support":  [
-
-                ],
-    "reviewers":  [
-
-                  ],
-    "dependency_changes":  [
-
-                           ],
-    "structural_changes":  [
-                               "LensHero na variante cinematic",
-                               "StorySequence no modo Percorrer",
-                               "CSS escopado à home"
-                           ],
-    "gates":  {
-                  "engineering":  "PASS: typecheck; focused lint without errors; 30 unit tests; final vinext build",
-                  "visual":  "PARTIAL: rendered inspection 390x844 and 1440x900",
-                  "functional":  "PARTIAL: carousel keyboard, open/close dialog, focus restoration and WhatsApp visibility verified",
-                  "mobile":  "PARTIAL: viewport inspection; real touch-device QA pending"
-              },
-    "open_failures":  [
-                          "GitHub push requires local authentication",
-                          "Real-device gestures, reduced-motion and 200% text matrix still pending",
-                          "Published Studio text/theme must be reviewed separately; defaults do not overwrite stored content",
-                          "Complete artistic refinement and measured performance audit remain"
-                      ],
-    "state":  "IN_PROGRESS"
+{
+  "objective": "Concluir a experiência imersiva no frontend real",
+  "visual_thesis": "Entrada pela câmera, fotografias amplas com reenquadramento na rolagem, legendas em repouso e ambiente roxo.",
+  "preserve_constraints": [
+    "SpatialCarousel 3D",
+    "Lente",
+    "CMS/API/D1/R2",
+    "Mobile",
+    "WhatsApp configurado"
+  ],
+  "strategy": "refactor",
+  "lead": "frontend-director",
+  "support": [],
+  "reviewers": [],
+  "dependency_changes": [],
+  "structural_changes": [
+    "LensHero cinematic",
+    "StorySequence no modo Percorrer",
+    "CSS da home",
+    "Preferência de movimento compartilhada",
+    "Gestos e foco do visualizador",
+    "Adaptação para texto ampliado"
+  ],
+  "gates": {
+    "engineering": "PASS: typecheck; 83 unit tests across 20 files; full repository lint with zero errors and three existing img warnings; complete Vinext build.",
+    "visual": "PASS local: rendered 320x568, 390x844, 430x932, 844x390 and 1440x900; no page horizontal overflow; typography, lens and alternating photo/caption composition inspected.",
+    "functional": "PASS local: album navigation, horizontal carousel drag, vertical-axis separation, keyboard, dialog Escape/focus restoration, WhatsApp visibility and native empty-form validation.",
+    "accessibility": "PASS focused: 200% text in 390px viewport without clipped headings/navigation; tall content exits sticky; reduced-motion control persists after reload; OS preference respected in code.",
+    "performance": "PASS focused: no new dependencies; scene updates scoped to intersection and batched in rAF; carousel photos lazy/async; LensHero chunk 1724 bytes (735 gzip). No field CWV or physical-device FPS claim."
+  },
+  "open_failures": [],
+  "state": "APPROVED",
+  "approval_scope": "Implementação e revisão frontend local; não constitui aprovação de deploy ou auditoria integral do produto.",
+  "external_status": {
+    "git_push": "NOT_PUBLISHED: GitHub local sem autenticação",
+    "deployment": "NOT_REQUESTED"
+  },
+  "limitations": [
+    "Sem teste em aparelho físico ou métricas Core Web Vitals publicadas",
+    "Sem envio real do formulário",
+    "Não auditadas todas as variantes do Studio",
+    "Configuração publicada e capas remotas não alteradas; defaults respeitam conteúdo persistido"
+  ]
 }

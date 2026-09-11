@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useReducedMotion } from "./motion-preference";
 import type { CarouselImage } from "../../lib/portfolio";
 
 interface SpatialCarouselProps {
@@ -34,15 +35,7 @@ export function SpatialCarousel({
   const angleStep = count > 0 ? 360 / count : 0;
   const radius = Math.max(380, Math.round((count * 180) / (2 * Math.PI)));
 
-  const reducedMotion = useSyncExternalStore(
-    (callback) => {
-      const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-      mediaQuery.addEventListener("change", callback);
-      return () => mediaQuery.removeEventListener("change", callback);
-    },
-    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-    () => false,
-  );
+  const reducedMotion = useReducedMotion();
 
   // Momentum decay animation
   const animateMomentum = useCallback(() => {
@@ -140,7 +133,7 @@ export function SpatialCarousel({
               <img
                 src={image.src}
                 alt={image.alt}
-                loading="eager"
+                loading="lazy" decoding="async"
                 className="spatial-card-image"
               />
               <span className="spatial-fallback-caption">
@@ -234,7 +227,7 @@ export function SpatialCarousel({
                 <img
                   src={image.src}
                   alt={image.alt}
-                  loading="eager"
+                  loading="lazy" decoding="async"
                   className="spatial-card-image"
                 />
                 <div className="spatial-card-overlay">

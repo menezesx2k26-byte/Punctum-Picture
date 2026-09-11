@@ -24,10 +24,10 @@ describe("ThemeResolver", () => {
     expect(Object.keys(first.cssVariables).sort()).toEqual(
       [...THEME_CSS_VARIABLE_NAMES].sort(),
     );
-    expect(first.cssVariables["--color-background"]).toBe("#f8f0fa");
-    expect(first.cssVariables["--font-heading"]).toContain("Cormorant Garamond");
+    expect(first.cssVariables["--color-background"]).toBe("#120a17");
+    expect(first.cssVariables["--font-heading"]).toContain("Instrument Serif");
     expect(first.cssVariables["--background-carousel"]).toContain(
-      "linear-gradient",
+      "radial-gradient",
     );
     expect(first.cssVariables["--collage-style"]).toBe("section-driven");
   });
@@ -89,7 +89,7 @@ describe("wrapper público de identidade", () => {
     expect(props["data-theme-preset"]).toBe("punctum-default");
     expect(props["data-theme-background"]).toBe("organic-glow");
     expect(props.style["--color-background" as keyof typeof props.style]).toBe(
-      "#f8f0fa",
+      "#120a17",
     );
     expect("data-theme-fallback" in props).toBe(false);
   });
@@ -99,7 +99,7 @@ describe("wrapper público de identidade", () => {
 
     expect(props["data-theme-fallback"]).toBe("true");
     expect(props.style["--color-primary" as keyof typeof props.style]).toBe(
-      "#7a25b5",
+      "#e0c8eb",
     );
   });
 });

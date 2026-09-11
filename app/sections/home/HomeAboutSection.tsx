@@ -1,4 +1,8 @@
+"use client";
+
 import Image from "next/image";
+import { useSceneProgress } from "../../components/visual/useSceneProgress";
+import { refreshAboutCopy } from "../../lib/editorial-refresh";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import type { EditorialConfig, HomeSectionConfig } from "../../../shared/config";
@@ -6,17 +10,20 @@ import { EditorialText } from "../../components/EditorialText";
 import { homeSectionAttributes } from "./section-attributes";
 
 export function HomeAboutSection({
-  copy,
+  copy: configuredCopy,
   section,
 }: {
   copy: EditorialConfig["home"]["about"];
   section: HomeSectionConfig;
 }) {
   const variant = section.variant;
+  const copy = refreshAboutCopy(configuredCopy);
+  const scene = useSceneProgress();
 
   if (variant === "centered") {
     return (
       <section
+        ref={scene}
         id="sobre"
         className="section manifesto manifesto-centered"
         aria-labelledby="sobre-title"
@@ -51,6 +58,7 @@ export function HomeAboutSection({
   if (variant === "editorial") {
     return (
       <section
+        ref={scene}
         id="sobre"
         className="section manifesto manifesto-editorial"
         aria-labelledby="sobre-title"
@@ -90,6 +98,7 @@ export function HomeAboutSection({
   if (variant === "side-portrait") {
     return (
       <section
+        ref={scene}
         id="sobre"
         className="section manifesto manifesto-side"
         aria-labelledby="sobre-title"
@@ -129,6 +138,7 @@ export function HomeAboutSection({
   // Default: portrait
   return (
     <section
+      ref={scene}
       id="sobre"
       className="section manifesto manifesto-portrait"
       aria-labelledby="sobre-title"
