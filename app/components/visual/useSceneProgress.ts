@@ -42,7 +42,10 @@ export function useSceneProgress() {
       const title = scene.querySelector<HTMLElement>(".lens-title");
       const navigation = scene.querySelector<HTMLElement>(".lens-navigation");
       if (title && navigation) {
-        const overflow = String(title.scrollHeight + navigation.scrollHeight + 120 > innerHeight * .55);
+        // Normal short desktop windows must retain the lens. The former 55%
+        // budget incorrectly counted side-by-side content as a vertical stack.
+        const enlargedText = parseFloat(getComputedStyle(document.documentElement).fontSize) > 24;
+        const overflow = String(enlargedText || title.scrollHeight > Math.max(220, innerHeight * .5) || navigation.scrollHeight > 112);
         if (scene.dataset.textOverflow !== overflow) scene.dataset.textOverflow = overflow;
       }
       request();

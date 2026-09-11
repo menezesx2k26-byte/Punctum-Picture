@@ -26,7 +26,14 @@ export function HomeHeroSection({
   );
   const variant = section.variant;
 
-  if (variant === "cinematic") return <LensHero hero={hero} copy={copy} section={section} />;
+  if (variant === "cinematic") {
+    // The lens has an approved opening photograph; the legacy portrait fallback
+    // belongs to other hero variants. Explicit Studio selections still win.
+    const lensHero = !section.heroMedia && !section.appearance.backgroundImageId
+      ? {src:"/photos/p002.jpg", alt:"Vela acesa iluminando uma mão em uma cena escura", width:1080, height:1440}
+      : hero;
+    return <LensHero hero={lensHero} copy={copy} section={section} />;
+  }
 
   if (variant === "fullscreen") {
     return (

@@ -19,8 +19,12 @@ Defaults: palette nocturne-plum, mode dark, headingFamily instrument-serif, body
 - Aro móvel: 280 px; telas baixas: 230 px; desktop ≥900 px: 420 px. Centro mobile 50%/61%; desktop 70%/50%.
 - Foto do Studio expande por clip-path circular. Aro amplia até 4× e gira até −24°; lâminas se afastam até −350 px. Título sai no primeiro terço; legenda entra na segunda metade. Rolagem reversa reverte a cena.
 - Ver fotografias leva à âncora após a lente. CTA secundário vem do Studio. Em largura <360 px, esse CTA é oculto por espaço; Portfólio segue no cabeçalho.
-- Se título + navegação + 120 px excederem 55% da altura da tela, usar fluxo normal, cabeçalho com quebra e título sem corte. Não diminuir artificialmente o conteúdo para sustentar o efeito.
+- Usar fluxo normal se a fonte raiz exceder 24 px, o título exceder max(220 px, 50% da altura da tela) ou a navegação exceder 112 px. A regra anterior de 55% desativava a câmera em janelas normais e foi removida.
 - Movimento reduzido mostra a fotografia sem animação; modo normal mantém a lente aprovada.
+
+### Correção após retorno da usuária
+
+Sem uma seleção explícita no Studio, a variante cinematic usa a foto aprovada da vela, public/photos/p002.jpg, nas dimensões originais 1080×1440. Não usar o retrato legado hero-maria.webp como fallback dessa variante. Seleções explícitas de mídia continuam respeitadas. A imagem cobre o palco mantendo proporção, com recorte, sem esticar pixels para preencher a tela. Regras de câmera para telas baixas e estreitas se limitam a largura inferior a 900 px; no desktop, centro da foto e centro do aro permanecem alinhados em 70%/50%.
 
 ## Rolagem e composição
 
