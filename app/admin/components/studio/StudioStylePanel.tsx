@@ -24,9 +24,9 @@ import {
 } from "../../../../shared/config";
 
 const MOTION_CHOICES = [
-  { id: "none", label: "Sem movimento", description: "Tudo permanece sereno." },
-  { id: "subtle", label: "Suave", description: "Transições discretas e naturais." },
-  { id: "expressive", label: "Mais vivo", description: "Um pouco mais de presença ao navegar." },
+  { id: "none", label: "Sem movimento", description: "Fotografia direta e galeria acessível, sem abertura animada ou giro 3D." },
+  { id: "subtle", label: "Suave", description: "A lente abre; os ensaios e retratos se movem discretamente." },
+  { id: "expressive", label: "Mais vivo", description: "A mesma lente, com reenquadramento mais amplo nos ensaios." },
 ] as const;
 
 const IMAGE_CHOICES = [
@@ -122,7 +122,7 @@ export function StudioStylePanel({
   }
 
   function choosePreset(id: SitePresetId) {
-    onChange(applySitePreset(config, id), "Estilo aplicado. Você ainda pode mudar cada detalhe.");
+    onChange(applySitePreset(config, id), "Estilo aplicado. A câmera e o carrossel continuam protegidos.");
   }
 
   function choosePalette(id: PaletteId) {
@@ -273,6 +273,7 @@ export function StudioStylePanel({
       <details className="studio-progressive">
         <summary>Movimento e fotografias</summary>
         <h3>Movimento</h3>
+        <p>A preferência do visitante por reduzir movimento sempre prevalece. A duração da abertura acompanha a rolagem; não há reprodução automática.</p>
         <div className="studio-option-row">
           {MOTION_CHOICES.map((choice) => (
             <button type="button" aria-pressed={config.theme.motion.intensity === choice.id} onClick={() => updateTheme((next) => { next.theme.motion.intensity = choice.id; }, "Movimento escolhido.")} key={choice.id}>

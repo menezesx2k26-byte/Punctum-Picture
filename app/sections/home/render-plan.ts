@@ -5,6 +5,7 @@ import {
   type SectionType,
   type SectionVariantByType,
 } from "../../../shared/config";
+import { protectImmersiveHome } from "../../../shared/config/immersive-policy";
 
 type HomeSectionRendererKeyMap = {
   [Type in SectionType]: {
@@ -65,7 +66,7 @@ function rendererKeyFor(
 export function buildHomeSectionRenderPlan(
   home: HomeComposition,
 ): HomeSectionRenderPlanEntry[] {
-  return enabledHomeSections(home).map((section) => ({
+  return enabledHomeSections(protectImmersiveHome(home)).map((section) => ({
     section,
     rendererKey: rendererKeyFor(section),
   }));

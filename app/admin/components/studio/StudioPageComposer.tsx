@@ -18,6 +18,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { isProtectedSection } from "../../../../shared/config/immersive-policy";
 import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
 import {
   SECTION_REGISTRY,
@@ -58,13 +59,15 @@ function SortableSectionCard({
   onEdit: (id: string, edit: SectionEdit) => void;
 }) {
   const definition = SECTION_REGISTRY[section.type];
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id });
+  const protectedSection = isProtectedSection(section.type);
+  const isHero = section.type === "hero";
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id, disabled:isHero });
   const style = { transform: CSS.Transform.toString(transform), transition };
 
   return (
     <article ref={setNodeRef} style={style} className={`studio-section-card${isDragging ? " dragging" : ""}${section.enabled ? "" : " hidden"}`}>
       <div className="studio-section-card-main">
-        <button className="studio-drag-handle" type="button" aria-label={`Arrastar ${definition.label}`} {...attributes} {...listeners}>
+        <button className="studio-drag-handle" type="button" disabled={isHero} aria-label={isHero ? "Câmera fixada na abertura" : `Arrastar ${definition.label}`} {...attributes} {...listeners}>
           <GripVertical size={20} aria-hidden="true" />
         </button>
         <span className={`studio-section-miniature section-${section.type} variant-${section.variant}`} aria-hidden="true"><i /><i /><i /></span>
@@ -72,7 +75,7 @@ function SortableSectionCard({
           <strong>{definition.label}</strong>
           <small>{definition.description}</small>
         </div>
-        {!definition.required ? (
+        {!definition.required && !protectedSection ? (
           <button
             className="studio-visibility-toggle"
             type="button"
@@ -88,17 +91,17 @@ function SortableSectionCard({
       </div>
 
       <div className="studio-section-card-actions">
-        <button type="button" onClick={() => onMove(index, index - 1)} disabled={index === 0} aria-label={`Mover ${definition.label} para cima`}>
+        <button type="button" onClick={() => onMove(index, index - 1)} disabled={isHero || index <= 1} aria-label={`Mover ${definition.label} para cima`}>
           <ArrowUp size={16} aria-hidden="true" /> Mover para cima
         </button>
-        <button type="button" onClick={() => onMove(index, index + 1)} disabled={index === total - 1} aria-label={`Mover ${definition.label} para baixo`}>
+        <button type="button" onClick={() => onMove(index, index + 1)} disabled={isHero || index === total - 1} aria-label={`Mover ${definition.label} para baixo`}>
           <ArrowDown size={16} aria-hidden="true" /> Mover para baixo
         </button>
       </div>
 
       <details className="studio-section-options">
         <summary>Mudar esta parte</summary>
-        <div className="studio-section-option-group">
+        {protectedSection ? <p className="studio-reassurance">{isHero ? "A câmera permanece na abertura. Troque a fotografia em Fotos e as palavras em Textos. O enquadramento da lente é automático para cada tela." : "O carrossel 3D permanece visível. Escolha e ordene suas fotografias na área Fotos."}</p> : <div className="studio-section-option-group">
           <h4>Composição</h4>
           <div className="studio-variant-grid">
             {definition.allowedVariants.map((variant) => {
@@ -112,9 +115,9 @@ function SortableSectionCard({
               );
             })}
           </div>
-        </div>
+        </div>}
 
-        <div className="studio-section-option-group">
+        {!isHero && <><div className="studio-section-option-group">
           <h4>Fundo desta parte</h4>
           <div className="studio-segmented">
             {definition.allowedSurfaces.map((surface) => (
@@ -156,6 +159,7 @@ function SortableSectionCard({
           </div>
         </div>
 
+        </>}
         {section.type === "featured-work" ? (
           <div className="studio-section-option-group">
             <h4>Quantidade de trabalhos</h4>
@@ -205,7 +209,7 @@ export function StudioPageComposer({
   );
 
   function move(from: number, to: number) {
-    if (to < 0 || to >= sections.length) return;
+    if (from === 0 || to < 1 || to >= sections.length) return;
     onReorder(arrayMove(sections, from, to).map((section) => section.id));
   }
 

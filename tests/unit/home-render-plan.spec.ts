@@ -52,8 +52,8 @@ describe("plano server-first do HomeRenderer", () => {
     hero.variant = "split";
     reel.variant = "patch";
     featured.variant = "collage";
-    expect(buildHomeSectionRenderPlan(home).map(({ rendererKey }) => rendererKey)).toContain("hero:split");
-    expect(buildHomeSectionRenderPlan(home).map(({ rendererKey }) => rendererKey)).toContain("photo-reel:patch");
+    expect(buildHomeSectionRenderPlan(home).map(({ rendererKey }) => rendererKey)).toContain("hero:cinematic");
+    expect(buildHomeSectionRenderPlan(home).map(({ rendererKey }) => rendererKey)).toContain("photo-reel:horizontal");
     expect(buildHomeSectionRenderPlan(home).map(({ rendererKey }) => rendererKey)).toContain("featured-work:collage");
   });
 

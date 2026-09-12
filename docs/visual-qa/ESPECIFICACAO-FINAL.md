@@ -8,9 +8,19 @@ Preservar abertura da lente, geometria do carrossel 3D, Studio, rotas de ensaios
 
 ## Integração
 
-HomeExperience coordena as seções existentes e aplica immersive-home. app/immersive.css concentra o acabamento. HomeHeroSection usa LensHero apenas na variante cinematic; outras variantes permanecem válidas. FeaturedStories usa StorySequence no modo interno projector, apresentado como Percorrer; Grade e Composição continuam disponíveis. HomePhotoReelSection conserva SpatialCarousel e seu visualizador.
+HomeExperience coordena as seções existentes e aplica immersive-home. app/immersive.css concentra o acabamento. A página pública normaliza a abertura para LensHero cinematic e o percurso de fotos para SpatialCarousel horizontal. FeaturedStories usa StorySequence no modo interno projector, apresentado como Percorrer; Grade e Composição continuam disponíveis. HomePhotoReelSection conserva SpatialCarousel e seu visualizador.
 
-Defaults: palette nocturne-plum, mode dark, headingFamily instrument-serif, bodyFamily manrope, headingScale display, bodyScale comfortable, headingWeight regular, headingTracking tight, radius square, density balanced, container wide, image treatment natural. Usar tokens/registro existentes; background padrão #120a17 e primary #e0c8eb. Configuração persistida prevalece. Não criar outro sistema de tema.
+Defaults: palette nocturne-plum, mode dark, headingFamily instrument-serif, bodyFamily manrope, headingScale display, bodyScale comfortable, headingWeight regular, headingTracking tight, radius square, density balanced, container wide, image treatment natural. Usar tokens/registro existentes; background padrão #120a17 e primary #e0c8eb. A configuração persistida prevalece em conteúdo, fotos, identidade e seções secundárias. O contrato de apresentação protege somente a lente e o carrossel 3D. Não criar outro sistema de tema.
+
+## Contrato do Studio
+
+- O Studio continua sendo a fonte de verdade para textos, foto do Hero, envio de uma nova foto do Hero, fotografias e ordem do carrossel, paleta, tipografia, tratamento de imagem, fundo global, intensidade do movimento, seções secundárias, quantidade de trabalhos e histórico de publicação.
+- Hero e photo-reel são sempre visíveis. Hero permanece primeiro e cinematic; photo-reel permanece horizontal. O painel não oferece ações que desativem ou troquem essas duas composições.
+- Configurações antigas, rascunhos e versões restauradas são normalizados no cliente e novamente no render público. Essa proteção não apaga heroMedia, photoIds, aparência, conteúdo editorial ou escolhas de tema.
+- Sem movimento: lente sem transição e grade acessível no lugar do cilindro animado. Suave: lente e reenquadramentos discretos. Mais vivo: lente e reenquadramentos mais amplos. A preferência de redução do visitante ou do sistema sempre prevalece.
+- A escolha do carrossel aceita zero ou de três a seis fotos únicas. Uma seleção parcial de uma ou duas fotos fica local no painel e não substitui o rascunho válido. Ao chegar a três, a ordem escolhida é persistida. Limpar volta à seleção automática do acervo.
+- A foto do Hero escolhida no acervo ou enviada pelo celular continua dentro da lente. Restaurar o Hero remove somente a escolha explícita e volta a public/photos/p002.jpg.
+- Rascunho, salvamento automático, prévia, descarte, publicação, restauração e detecção de conflito continuam usando o fluxo existente. Toda alteração passa pelo mesmo schema e pela política imersiva antes de ser salva.
 
 ## Entrada pela câmera
 

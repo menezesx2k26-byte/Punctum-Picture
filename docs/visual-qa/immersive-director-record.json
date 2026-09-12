@@ -19,26 +19,28 @@
     "CSS da home",
     "Preferência de movimento compartilhada",
     "Gestos e foco do visualizador",
-    "Adaptação para texto ampliado"
+    "Adaptação para texto ampliado",
+    "Contrato entre Studio e experiência imersiva",
+    "Seleção e ordenação de fotografias do carrossel"
   ],
   "gates": {
-    "engineering": "PASS: typecheck; 83 unit tests across 20 files; full repository lint with zero errors and three existing img warnings; complete Vinext build.",
-    "visual": "PASS local: rendered 320x568, 390x844, 430x932, 844x390 and 1440x900; no page horizontal overflow; typography, lens and alternating photo/caption composition inspected.",
-    "functional": "PASS local: album navigation, horizontal carousel drag, vertical-axis separation, keyboard, dialog Escape/focus restoration, WhatsApp visibility and native empty-form validation.",
+    "engineering": "PASS: typecheck; 86 unit tests across 21 files; full repository lint with zero errors and three existing img warnings; complete Vinext build.",
+    "visual": "PASS local: previous viewport suite plus final 1280x720 and 390x844 checks; no page horizontal overflow; approved candle remains in the lens; desktop and mobile scroll reveal confirmed.",
+    "functional": "PASS local: protected lens/carousel policy, exact Studio carousel ordering, Studio motion modes, album navigation, carousel input, keyboard, dialog focus, WhatsApp visibility and native empty-form validation.",
     "accessibility": "PASS focused: 200% text in 390px viewport without clipped headings/navigation; tall content exits sticky; reduced-motion control persists after reload; OS preference respected in code.",
     "performance": "PASS focused: no new dependencies; scene updates scoped to intersection and batched in rAF; carousel photos lazy/async; LensHero chunk 1724 bytes (735 gzip). No field CWV or physical-device FPS claim."
   },
   "open_failures": [],
   "state": "APPROVED",
-  "approval_scope": "Implementação e revisão frontend local; não constitui aprovação de deploy ou auditoria integral do produto.",
+  "approval_scope": "Implementação e revisão frontend local; a publicação na main foi autorizada na conversa. Não constitui auditoria integral do produto.",
   "external_status": {
-    "git_push": "NOT_PUBLISHED: GitHub local sem autenticação",
-    "deployment": "NOT_REQUESTED"
+    "git_push": "Repositório autenticado; publicação desta revisão segue pela main.",
+    "deployment": "A main aciona o workflow Cloudflare Git Main."
   },
   "limitations": [
     "Sem teste em aparelho físico ou métricas Core Web Vitals publicadas",
     "Sem envio real do formulário",
-    "Não auditadas todas as variantes do Studio",
-    "Configuração publicada e capas remotas não alteradas; defaults respeitam conteúdo persistido"
+    "Não auditadas todas as combinações visuais possíveis do Studio",
+    "O contrato protege a composição da lente e do carrossel; o conteúdo persistido continua prevalecendo"
   ]
 }

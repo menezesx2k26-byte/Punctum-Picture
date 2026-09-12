@@ -17,7 +17,7 @@ export function FeaturedStories({
   variant?: "editorial-grid" | "gallery" | "collage";
 }) {
   const [mode, setMode] = useState<"projector" | "editorial" | "collage">(
-    variant === "collage" ? "collage" : "projector"
+    variant === "collage" ? "collage" : variant === "gallery" ? "editorial" : "projector"
   );
 
   if (!albums.length) return null;

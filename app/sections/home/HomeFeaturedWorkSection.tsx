@@ -45,6 +45,7 @@ export function HomeFeaturedWorkSection({
           </div>
         </div>
         <FeaturedStories
+          key={variant}
           albums={albums.slice(0, section.itemCount)}
           variant={variant}
         />

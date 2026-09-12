@@ -29,7 +29,7 @@ export function LensHero({hero, copy, section}: {
         <p>{copy.eyebrow}</p>
         <h1 id="hero-title"><span>{copy.title}</span><em>{copy.accent}</em></h1>
       </div>
-      <div className="lens-caption"><p>{copy.body}</p></div>
+      <div className="lens-caption"><p>{copy.body}</p><Link href="/arquivo" className="text-link">{copy.secondaryCta} <ArrowUpRight size={18}/></Link></div>
       <div className="lens-navigation">
         <a href={`#after-${section.id}`} className="lens-skip">Ver fotografias <ArrowDown size={18}/></a>
         <Link href="/portfolio" className="text-link">{copy.primaryCta} <ArrowUpRight size={18}/></Link>

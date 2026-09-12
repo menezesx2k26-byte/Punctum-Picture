@@ -1,4 +1,5 @@
 "use client";
+import { isProtectedSection, protectImmersiveConfig } from "../../../shared/config/immersive-policy";
 
 import {
   Check,
@@ -290,6 +291,7 @@ export function StudioManager() {
   }, []);
 
   const commitConfig = useCallback((next: SiteConfig, message: string) => {
+    next = protectImmersiveConfig(next);
     const current = configRef.current;
     if (!current || JSON.stringify(current) === JSON.stringify(next)) return;
     undoStackRef.current = [...undoStackRef.current.slice(-39), structuredClone(current)];
@@ -361,15 +363,16 @@ export function StudioManager() {
     if (!body.siteConfig || typeof body.revision !== "number") {
       throw new Error("O Studio devolveu uma resposta incompleta.");
     }
-    savedConfigRef.current = body.siteConfig;
+    const protectedConfig = protectImmersiveConfig(body.siteConfig);
+    savedConfigRef.current = protectedConfig;
     revisionRef.current = body.revision;
-    setSavedConfig(body.siteConfig);
+    setSavedConfig(protectedConfig);
     setRevision(body.revision);
     setHasUnpublishedChanges(Boolean(body.hasUnpublishedChanges));
     setHistory(body.history ?? []);
     if (replaceLocal) {
-      configRef.current = body.siteConfig;
-      setConfig(body.siteConfig);
+      configRef.current = protectedConfig;
+      setConfig(protectedConfig);
     }
     setPreviewRevision(body.revision);
     return body.revision;
@@ -623,6 +626,8 @@ export function StudioManager() {
     const target = next.pages.home.sections[index];
     if (!target) return;
     const definition = SECTION_REGISTRY[target.type];
+    if (isProtectedSection(target.type) && (edit.kind === "variant" || edit.kind === "enabled")) return;
+    if (target.type === "hero" && ["surface", "density", "alignment"].includes(edit.kind)) return;
 
     if (edit.kind === "enabled") {
       if (definition.required && !edit.value) return;

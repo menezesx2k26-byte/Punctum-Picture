@@ -153,7 +153,7 @@ export function HomeAboutSection({
             height={1536}
             sizes="(max-width: 900px) 100vw, 42vw"
           />
-          <span aria-hidden="true">{copy.imageNote}</span>
+          <span>{copy.imageNote}</span>
         </div>
         <div className="reveal manifesto-copy-block">
           <p className="eyebrow">{copy.eyebrow}</p>

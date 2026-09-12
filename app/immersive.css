@@ -25,6 +25,9 @@
 .lens-blade {fill:#1c1126;stroke:#9573a455;stroke-width:.6;transform-origin:150px 150px;transform:translateY(calc(var(--scene-progress)*-350px))}
 .lens-glass {position:absolute;inset:28px;border-radius:50%;box-shadow:inset 7px 1px 12px #ae7dc355,inset -6px -2px 14px #121024;background:linear-gradient(125deg,transparent 20%,#f0daff25 25%,transparent 28%,transparent 68%,#9f70d016 70%,transparent 85%)}
 .lens-caption {position:absolute;bottom:130px;left:var(--gutter);right:var(--gutter);max-width:32rem;font-size:1rem;line-height:1.6;opacity:0}
+.lens-caption {pointer-events:none;visibility:hidden}
+.lens-story[data-revealed="true"] .lens-caption,.lens-story[data-motion="reduced"] .lens-caption,.lens-story[data-text-overflow="true"] .lens-caption {visibility:visible;pointer-events:auto}
+.lens-caption:focus-within {opacity:1!important;pointer-events:auto}
 .lens-navigation {position:absolute;bottom:28px;inset-inline:var(--gutter);display:flex;align-items:center;justify-content:space-between;gap:1rem;z-index:3}
 .lens-navigation {padding-right:64px;flex-wrap:wrap}
 .lens-skip {display:flex;align-items:center;gap:.6rem;min-height:48px;font-size:.875rem}
@@ -184,4 +187,30 @@ body:has(dialog[open]) .floating-whatsapp,body:has(input:focus,textarea:focus,se
  .site-shell.immersive-home .manifesto[data-motion="ready"] .manifesto-image img {transform:translateY(calc((1 - var(--arrival,1))*24px)) scale(calc(1.06 - var(--arrival,1)*.06))}
  .site-shell.immersive-home .contact-home[data-motion="ready"] .contact-aperture {transform:rotate(calc(var(--arrival,1)*30deg)) scale(calc(.85 + var(--arrival,1)*.15))}
  .site-shell.immersive-home .contact-home[data-motion="ready"] .contact-intro h2 {transform:translateY(calc((1 - var(--arrival,1))*28px))}
+}
+
+/* Studio values are authoritative; the physical lens keeps its optical finish. */
+.site-shell.immersive-home {--gutter:var(--space-section-inline);--scene-scale:.06;--scene-shift:16px}
+.site-shell.immersive-home[data-theme-motion="expressive"] {--scene-scale:.12;--scene-shift:30px}
+.site-shell.immersive-home .lens-stage {background:radial-gradient(ellipse at 64% 52%,color-mix(in srgb,var(--color-primary) 16%,var(--color-background)),var(--color-background) 80%);color:var(--color-foreground)}
+.site-shell.immersive-home .lens-title>p {color:var(--color-muted)}
+.site-shell.immersive-home .lens-title h1 em {color:var(--color-primary)}
+.site-shell.immersive-home .lens-caption {color:var(--color-on-dark);text-shadow:0 1px 10px #000}
+.site-shell.immersive-home .lens-caption a {pointer-events:auto}
+.site-shell.immersive-home .lens-story[data-text-overflow="true"] .lens-caption {color:var(--color-foreground);text-shadow:none}
+.site-shell.immersive-home :is(.visual-thesis,.manifesto)[data-section-surface="default"] {background:transparent}
+.site-shell.immersive-home .manifesto-image img {filter:var(--image-filter)}
+.site-shell.immersive-home .manifesto-image>span {display:block;font-family:var(--font-body);letter-spacing:normal;text-transform:none;font-size:.875rem}
+.site-shell.immersive-home [data-home-section-type]:not([data-home-section-type="hero"])[data-section-density="compact"] {padding-block:3rem}
+.site-shell.immersive-home [data-home-section-type]:not([data-home-section-type="hero"])[data-section-density="spacious"] {padding-block:clamp(5rem,12vw,11rem)}
+.site-shell.immersive-home [data-home-section-type]:not([data-home-section-type="hero"])[data-section-surface="light"] {background:var(--color-surface-soft)}
+.site-shell.immersive-home [data-home-section-type]:not([data-home-section-type="hero"])[data-section-surface="dark"] {background:var(--color-night)}
+.site-shell.immersive-home [data-home-section-type]:not([data-home-section-type="hero"])[data-section-surface="accent"] {background:var(--color-primary)}
+.site-shell.immersive-home [data-home-section-type]:not([data-home-section-type="hero"])[data-section-surface="photo"] {background:linear-gradient(color-mix(in srgb,var(--color-background) 88%,transparent),color-mix(in srgb,var(--color-background) 88%,transparent)),var(--section-background-image) center/cover}
+.site-shell.immersive-home [data-section-alignment="center"] :is(.manifesto-copy-block,.manifesto-side-content,.manifesto-centered-text,.manifesto-editorial-bio,.contact-intro,.section-heading,.carousel-heading) {text-align:center}
+.site-shell.immersive-home [data-section-alignment="center"] :is(.contact-intro h2,.contact-intro>p,.section-heading p,.carousel-heading p) {margin-inline:auto}
+@media(prefers-reduced-motion:no-preference) {
+ .site-shell.immersive-home .sequence-story[data-motion="ready"] .sequence-art img {transform:scale(calc(1 + (1 - var(--scene-progress))*var(--scene-scale)))}
+ .site-shell.immersive-home .manifesto[data-motion="ready"] .manifesto-image img {transform:translateY(calc((1 - var(--arrival,1))*var(--scene-shift))) scale(calc(1 + (1 - var(--arrival,1))*var(--scene-scale)))}
+ .site-shell.immersive-home .contact-home[data-motion="ready"] .contact-intro h2 {transform:translateY(calc((1 - var(--arrival,1))*var(--scene-shift)))}
 }

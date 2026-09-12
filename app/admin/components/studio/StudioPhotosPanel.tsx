@@ -31,6 +31,7 @@ export function StudioPhotosPanel({ config, photos, loading, error, onLoad, onCh
   const [query,setQuery]=useState("");
   const [uploading,setUploading]=useState(false);
   const [uploadError,setUploadError]=useState<string|null>(null);
+  const [pendingReel,setPendingReel]=useState<string[]|null>(null);
   useEffect(()=>{ onLoad(); },[onLoad]);
   const hero=config.pages.home.sections.find((section)=>section.type==="hero");
   const reel=config.pages.home.sections.find((section)=>section.type==="photo-reel");
@@ -44,7 +45,7 @@ export function StudioPhotosPanel({ config, photos, loading, error, onLoad, onCh
       return hero?.type==="hero"&&hero.appearance.backgroundImageId?[hero.appearance.backgroundImageId]:[];
     }
     if(target==="global") return config.theme.background.imageId?[config.theme.background.imageId]:[];
-    if(target==="patch") return reel?.type==="photo-reel"?reel.photoIds:[];
+    if(target==="patch") return pendingReel ?? (reel?.type==="photo-reel"?reel.photoIds:[]);
     const section=config.pages.home.sections.find((candidate)=>candidate.id===target.slice("section:".length));
     return section?.appearance.backgroundImageId?[section.appearance.backgroundImageId]:[];
   }
@@ -102,9 +103,13 @@ export function StudioPhotosPanel({ config, photos, loading, error, onLoad, onCh
     if(target==="patch"){
       const targetReel=next.pages.home.sections.find((section)=>section.type==="photo-reel");
       if(!targetReel || targetReel.type!=="photo-reel") return;
-      if(targetReel.photoIds.includes(photoId)){ const without=targetReel.photoIds.filter((id)=>id!==photoId); targetReel.photoIds=without.length>=3?without:[]; }
-      else { const candidates=[...targetReel.photoIds,photoId,...photos.map((p)=>p.id)].filter((id,index,all)=>all.indexOf(id)===index); if(candidates.length<3)return; targetReel.photoIds=candidates.slice(0,Math.max(3,targetReel.photoIds.length+1)).slice(0,6); }
-      onChange(siteConfigSchema.parse(next),"Fotografias do Patch atualizadas."); return;
+      const current = pendingReel ?? targetReel.photoIds;
+      const ids = current.includes(photoId) ? current.filter(id=>id!==photoId) : [...current,photoId];
+      if(ids.length>6) return;
+      if(ids.length>0 && ids.length<3) { setPendingReel(ids); return; }
+      setPendingReel(null);
+      targetReel.photoIds=ids;
+      onChange(siteConfigSchema.parse(next),"Fotografias do carrossel atualizadas na ordem escolhida."); return;
     }
     const section=next.pages.home.sections.find((candidate)=>candidate.id===target.slice("section:".length));
     if(!section)return; section.appearance.surface="photo"; section.appearance.backgroundImageId=photoId;
@@ -117,7 +122,7 @@ export function StudioPhotosPanel({ config, photos, loading, error, onLoad, onCh
     }
     const next=structuredClone(config);
     if(target==="global") next.theme.background={...next.theme.background,style:"soft-image",assetId:"manifesto-portrait",imageId:null};
-    else if(target==="patch"){ const targetReel=next.pages.home.sections.find((section)=>section.type==="photo-reel"); if(targetReel?.type==="photo-reel")targetReel.photoIds=[]; }
+    else if(target==="patch"){ setPendingReel(null); const targetReel=next.pages.home.sections.find((section)=>section.type==="photo-reel"); if(targetReel?.type==="photo-reel")targetReel.photoIds=[]; }
     else { const section=next.pages.home.sections.find((candidate)=>candidate.id===target.slice("section:".length)); if(section){section.appearance.surface="default";section.appearance.backgroundImageId=null;} }
     onChange(siteConfigSchema.parse(next),"Seleção de fotografias restaurada.");
   }
@@ -130,11 +135,18 @@ export function StudioPhotosPanel({ config, photos, loading, error, onLoad, onCh
     <div className="studio-photo-targets" role="group" aria-label="Onde usar as fotografias">
       <button type="button" aria-pressed={target==="hero"} onClick={()=>setTarget("hero")}>Hero da página inicial</button>
       <button type="button" aria-pressed={target==="global"} onClick={()=>setTarget("global")}>Fundo do site</button>
-      {reel?<button type="button" aria-pressed={target==="patch"} onClick={()=>setTarget("patch")}>Fotos do Patch</button>:null}
+      {reel?<button type="button" aria-pressed={target==="patch"} onClick={()=>setTarget("patch")}>Fotos do carrossel 3D</button>:null}
       {photoSections.map((section)=><button type="button" aria-pressed={target===`section:${section.id}`} onClick={()=>setTarget(`section:${section.id}`)} key={section.id}>Fundo · {SECTION_REGISTRY[section.type].label}</button>)}
     </div>
 
-    {target!=="hero"?<div className="studio-photo-guidance"><div><strong>{target==="patch"?"Escolha de 3 a 6 fotos.":"Escolha uma fotografia."}</strong><span>{selected.length?`${selected.length} selecionada${selected.length>1?"s":""}`:"Nenhuma foto do acervo escolhida"}</span></div>{selected.length?<button type="button" onClick={clearSelection}><X size={16}/> Limpar escolha</button>:null}</div>:siteMediaHero||selected.length?<div className="studio-photo-guidance"><div><strong>Quer voltar ao Hero original?</strong><span>A foto 4K atual continua como fallback seguro.</span></div><button type="button" onClick={clearSelection}><X size={16}/> Restaurar Hero padrão</button></div>:null}
+    {target!=="hero"?<div className="studio-photo-guidance"><div><strong>{target==="patch"?"Escolha de 3 a 6 fotos, na ordem de exibição.":"Escolha uma fotografia."}</strong><span>{selected.length?`${selected.length} selecionada${selected.length>1?"s":""}`:"Nenhuma foto do acervo escolhida"}</span></div>{selected.length?<button type="button" onClick={clearSelection}><X size={16}/> Limpar escolha</button>:null}</div>:siteMediaHero||selected.length?<div className="studio-photo-guidance"><div><strong>Quer voltar à foto da vela?</strong><span>A câmera continua; somente a fotografia é restaurada.</span></div><button type="button" onClick={clearSelection}><X size={16}/> Restaurar Hero padrão</button></div>:null}
+    {target==="patch" && pendingReel ? <p role="status">Escolha pelo menos três fotos para aplicar esta seleção. Até lá, o carrossel mantém a seleção salva. <button type="button" onClick={()=>setPendingReel(null)}>Cancelar seleção incompleta</button></p> : null}
+    {target==="patch" && selected.length ? <ol aria-label="Ordem das fotos do carrossel">{selected.map((id,index)=><li key={id}>{photos.find(photo=>photo.id===id)?.albumTitle ?? "Fotografia selecionada"} <button type="button" disabled={index===0} aria-label={`Mover fotografia ${index+1} para cima`} onClick={()=>{
+      const ids=[...selected]; [ids[index-1],ids[index]]=[ids[index],ids[index-1]];
+      if(pendingReel){setPendingReel(ids);return;}
+      const next=structuredClone(config); const item=next.pages.home.sections.find(section=>section.type==="photo-reel");
+      if(item?.type==="photo-reel"){item.photoIds=ids;onChange(siteConfigSchema.parse(next),"Ordem das fotografias atualizada.");}
+    }}>Mover para cima</button></li>)}</ol> : null}
 
     <label className="studio-photo-search"><span>Encontrar pelo ensaio</span><input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Ex.: Fé e Tradição"/></label>
     {loading?<div className="studio-photo-state" role="status"><ImageIcon/> Preparando suas fotografias…</div>:null}

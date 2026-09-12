@@ -1,5 +1,5 @@
 import "../immersive.css";
-import { MotionControl } from "./visual/motion-preference";
+import { MotionControl, StudioMotionProvider } from "./visual/motion-preference";
 import type { SiteConfig } from "../../shared/config";
 import type {
   PublicAlbumSummary,
@@ -23,6 +23,7 @@ export function HomeExperience({
 }) {
   return (
     <SiteThemeRoot config={config} className="immersive-home" ambientCursor={false}>
+      <StudioMotionProvider intensity={config.theme.motion.intensity}>
       <SiteHeader site={site} editorial={config.editorial} />
       <main id="conteudo">
         <HomeRenderer
@@ -34,6 +35,7 @@ export function HomeExperience({
       </main>
       <SiteFooter site={site} editorial={config.editorial} />
       <div className="motion-preference-bar"><MotionControl /></div>
+      </StudioMotionProvider>
     </SiteThemeRoot>
   );
 }

@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { motionPreference, subscribeMotion } from "./motion-preference";
+import { motionPreference, subscribeMotion, useStudioMotion } from "./motion-preference";
 
 /** One active scene, one scheduled paint. Content is visible before hydration. */
 export function useSceneProgress() {
+  const intensity = useStudioMotion();
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
     const scene = ref.current;
@@ -20,11 +21,13 @@ export function useSceneProgress() {
       const travel = Math.max(1, rect.height - viewport);
       const progress = Math.max(0, Math.min(1, -rect.top / travel));
       scene.style.setProperty("--scene-progress", String(progress));
+      const revealed = String(progress >= .5);
+      if (scene.dataset.revealed !== revealed) scene.dataset.revealed = revealed;
       scene.style.setProperty("--arrival", String(Math.max(0, Math.min(1, (viewport - rect.top) / viewport))));
     };
     const request = () => { if (active && !frame && !reduced) frame = requestAnimationFrame(paint); };
     const preference = () => {
-      reduced = motionPreference() !== "full";
+      reduced = intensity === "none" || motionPreference() !== "full";
       scene.dataset.motion = reduced ? "reduced" : "ready";
       paint();
     };
@@ -69,6 +72,6 @@ export function useSceneProgress() {
       unsubscribe();
       delete scene.dataset.motion;
     };
-  }, []);
+  }, [intensity]);
   return ref;
 }
