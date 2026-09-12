@@ -45,6 +45,8 @@ Ensaios: fotos grandes, legenda atravessando a borda inferior, alternância esqu
 
 Desktop ≥900 px: 12 colunas; imagem ocupa 1–9, legenda 9–12, espelhadas no próximo ensaio; foto até 78svh. Mobile: imagem até 65svh; legenda sobe 2rem sobre a borda com fundo sólido. Mesa de fotos: quatro colunas desktop, duas mobile, itens pares deslocados 2rem. Não colocar numeração ou categorias ornamentais embaixo das miniaturas.
 
+Cabeçalho, Hero, manifesto, títulos do carrossel e dos ensaios, rodapé do carrossel, mesa de fotos, Sobre, Contato, rodapé e controle de movimento compartilham a mesma margem editorial. Em telas mais largas que o conteúdo máximo, --frame-edge centraliza esse eixo; em telas menores, usa o gutter responsivo. Imagens e palco 3D podem atravessar essa moldura, mas os pontos de leitura retornam ao mesmo eixo.
+
 Sobre: retrato chega com até 24 px e escala 1,06→1. Contato: título chega com até 28 px; anéis decorativos discretos apenas em telas maiores. Inputs permanecem estáveis. Cada trecho tem composição própria, sem animação automática uniforme em todos os elementos.
 
 ## Carrossel e diálogo

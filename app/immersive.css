@@ -214,3 +214,42 @@ body:has(dialog[open]) .floating-whatsapp,body:has(input:focus,textarea:focus,se
  .site-shell.immersive-home .manifesto[data-motion="ready"] .manifesto-image img {transform:translateY(calc((1 - var(--arrival,1))*var(--scene-shift))) scale(calc(1 + (1 - var(--arrival,1))*var(--scene-scale)))}
  .site-shell.immersive-home .contact-home[data-motion="ready"] .contact-intro h2 {transform:translateY(calc((1 - var(--arrival,1))*var(--scene-shift)))}
 }
+
+/* One editorial frame keeps every reading edge aligned while media stays immersive. */
+.site-shell.immersive-home {
+ --frame-edge:max(var(--gutter),calc((100% - var(--container-max))/2));
+}
+.site-shell.immersive-home .stories-section .section-heading,
+.site-shell.immersive-home .stories-view-bar,
+.site-shell.immersive-home .spatial-reel-footer,
+.site-shell.immersive-home .home-contact-sheet,
+.site-shell.immersive-home .site-footer,
+.site-shell.immersive-home .motion-preference-bar {
+ width:100%;
+ max-width:calc(var(--container-max) + 2 * var(--gutter));
+ margin-inline:auto;
+ padding-inline:var(--gutter);
+}
+.site-shell.immersive-home .spatial-reel-footer {
+ align-items:flex-start;
+ text-align:left;
+}
+.site-shell.immersive-home .sequence-story {
+ padding-inline:var(--frame-edge);
+}
+@media(min-width:700px) {
+ .site-shell.immersive-home .spatial-reel-footer {
+  flex-direction:row;
+  align-items:center;
+  justify-content:space-between;
+ }
+}
+@media(min-width:900px) {
+ .site-shell.immersive-home .lens-title,
+ .site-shell.immersive-home .lens-caption {
+  left:var(--frame-edge);
+ }
+ .site-shell.immersive-home .lens-navigation {
+  inset-inline:var(--frame-edge);
+ }
+}
