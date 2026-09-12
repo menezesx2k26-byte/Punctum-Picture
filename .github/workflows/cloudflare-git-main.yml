@@ -160,6 +160,38 @@ jobs:
         id: deploy_worker
         run: wrangler deploy --config dist/server/wrangler.json
 
+      - name: Verify published immersive experience
+        id: published_experience
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='https://punctumpicture.com'
+          EXPECTED_CONFIG='(
+            .siteConfig.editorial.home.hero.title == "Fotografias de" and
+            .siteConfig.editorial.home.statement.title == "Comecei na fotografia na igreja, e desde então nunca mais parei." and
+            .siteConfig.editorial.home.carousel.title == "Fotografias para ver de perto." and
+            .siteConfig.theme.typography.headingFamily == "instrument-serif" and
+            (.siteConfig.pages.home.sections | any(
+              .type == "hero" and .variant == "cinematic" and .heroMedia == null
+            )) and
+            (.siteConfig.pages.home.sections | any(
+              .type == "photo-reel" and .variant == "horizontal"
+            ))
+          )'
+
+          PUBLISHED_OK=false
+          for attempt in 1 2 3 4 5; do
+            if curl -fsS -H 'Cache-Control: no-cache' \
+              "$BASE/api/public/site?deploy=${GITHUB_SHA}&attempt=${attempt}" \
+              -o /tmp/published-site.json && \
+              jq -e "$EXPECTED_CONFIG" /tmp/published-site.json >/dev/null; then
+              PUBLISHED_OK=true
+              break
+            fi
+            sleep 6
+          done
+          [ "$PUBLISHED_OK" = "true" ]
+
       - name: Smoke test production root, hero and admin
         id: smoke
         shell: bash
@@ -223,6 +255,7 @@ jobs:
             echo '- Worker: `punctum-picture-migration`'
             echo '- Production apex: healthy'
             echo '- Production hero: valid WebP binary'
+            echo '- Published lens, carousel, direct copy and typography: verified'
             echo "- WWW smoke: \`${WWW_SMOKE_STATUS:-unknown}\` (non-blocking)"
             echo '- D1 migrations: applied before Worker deploy'
             echo '- D1: `punctum-picture`'
@@ -261,6 +294,7 @@ jobs:
               "d1Migrations": "${{ steps.d1_migrations.outcome }}",
               "generatedConfig": "${{ steps.patch.outcome }}",
               "deploy": "${{ steps.deploy_worker.outcome }}",
+              "publishedExperience": "${{ steps.published_experience.outcome }}",
               "smoke": "${{ steps.smoke.outcome }}"
             },
             "wwwSmokeStatus": "${WWW_SMOKE_STATUS:-unknown}",
@@ -271,6 +305,7 @@ jobs:
             "cloudflareImages": true,
             "cronsEnabled": true,
             "studioContractVerified": true,
+            "publishedExperienceVerified": $([ '${{ steps.published_experience.outcome }}' = 'success' ] && echo true || echo false),
             "customDomainsConfigured": true
           }
           EOF

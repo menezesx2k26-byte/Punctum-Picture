@@ -6,6 +6,7 @@ export * from "./editorial";
 export * from "./font-pairs";
 export * from "./font-registry";
 export * from "./image-reference";
+export * from "./legacy-refresh";
 export * from "./palette-registry";
 export * from "./preset-ids";
 export * from "./preset-registry";

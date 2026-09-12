@@ -1,6 +1,7 @@
 import {
   BACKGROUND_ASSET_REGISTRY,
   PUNCTUM_DEFAULT_SITE_CONFIG,
+  refreshLegacyPublishedConfig,
   safeParseSiteConfig,
   siteConfigSchema,
   type SiteConfig,
@@ -130,6 +131,7 @@ function parseStoredConfig(
   }
 
   const parsed = safeParseSiteConfig(input);
+  const refreshedConfig = refreshLegacyPublishedConfig(parsed.config);
   if (parsed.source === "punctum-default") {
     return {
       config: siteConfigFromLegacySettings(fallbackSettings),
@@ -139,26 +141,28 @@ function parseStoredConfig(
   }
   if (parsed.source === "migrated-v1") {
     return {
-      config: siteConfigWithLegacySettings(parsed.config, fallbackSettings),
+      config: refreshLegacyPublishedConfig(
+        siteConfigWithLegacySettings(refreshedConfig, fallbackSettings),
+      ),
       source: "migrated-v1",
       issues: parsed.issues,
     };
   }
   if (parsed.source === "migrated-v2") {
     return {
-      config: parsed.config,
+      config: refreshedConfig,
       source: "migrated-v2",
       issues: parsed.issues,
     };
   }
   if (parsed.source === "migrated-v3") {
     return {
-      config: parsed.config,
+      config: refreshedConfig,
       source: "migrated-v3",
       issues: parsed.issues,
     };
   }
-  return { config: parsed.config, source: "published", issues: [] };
+  return { config: refreshedConfig, source: "published", issues: [] };
 }
 
 async function readPointers(db: D1Database): Promise<PointerRow | null> {
