@@ -1,7 +1,7 @@
 {
   "status": "success",
-  "checkedAt": "2026-09-12T21:00:11Z",
-  "sourceCommit": "8edadc12eedf88066563db318cb3eb8f8df9af25",
+  "checkedAt": "2026-09-12T21:25:50Z",
+  "sourceCommit": "d2b1542c12dd465c0056fdd40f472e7cdf8f61f4",
   "worker": "punctum-picture-migration",
   "workerUrl": "https://punctum-picture-migration.menezesx2k26.workers.dev",
   "productionUrl": "https://punctumpicture.com",
@@ -20,6 +20,7 @@
     "d1Migrations": "success",
     "generatedConfig": "success",
     "deploy": "success",
+    "publishedExperience": "success",
     "smoke": "success"
   },
   "wwwSmokeStatus": "unexpected-stats",
@@ -30,5 +31,6 @@
   "cloudflareImages": true,
   "cronsEnabled": true,
   "studioContractVerified": true,
+  "publishedExperienceVerified": true,
   "customDomainsConfigured": true
 }
