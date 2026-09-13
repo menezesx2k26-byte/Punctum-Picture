@@ -99,9 +99,12 @@ export function HomePhotoReelSection({
                   <span className="filmstrip-meta">35mm · ISO 400</span>
                 </div>
                 <div className="filmstrip-photo-wrap">
-                  <img
+                  <Image
                     src={image.src}
                     alt={image.alt}
+                    width={720}
+                    height={960}
+                    sizes="(max-width: 699px) 78vw, (max-width: 1199px) 52vw, 420px"
                     loading="lazy"
                     className="filmstrip-photo"
                   />

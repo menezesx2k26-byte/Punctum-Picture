@@ -71,7 +71,7 @@ export default async function ServicesPage() {
             <div className="local-area-grid service-hub-grid">
               {services.map((service) => (
                 <Link key={service.href} href={service.href} className="local-area-card">
-                  <Image src={service.image} alt="" width={120} height={160} sizes="120px" className="service-index-image" />
+                  <Image src={service.image} alt="" width={128} height={171} sizes="128px" className="service-index-image" />
                   <h2>{service.name}</h2>
                   <p>{service.lead}</p>
                   <strong>

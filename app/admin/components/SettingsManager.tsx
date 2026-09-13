@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type Settings = {
   brandName: string;
@@ -33,6 +34,7 @@ const empty: Settings = {
 };
 
 export function SettingsManager() {
+  const router = useRouter();
   const [settings, setSettings] = useState<Settings>(empty);
   const [status, setStatus] = useState("");
   const [passwordStatus, setPasswordStatus] = useState("");
@@ -101,7 +103,8 @@ export function SettingsManager() {
       form.reset();
       setPasswordStatus("Senha definitiva salva. Entre novamente com a nova senha.");
       window.setTimeout(() => {
-        window.location.href = "/acesso";
+        router.replace("/acesso");
+        router.refresh();
       }, 1600);
     } catch (error) {
       setPasswordStatus(

@@ -2,6 +2,7 @@
 
 import { Archive, CircleAlert, ExternalLink, Plus } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 type Album = {
@@ -20,6 +21,7 @@ type AlbumsResponse = {
 };
 
 export function AlbumsManager() {
+  const router = useRouter();
   const [albums, setAlbums] = useState<Album[]>([]);
   const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(true);
@@ -59,7 +61,7 @@ export function AlbumsManager() {
       setError("A resposta não trouxe o ensaio criado.");
       return;
     }
-    window.location.href = `/admin/ensaios/${body.album.id}`;
+    router.push(`/admin/ensaios/${body.album.id}`);
   }
 
   return (

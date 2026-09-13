@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "./motion-preference";
 import type { CarouselImage } from "../../lib/portfolio";
@@ -130,10 +131,14 @@ export function SpatialCarousel({
               className="spatial-fallback-item"
               onClick={() => onSelectImage?.(image)}
             >
-              <img
+              <Image
                 src={image.src}
                 alt={image.alt}
-                loading="lazy" decoding="async"
+                width={640}
+                height={800}
+                sizes="(max-width: 699px) calc(100vw - 3rem), (max-width: 1199px) 50vw, 33vw"
+                loading="lazy"
+                decoding="async"
                 className="spatial-card-image"
               />
               <span className="spatial-fallback-caption">
@@ -224,10 +229,14 @@ export function SpatialCarousel({
               }}
             >
               <div className="spatial-card-inner">
-                <img
+                <Image
                   src={image.src}
                   alt={image.alt}
-                  loading="lazy" decoding="async"
+                  width={640}
+                  height={900}
+                  sizes="(max-width: 699px) 230px, (max-width: 1279px) 25vw, 320px"
+                  loading="lazy"
+                  decoding="async"
                   className="spatial-card-image"
                 />
                 <div className="spatial-card-overlay">
